@@ -1419,3 +1419,6 @@ pwdhash
 wesbos
 entrancy
 vbyte
+prefs
+Prefs
+oxlintrc
