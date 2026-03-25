@@ -556,6 +556,7 @@ export function AvailableAssetsTabViewList() {
               onSelectionChange={handleNetworkFilterChange}
             />
             <SearchBar
+              size="small"
               placeholder={intl.formatMessage({
                 id: ETranslations.global_search_asset,
               })}
