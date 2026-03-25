@@ -39,6 +39,7 @@ import { EarnNavigation } from '../earnUtils';
 
 import { AprText } from './AprText';
 import { buildEarnAvailableAssetCategoryTabs } from './earnCategoryTabs';
+import { NetworkFilterControl } from './NetworkFilterControl';
 
 export function AvailableAssetsTabViewList() {
   const [{ availableAssetsByType = {}, refreshTrigger = 0 }] = useEarnAtom();
@@ -47,6 +48,13 @@ export function AvailableAssetsTabViewList() {
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
+  const [networkFilterByTab, setNetworkFilterByTab] = useState<
+    Record<number, string[]>
+  >({});
+  const selectedNetworkIds = useMemo(
+    () => networkFilterByTab[selectedTabIndex] || [],
+    [networkFilterByTab, selectedTabIndex],
+  );
   const media = useMedia();
   const navigation = useAppNavigation();
   const { activeAccount } = useActiveAccount({ num: 0 });
@@ -64,10 +72,20 @@ export function AvailableAssetsTabViewList() {
   }, [tabData]);
   const focusedTab = useSharedValue(TabNames[0]);
 
-  // Get filtered assets based on selected tab and search text
+  // Get filtered assets based on selected tab, network filter, and search text
   const assets = useMemo(() => {
     const currentTabType = tabData[selectedTabIndex]?.type;
-    const source = availableAssetsByType[currentTabType] || [];
+    let source = availableAssetsByType[currentTabType] || [];
+
+    // Network filter
+    if (selectedNetworkIds.length > 0) {
+      const networkSet = new Set(selectedNetworkIds);
+      source = source.filter((a) =>
+        a.protocols.some((p) => networkSet.has(p.networkId)),
+      );
+    }
+
+    // Search filter
     if (!searchText) return source;
     const query = searchText.toLowerCase();
     return source.filter(
@@ -75,7 +93,36 @@ export function AvailableAssetsTabViewList() {
         a.symbol.toLowerCase().includes(query) ||
         a.name.toLowerCase().includes(query),
     );
-  }, [availableAssetsByType, selectedTabIndex, tabData, searchText]);
+  }, [
+    availableAssetsByType,
+    selectedTabIndex,
+    tabData,
+    searchText,
+    selectedNetworkIds,
+  ]);
+
+  // Compute available network IDs for the current tab
+  const availableNetworkIds = useMemo(() => {
+    const currentTabType = tabData[selectedTabIndex]?.type;
+    const source = availableAssetsByType[currentTabType] || [];
+    const set = new Set<string>();
+    for (const asset of source) {
+      for (const p of asset.protocols) {
+        set.add(p.networkId);
+      }
+    }
+    return Array.from(set);
+  }, [availableAssetsByType, selectedTabIndex, tabData]);
+
+  const handleNetworkFilterChange = useCallback(
+    (networkIds: string[]) => {
+      setNetworkFilterByTab((prev) => ({
+        ...prev,
+        [selectedTabIndex]: networkIds,
+      }));
+    },
+    [selectedTabIndex],
+  );
 
   // Use ref to track component mount status to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -388,7 +435,7 @@ export function AvailableAssetsTabViewList() {
   // Memoize ListEmptyComponent
   const listEmptyComponent = useMemo(
     () =>
-      searchText ? (
+      searchText || selectedNetworkIds.length > 0 ? (
         <Empty
           icon="SearchOutline"
           title={intl.formatMessage({
@@ -396,7 +443,7 @@ export function AvailableAssetsTabViewList() {
           })}
         />
       ) : null,
-    [searchText, intl],
+    [searchText, selectedNetworkIds, intl],
   );
 
   // Pre-fetch all categories and open search dialog
@@ -502,13 +549,20 @@ export function AvailableAssetsTabViewList() {
           renderItem={renderTabItem}
         />
         {media.gtMd ? (
-          <SearchBar
-            placeholder={intl.formatMessage({
-              id: ETranslations.global_search_asset,
-            })}
-            onSearchTextChange={setSearchText}
-            containerProps={searchBarContainerProps}
-          />
+          <XStack ai="center" gap="$3">
+            <NetworkFilterControl
+              availableNetworkIds={availableNetworkIds}
+              selectedNetworkIds={selectedNetworkIds}
+              onSelectionChange={handleNetworkFilterChange}
+            />
+            <SearchBar
+              placeholder={intl.formatMessage({
+                id: ETranslations.global_search_asset,
+              })}
+              onSearchTextChange={setSearchText}
+              containerProps={searchBarContainerProps}
+            />
+          </XStack>
         ) : null}
       </XStack>
 
