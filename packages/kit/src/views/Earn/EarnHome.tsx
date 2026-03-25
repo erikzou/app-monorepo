@@ -335,16 +335,17 @@ function BasicEarnHome({
     [account, accountSelectorActions, indexedAccount, navigation],
   );
 
-  const banners = useMemo(
-    () => (
-      <BannerV2
-        data={earnBanners}
-        onBannerPress={onBannerPress}
-        isActive={isEarnTabFocused}
-      />
-    ),
-    [earnBanners, onBannerPress, isEarnTabFocused],
-  );
+  const banners = null;
+  // const banners = useMemo(
+  //   () => (
+  //     <BannerV2
+  //       data={earnBanners}
+  //       onBannerPress={onBannerPress}
+  //       isActive={isEarnTabFocused}
+  //     />
+  //   ),
+  //   [earnBanners, onBannerPress, isEarnTabFocused],
+  // );
 
   const mobileContainerProps = useMemo(
     () => ({
@@ -353,7 +354,7 @@ function BasicEarnHome({
       },
       allowHeaderOverscroll: true,
       renderHeader: () => (
-        <YStack gap="$4" pt="$4" bg="$bgApp" pointerEvents="box-none">
+        <YStack gap="$4" pt="$4" pb="$5" bg="$bgApp" pointerEvents="box-none">
           <YStack gap="$7.5">
             <YStack px="$pagePadding">
               <Overview
@@ -531,7 +532,7 @@ function BasicEarnHome({
           defaultMode={defaultMode}
           onModeChange={handleModeChange}
           earn={
-            <YStack flex={1}>
+            <YStack flex={1} gap="$5">
               <YStack>
                 <XStack px="$pagePadding">
                   <Overview
