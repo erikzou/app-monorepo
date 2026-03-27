@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import {
+  Badge,
   Button,
   Checkbox,
   Icon,
@@ -16,12 +17,14 @@ import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 interface INetworkFilterControlProps {
   availableNetworkIds: string[];
   selectedNetworkIds: string[];
+  networkAssetCounts: Record<string, number>;
   onSelectionChange: (networkIds: string[]) => void;
 }
 
 function NetworkFilterControl({
   availableNetworkIds,
   selectedNetworkIds,
+  networkAssetCounts,
   onSelectionChange,
 }: INetworkFilterControlProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,6 +36,17 @@ function NetworkFilterControl({
     });
     return resp.networks;
   }, [availableNetworkIds]);
+
+  const sortedNetworks = useMemo(
+    () =>
+      networks
+        ?.slice()
+        .sort(
+          (a, b) =>
+            (networkAssetCounts[b.id] ?? 0) - (networkAssetCounts[a.id] ?? 0),
+        ),
+    [networks, networkAssetCounts],
+  );
 
   const toggleNetwork = useCallback(
     (networkId: string) => {
@@ -100,8 +114,9 @@ function NetworkFilterControl({
             ) : null}
           </XStack>
           <YStack mt="$2.5">
-            {networks?.map((network) => {
+            {sortedNetworks?.map((network) => {
               const isSelected = selectedNetworkIds.includes(network.id);
+              const count = networkAssetCounts[network.id] ?? 0;
               return (
                 <XStack
                   key={network.id}
@@ -114,11 +129,25 @@ function NetworkFilterControl({
                   <Checkbox
                     value={isSelected}
                     onChange={() => toggleNetwork(network.id)}
-                    containerProps={{ py: '$0' }}
+                    containerProps={{ py: '$0', flexShrink: 0 }}
                     shouldStopPropagation
                   />
                   <NetworkAvatar networkId={network.id} size="$5" />
-                  <SizableText size="$bodyLgMedium">{network.name}</SizableText>
+                  <SizableText size="$bodyLgMedium" flex={1}>
+                    {network.name}
+                  </SizableText>
+                  {count > 0 ? (
+                    <Badge
+                      badgeType="default"
+                      badgeSize="sm"
+                      minWidth={20}
+                      borderRadius="$full"
+                      justifyContent="center"
+                      px="$1.5"
+                    >
+                      {String(count)}
+                    </Badge>
+                  ) : null}
                 </XStack>
               );
             })}

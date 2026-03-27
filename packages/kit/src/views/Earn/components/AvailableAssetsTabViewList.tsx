@@ -48,13 +48,7 @@ export function AvailableAssetsTabViewList() {
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
   const [searchText, setSearchText] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
-  const [networkFilterByTab, setNetworkFilterByTab] = useState<
-    Record<number, string[]>
-  >({});
-  const selectedNetworkIds = useMemo(
-    () => networkFilterByTab[selectedTabIndex] || [],
-    [networkFilterByTab, selectedTabIndex],
-  );
+  const [selectedNetworkIds, setSelectedNetworkIds] = useState<string[]>([]);
   const media = useMedia();
   const navigation = useAppNavigation();
   const { activeAccount } = useActiveAccount({ num: 0 });
@@ -102,26 +96,30 @@ export function AvailableAssetsTabViewList() {
   ]);
 
   // Compute available network IDs for the current tab
-  const availableNetworkIds = useMemo(() => {
+  const { availableNetworkIds, networkAssetCounts } = useMemo(() => {
     const currentTabType = tabData[selectedTabIndex]?.type;
     const source = availableAssetsByType[currentTabType] || [];
-    const set = new Set<string>();
+    const counts: Record<string, number> = {};
     for (const asset of source) {
+      const seen = new Set<string>();
       for (const p of asset.protocols) {
-        set.add(p.networkId);
+        if (!seen.has(p.networkId)) {
+          seen.add(p.networkId);
+          counts[p.networkId] = (counts[p.networkId] ?? 0) + 1;
+        }
       }
     }
-    return Array.from(set);
+    return {
+      availableNetworkIds: Object.keys(counts),
+      networkAssetCounts: counts,
+    };
   }, [availableAssetsByType, selectedTabIndex, tabData]);
 
   const handleNetworkFilterChange = useCallback(
     (networkIds: string[]) => {
-      setNetworkFilterByTab((prev) => ({
-        ...prev,
-        [selectedTabIndex]: networkIds,
-      }));
+      setSelectedNetworkIds(networkIds);
     },
-    [selectedTabIndex],
+    [],
   );
 
   // Use ref to track component mount status to prevent state updates after unmount
@@ -190,6 +188,7 @@ export function AvailableAssetsTabViewList() {
       if (index !== -1) {
         focusedTab.value = name;
         setSelectedTabIndex(index);
+        setSelectedNetworkIds([]);
       }
     },
     [focusedTab, tabData],
@@ -553,6 +552,7 @@ export function AvailableAssetsTabViewList() {
             <NetworkFilterControl
               availableNetworkIds={availableNetworkIds}
               selectedNetworkIds={selectedNetworkIds}
+              networkAssetCounts={networkAssetCounts}
               onSelectionChange={handleNetworkFilterChange}
             />
             <SearchBar
@@ -567,19 +567,21 @@ export function AvailableAssetsTabViewList() {
         ) : null}
       </XStack>
 
-      <TableList<IEarnAvailableAsset>
-        key={`assets-tab-${selectedTabIndex}`}
-        data={assets ?? []}
-        columns={columns}
-        keyExtractor={keyExtractor}
-        withHeader={platformEnv.isNative ? false : media.gtMd}
-        defaultSortKey="yield"
-        defaultSortDirection="desc"
-        onPressRow={onPressRow}
-        mobileRenderItem={mobileRenderItem}
-        enableDrillIn
-        ListEmptyComponent={listEmptyComponent}
-      />
+      <YStack minHeight={400}>
+        <TableList<IEarnAvailableAsset>
+          key={`assets-tab-${selectedTabIndex}`}
+          data={assets ?? []}
+          columns={columns}
+          keyExtractor={keyExtractor}
+          withHeader={platformEnv.isNative ? false : media.gtMd}
+          defaultSortKey="yield"
+          defaultSortDirection="desc"
+          onPressRow={onPressRow}
+          mobileRenderItem={mobileRenderItem}
+          enableDrillIn
+          ListEmptyComponent={listEmptyComponent}
+        />
+      </YStack>
     </YStack>
   );
 }
