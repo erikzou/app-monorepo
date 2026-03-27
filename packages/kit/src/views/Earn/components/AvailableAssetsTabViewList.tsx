@@ -115,12 +115,9 @@ export function AvailableAssetsTabViewList() {
     };
   }, [availableAssetsByType, selectedTabIndex, tabData]);
 
-  const handleNetworkFilterChange = useCallback(
-    (networkIds: string[]) => {
-      setSelectedNetworkIds(networkIds);
-    },
-    [],
-  );
+  const handleNetworkFilterChange = useCallback((networkIds: string[]) => {
+    setSelectedNetworkIds(networkIds);
+  }, []);
 
   // Use ref to track component mount status to prevent state updates after unmount
   const isMountedRef = useRef(true);
@@ -530,8 +527,8 @@ export function AvailableAssetsTabViewList() {
         {media.gtMd ? null : (
           <IconButton
             variant="tertiary"
+            size="medium"
             icon="SearchOutline"
-            iconSize="$5"
             loading={searchLoading}
             disabled={searchLoading}
             onPress={handleMobileSearchPress}
@@ -567,7 +564,7 @@ export function AvailableAssetsTabViewList() {
         ) : null}
       </XStack>
 
-      <YStack minHeight={400}>
+      <YStack {...(media.gtMd && { minHeight: 400 })}>
         <TableList<IEarnAvailableAsset>
           key={`assets-tab-${selectedTabIndex}`}
           data={assets ?? []}
