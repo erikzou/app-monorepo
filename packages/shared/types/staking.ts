@@ -1054,6 +1054,17 @@ export interface IBorrowOnekeyBonusAction {
   text: IEarnText;
 }
 
+export interface IEarnMarketInfoActionIcon {
+  type: 'marketInfo';
+  data: {
+    description?: string;
+    riskInvolved?: string;
+    importantQuirks?: string;
+    initiatedBy?: string;
+    provider?: string;
+  };
+}
+
 export type IEarnActionIcon =
   | IEarnPopupActionIcon
   | IEarnLinkActionIcon
@@ -1064,7 +1075,8 @@ export type IEarnActionIcon =
   | IEarnReceiveActionIcon
   | IEarnTradeActionIcon
   | IEarnCloseActionIcon
-  | IEarnListaCheckActionIcon;
+  | IEarnListaCheckActionIcon
+  | IEarnMarketInfoActionIcon;
 
 interface IEarnGridItem {
   title: IEarnText;

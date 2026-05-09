@@ -3,6 +3,7 @@ import { Fragment, memo, useCallback, useMemo, useState } from 'react';
 import { useIntl } from 'react-intl';
 
 import {
+  Badge,
   Divider,
   Icon,
   IconButton,
@@ -65,6 +66,7 @@ import { EarnAlert } from '../../../Staking/components/ProtocolDetails/EarnAlert
 import { EarnIcon } from '../../../Staking/components/ProtocolDetails/EarnIcon';
 import { EarnText } from '../../../Staking/components/ProtocolDetails/EarnText';
 import { GridItem } from '../../../Staking/components/ProtocolDetails/GridItemV2';
+import { showMarketInfoDialog } from '../../../Staking/components/ProtocolDetails/MarketInfoDialog';
 import { PendleRulesSection } from '../../../Staking/components/ProtocolDetails/PendleRulesSection';
 import { PeriodSection } from '../../../Staking/components/ProtocolDetails/PeriodSectionV2';
 import { ProtectionSection } from '../../../Staking/components/ProtocolDetails/ProtectionSectionV2';
@@ -348,11 +350,13 @@ function ChartSection({
 
 function GridSection({
   data,
+  titleAccessory,
 }: {
   data?:
     | IStakeEarnDetail['intro']
     | IStakeEarnDetail['rules']
     | IStakeEarnDetail['performance'];
+  titleAccessory?: React.ReactNode;
 }) {
   if (!data) {
     return null;
@@ -362,7 +366,10 @@ function GridSection({
     <>
       {data.items?.length ? (
         <YStack gap="$6">
-          <EarnText text={data.title} size="$headingLg" />
+          <XStack alignItems="center" gap="$3">
+            <EarnText text={data.title} size="$headingLg" />
+            {titleAccessory}
+          </XStack>
           <XStack flexWrap="wrap" m="$-5" p="$2">
             {data.items.map((cell, cellIndex) => (
               <GridItem
@@ -532,7 +539,34 @@ const DetailsPartComponent = ({
                 vault={vault}
               />
             </YStack>
-            <GridSection data={detailInfo.intro} />
+            <GridSection
+              data={detailInfo.intro}
+              titleAccessory={
+                earnUtils.isPendleProvider({ providerName: provider }) ? (
+                  <Badge
+                    badgeSize="lg"
+                    gap="$1"
+                    cursor="pointer"
+                    onPress={() =>
+                      showMarketInfoDialog({
+                        description:
+                          'USDG is a US dollar-pegged stablecoin issued by Paxos, redeemable 1:1 for USD with Paxos. The exchange rate in this market is 1 USDG = 1 USDG.',
+                        riskInvolved:
+                          'Pendle has flagged this pool as having a low risk of generating negative yield.',
+                        initiatedBy: 'Pendle Team',
+                      })
+                    }
+                  >
+                    <Badge.Text>Market info</Badge.Text>
+                    <Icon
+                      name="InfoCircleOutline"
+                      size="$3.5"
+                      color="$iconSubdued"
+                    />
+                  </Badge>
+                ) : null
+              }
+            />
             <ProtocolIntroSection protocolInfo={detailInfo.protocolInfo} />
             {earnUtils.isPendleProvider({
               providerName: provider,

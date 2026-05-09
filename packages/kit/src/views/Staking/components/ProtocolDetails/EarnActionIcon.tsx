@@ -41,6 +41,7 @@ import { useHandleClaim } from '../../pages/ProtocolDetails/useHandleClaim';
 import { EarnAmountText } from './EarnAmountText';
 import { EarnIcon } from './EarnIcon';
 import { EarnText } from './EarnText';
+import { showMarketInfoDialog } from './MarketInfoDialog';
 
 type IActionTrigger = ({
   onPress,
@@ -619,6 +620,16 @@ function BasicEarnActionIcon({
             color="$textSubdued"
           />
         </XStack>
+      );
+    case 'marketInfo':
+      return (
+        <IconButton
+          size="small"
+          icon="InfoCircleOutline"
+          variant="tertiary"
+          color="$iconSubdued"
+          onPress={() => showMarketInfoDialog(actionIcon.data)}
+        />
       );
     default:
   }
