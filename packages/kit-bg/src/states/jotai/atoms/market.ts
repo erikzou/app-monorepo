@@ -71,3 +71,18 @@ export const {
     spotNetworkId: '',
   },
 });
+
+export type IMarketChartMode = 'lite' | 'pro';
+
+export interface IMarketChartModeAtom {
+  mode: IMarketChartMode;
+}
+
+// Persisted per user (not per asset): once the user opts into the Pro chart it
+// stays Pro across sessions and across assets.
+export const { target: marketChartModeAtom, use: useMarketChartModeAtom } =
+  globalAtom<IMarketChartModeAtom>({
+    persist: true,
+    name: EAtomNames.marketChartModeAtom,
+    initialValue: { mode: 'lite' },
+  });

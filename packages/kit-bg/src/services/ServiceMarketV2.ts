@@ -28,6 +28,7 @@ import type {
   IMarketPerpsTokenListData,
   IMarketPerpsTokenListResponse,
   IMarketStockDetail,
+  IMarketStockEntity,
   IMarketTokenBatchListResponse,
   IMarketTokenDetailResponse,
   IMarketTokenHoldersResponse,
@@ -53,6 +54,7 @@ import { MOCK_MARKET_BANNER_LIST } from './ServiceMarketV2.const';
 import {
   type IMarketStockAssetApiData,
   buildMarketStockDetail,
+  buildMarketStockEntity,
 } from './utils/marketStockUtils';
 import { resolveMarketTokenDetailRequestTokenAddress } from './utils/marketTokenDetailUtils';
 
@@ -99,6 +101,7 @@ class ServiceMarketV2 extends ServiceBase {
       this._marketTokenBatchCache.clear();
       void this.memoizedFetchMarketTokenList.clear();
       void this.memoizedFetchMarketStockByTicker.clear();
+      void this.memoizedFetchMarketStockEntityByInstrument.clear();
     });
   }
 
@@ -141,6 +144,56 @@ class ServiceMarketV2 extends ServiceBase {
       promise: true,
     },
   );
+
+  // Resolves the whole stock entity (underlying + every tokenized variant) from
+  // any one of its variants, so a token route can render the entity page.
+  private memoizedFetchMarketStockEntityByInstrument = memoizee(
+    async (networkId: string, contractAddress: string, locale: string) => {
+      const client = await this.getClient(EServiceEndpointEnum.Utility);
+      const response = await client.get<{
+        code: number;
+        message: string;
+        data?: IMarketStockAssetApiData | null;
+      }>('/utility/v1/market/stock/instrument', {
+        params: {
+          networkId,
+          contractAddress,
+        },
+        headers: {
+          'x-onekey-request-currency': 'usd',
+          'x-onekey-request-locale': locale,
+        },
+      });
+      const data = response.data?.data;
+      return data ? buildMarketStockEntity(data) : undefined;
+    },
+    {
+      maxAge: timerUtils.getTimeDurationMs({ minute: 5 }),
+      promise: true,
+      max: 20,
+    },
+  );
+
+  @backgroundMethod()
+  async fetchMarketStockEntityByInstrument({
+    networkId,
+    contractAddress,
+  }: {
+    networkId: string;
+    contractAddress: string;
+  }): Promise<IMarketStockEntity | undefined> {
+    if (!networkId || !contractAddress) {
+      return undefined;
+    }
+    const locale = await this._getMarketTokenBatchCacheLocale();
+    // Negative results stay cached on purpose: every non-stock token detail
+    // page asks this too, and dropping the miss would refetch on each render.
+    return this.memoizedFetchMarketStockEntityByInstrument(
+      networkId,
+      contractAddress,
+      locale,
+    );
+  }
 
   private _cleanExpiredMarketTokenBatchCache() {
     const now = Date.now();

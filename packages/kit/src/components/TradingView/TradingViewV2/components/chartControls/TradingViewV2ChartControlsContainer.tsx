@@ -66,6 +66,7 @@ interface ITradingViewV2ChartControlsContainerProps {
   chartTimezone: string;
   isFullscreen?: boolean;
   fullscreenHeader?: ReactNode;
+  rightGroupTrailingControl?: ReactNode;
   onIntervalChange: (interval: string) => void;
   onIndicatorSelect: (indicatorName: string, desiredActive: boolean) => void;
   onChartTypeChange: (chartType: number) => void;
@@ -96,6 +97,7 @@ export const TradingViewV2ChartControlsContainer = memo(
     chartTimezone,
     isFullscreen = false,
     fullscreenHeader,
+    rightGroupTrailingControl,
     onIntervalChange,
     onIndicatorSelect,
     onChartTypeChange,
@@ -313,6 +315,7 @@ export const TradingViewV2ChartControlsContainer = memo(
         chartTimezone={chartTimezone}
         isFullscreen={isFullscreen}
         fullscreenHeader={fullscreenHeader}
+        rightGroupTrailingControl={rightGroupTrailingControl}
         onIntervalChange={onIntervalChange}
         onIndicatorPress={handleIndicatorPress}
         onShowIndicatorsDialog={showIndicatorsDialog}

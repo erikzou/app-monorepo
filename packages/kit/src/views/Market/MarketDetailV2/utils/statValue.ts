@@ -117,6 +117,22 @@ export function formatPercentValue(
   return `${numberFormat(percentStr, { formatter: 'value' })}%`;
 }
 
+/**
+ * For fields that already arrive in percentage points. `underlyingMeta` mixes
+ * both conventions: `turnoverRate24h` is 0.0592 meaning 0.0592%, while
+ * `dividendYieldTTM` / ROE / ROA / net margin are decimals and need
+ * `formatPercentValue`. Multiplying here would be a 100x error — cross-check
+ * with `volumeShares / sharesOutstanding`.
+ */
+export function formatPercentPointValue(
+  value?: string | number | null,
+  fallback: string = STAT_FALLBACK_VALUE,
+): string {
+  const str = toValidString(value);
+  if (!str) return fallback;
+  return `${numberFormat(str, { formatter: 'value' })}%`;
+}
+
 export function formatPriceChangeDisplay(value?: string | number | null): {
   color: ITTextColorToken;
   display: string;

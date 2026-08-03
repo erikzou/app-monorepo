@@ -1579,3 +1579,7 @@ mispunched
 unifold
 hypercore
 lookback
+
+# Tokenized stock issuers and fundamentals vocabulary
+xstock
+financials

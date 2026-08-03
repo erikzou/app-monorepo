@@ -77,6 +77,10 @@ export type ISwapPanelContentProps = {
   disableNativeToken?: boolean;
   marketPresetSettings?: IMarketPresetSettingsState;
   estimatePriorityFeeFiatValues?: IEstimateMarketPresetPriorityFeeFiatValues;
+  // Slot right under the order-type row, above the amount input. Stock pages
+  // put the variant switcher here so picking the token reads as part of the
+  // order rather than as page chrome.
+  orderHeaderSlot?: ReactNode;
 };
 
 export function SwapPanelContent(props: ISwapPanelContentProps) {
@@ -105,6 +109,7 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
     disableNativeToken,
     marketPresetSettings,
     estimatePriorityFeeFiatValues,
+    orderHeaderSlot,
     onCloseDialog,
   } = props;
 
@@ -285,6 +290,7 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
           balanceLoading={balanceLoading}
           handleBalanceClick={handleBalanceClick}
         />
+        {orderHeaderSlot}
         <TokenInputSection
           ref={tokenBuyInputRef}
           style={tradeType === ESwapDirection.BUY ? {} : { display: 'none' }}

@@ -27,6 +27,15 @@ export const MarketTestIDs = {
   detailSwapButton: 'market-detail-swap-button',
   detailAbout: 'market-detail-about',
   detailNotificationButton: 'market-banner-detail-notification', // preserve existing
+  detailMoreButton: 'market-detail-more-button',
+
+  // Stock entity page
+  stockStatsToggle: 'market-stock-stats-toggle',
+  stockAboutToggle: 'market-stock-about-toggle',
+  stockAuditButton: 'market-stock-audit-button',
+  stockTokenLink: (key: string) => `market-stock-token-link-${key}`,
+  stockCopyContractButton: 'market-stock-copy-contract-button',
+  stockVariantSwitchButton: 'market-stock-variant-switch-button',
 
   // Chart time range
   chartTimeRange: (range: string) => `market-chart-range-${range}`,

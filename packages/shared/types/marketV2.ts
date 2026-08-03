@@ -214,6 +214,47 @@ export interface IMarketStockDetail {
   stock: IMarketStockInfo;
 }
 
+/**
+ * One tradable tokenization of a stock: a single issuer on a single chain.
+ * Several of these collapse under one `IMarketStockEntity`.
+ */
+export interface IMarketStockInstrument {
+  instrumentId: string;
+  issuer: string;
+  tokenSymbol: string;
+  tokenName?: string;
+  networkId: string;
+  chainName?: string;
+  contractAddress: string;
+  logoUrl?: string;
+  tokenToAssetRatio?: string;
+  tradingDays?: string;
+  isMarketOpen?: boolean;
+  minTradeUsd?: string;
+  maxTradeUsd?: string;
+  price?: string;
+  priceChange24H?: string;
+  volume24h?: string;
+  liquidityUsd?: string;
+}
+
+/**
+ * The stock entity page's payload: the underlying stock plus every tokenized
+ * variant of it. Keyed by ticker, not by contract address.
+ */
+export interface IMarketStockEntity {
+  ticker: string;
+  name: string;
+  logoUrl?: string;
+  introduction?: string;
+  category?: string[];
+  underlyingPrice?: string;
+  underlyingPriceChange24H?: string;
+  underlyingUpdatedAt?: string;
+  stock: IMarketStockInfo;
+  instruments: IMarketStockInstrument[];
+}
+
 export interface IMarketTokenListItem extends IMarketTokenHistoricalPriceFields {
   address: string;
   logoUrl?: string;
