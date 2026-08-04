@@ -32,6 +32,10 @@ type ITradingWidgetMainButtonProps<T extends string> = {
   onPresetChange: (value: T) => void;
   onOpenSettings: () => void;
   onQuickPresetPress?: (event?: ITradingWidgetMainButtonPressEvent) => void;
+  // Drop the preset shortcut row and keep the summary line unchanged. The
+  // summary line already opens the settings dialog, which holds the same
+  // presets, so the row is a duplicate entry point on some surfaces.
+  hidePresetButtons?: boolean;
   testID?: string;
 };
 
@@ -206,6 +210,7 @@ export function TradingWidgetMainButton<T extends string>({
   onPresetChange,
   onOpenSettings,
   onQuickPresetPress,
+  hidePresetButtons,
   testID,
 }: ITradingWidgetMainButtonProps<T>) {
   if (variant === 'compact') {
@@ -227,16 +232,23 @@ export function TradingWidgetMainButton<T extends string>({
 
   return (
     <YStack gap="$3" width="100%" testID={testID}>
-      <XStack alignItems="center" gap="$2" justifyContent="center" width="100%">
-        {presetOptions.map((option) => (
-          <TradingWidgetPresetButton
-            key={option.value}
-            option={option}
-            selected={option.value === selectedPresetValue}
-            onPresetChange={onPresetChange}
-          />
-        ))}
-      </XStack>
+      {hidePresetButtons ? null : (
+        <XStack
+          alignItems="center"
+          gap="$2"
+          justifyContent="center"
+          width="100%"
+        >
+          {presetOptions.map((option) => (
+            <TradingWidgetPresetButton
+              key={option.value}
+              option={option}
+              selected={option.value === selectedPresetValue}
+              onPresetChange={onPresetChange}
+            />
+          ))}
+        </XStack>
+      )}
 
       <TradingWidgetMainButtonInfoRow
         variant={variant}

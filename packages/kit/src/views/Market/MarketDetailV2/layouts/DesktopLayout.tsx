@@ -54,6 +54,9 @@ import type { IMarketTradingViewProps } from '../components/MarketTradingView/Ma
 
 const MARKET_DETAIL_LAYOUT = {
   chartHeight: 550,
+  // The stock page carries a price bar above the chart and denser tabs below
+  // it, so it runs a shorter chart to keep Key Data closer to the fold.
+  stockChartHeight: 440,
   chartFullscreenHeaderFillHeight: 48,
   infoTabsHeight: 480,
 } as const;
@@ -240,6 +243,9 @@ export function DesktopLayout({
   const isStockPage = Boolean(stockEntity);
   const showChartModeSwitch = isStockPage && !isChartFullscreen;
   const showLiteChart = showChartModeSwitch && chartMode === 'lite';
+  const chartHeight = isStockPage
+    ? MARKET_DETAIL_LAYOUT.stockChartHeight
+    : MARKET_DETAIL_LAYOUT.chartHeight;
 
   const scrollContainerRef = useRef<HTMLElement>(null);
   useIframeWheelPassthrough({
@@ -377,7 +383,7 @@ export function DesktopLayout({
           ) : null}
 
           <Stack
-            h={isChartFullscreen ? undefined : MARKET_DETAIL_LAYOUT.chartHeight}
+            h={isChartFullscreen ? undefined : chartHeight}
             overflow="hidden"
             bg="$bgApp"
             zIndex={isChartFullscreen ? chartFullscreenZIndex : undefined}
@@ -404,10 +410,7 @@ export function DesktopLayout({
                       networkId={networkId}
                       tokenAddress={tokenAddress}
                       range={liteChartRange}
-                      height={
-                        MARKET_DETAIL_LAYOUT.chartHeight -
-                        MARKET_CHART_TOOLBAR_HEIGHT
-                      }
+                      height={chartHeight - MARKET_CHART_TOOLBAR_HEIGHT}
                     />
                   </>
                 ) : null}

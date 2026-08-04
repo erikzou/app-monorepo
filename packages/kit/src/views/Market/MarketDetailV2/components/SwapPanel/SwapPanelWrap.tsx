@@ -705,6 +705,7 @@ export function SwapPanelWrap({ onCloseDialog }: ISwapPanelWrapProps) {
 
   return (
     <SwapPanelContent
+      hideMarketPresetButtons={isStockEntity}
       orderHeaderSlot={
         isStockEntity ? (
           <StockVariantSelector

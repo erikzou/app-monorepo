@@ -81,6 +81,10 @@ export type ISwapPanelContentProps = {
   // put the variant switcher here so picking the token reads as part of the
   // order rather than as page chrome.
   orderHeaderSlot?: ReactNode;
+  // Drop the Auto/P1/P2/P3 shortcut row above the preset summary line. The
+  // summary line's own press target already opens the settings dialog, which
+  // holds the same presets, so the row is a duplicate entry point.
+  hideMarketPresetButtons?: boolean;
 };
 
 export function SwapPanelContent(props: ISwapPanelContentProps) {
@@ -110,6 +114,7 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
     marketPresetSettings,
     estimatePriorityFeeFiatValues,
     orderHeaderSlot,
+    hideMarketPresetButtons,
     onCloseDialog,
   } = props;
 
@@ -350,6 +355,7 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
           estimatePriorityFeeFiatValues={estimatePriorityFeeFiatValues}
           presetSettings={marketPresetSettings}
           variant={onCloseDialog ? 'compact' : 'full'}
+          hidePresetButtons={hideMarketPresetButtons}
         />
       ) : null}
 
