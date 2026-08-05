@@ -200,6 +200,10 @@ function MarketHomeTabBar({
               onTimeRangeChange={ctx.filterBarProps.onTimeRangeChange}
             />
           ) : null}
+          {/* The market-status chip is desktop-only for now: this sub-header
+              runs on a fixed shared height (MARKET_MOBILE_SECONDARY_HEADER_HEIGHT)
+              that native list offsets are derived from, so giving the Stocks
+              tab a taller header is its own change. */}
           {showStockCategorySelector ? (
             <MarketStockCategorySelector
               categories={ctx.stockCategories}

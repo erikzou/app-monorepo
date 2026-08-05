@@ -1,6 +1,8 @@
 import { memo } from 'react';
+import type { ReactNode } from 'react';
 
 import {
+  Divider,
   GradientMask,
   ScrollView,
   XStack,
@@ -22,6 +24,12 @@ interface IMarketStockCategorySelectorProps {
   selectedCategoryId: string;
   onSelectCategory: (categoryId: string) => void;
   containerStyle?: Record<string, unknown>;
+  /**
+   * Rendered inside the bar, ahead of the category chips and separated by a
+   * rule. The Stocks tab puts its market-status chip here so the page-level
+   * state reads as part of the same control strip.
+   */
+  leading?: ReactNode;
 }
 
 function MarketStockCategorySelectorImpl({
@@ -29,6 +37,7 @@ function MarketStockCategorySelectorImpl({
   selectedCategoryId,
   onSelectCategory,
   containerStyle,
+  leading,
 }: IMarketStockCategorySelectorProps) {
   const { md } = useMedia();
   const {
@@ -58,7 +67,14 @@ function MarketStockCategorySelectorImpl({
         borderWidth={1}
         borderColor="$neutral4"
         borderRadius="$3"
+        alignItems="center"
       >
+        {leading ? (
+          <>
+            {leading}
+            <Divider vertical h={16} mx="$1" />
+          </>
+        ) : null}
         <XStack flex={1} position="relative">
           <ScrollView
             ref={scrollViewRef}

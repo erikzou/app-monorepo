@@ -98,6 +98,18 @@ interface ITokenIdentityItemProps {
    * Whether to show the stock subtitle. Defaults to true.
    */
   showStockSubtitle?: boolean;
+  /**
+   * Drop the contract address (and its copy button) from the second row. Stock
+   * entity rows stand for the company, not for one tokenization, so the CA
+   * belongs on the detail page's trust block instead.
+   */
+  hideAddress?: boolean;
+  /**
+   * Drop the chain badge and the issuer logo. A collapsed stock entity row
+   * stands for the company, so anything identifying one particular
+   * tokenization belongs on the detail page, not here.
+   */
+  hideVariantChrome?: boolean;
 }
 
 const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
@@ -117,6 +129,8 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   maxLeverage,
   perpsSubtitle,
   showStockSubtitle = true,
+  hideAddress = false,
+  hideVariantChrome = false,
 }) => {
   const { gtMd } = useMedia();
   const { copyText } = useClipboard();
@@ -137,8 +151,9 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   );
 
   const shouldShowVolume = showVolume && !!volume;
-  const shouldShowAddress = !showVolume && Boolean(address);
-  const shouldShowCopyButton = showCopyButton && Boolean(address);
+  const shouldShowAddress = !hideAddress && !showVolume && Boolean(address);
+  const shouldShowCopyButton =
+    !hideAddress && showCopyButton && Boolean(address);
   // Localized name shown as plain text on the second row, before volume/address.
   let localizedName: string | undefined;
   if (showStockSubtitle && stock?.subtitle) {
@@ -200,7 +215,9 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
       <Token
         tokenImageUri={getTokenImageUri()}
         tokenImageUris={tokenLogoURIs}
-        networkImageUri={effectiveNetworkLogoUri}
+        networkImageUri={
+          hideVariantChrome ? undefined : effectiveNetworkLogoUri
+        }
         fallbackIcon="CryptoCoinOutline"
         size="md"
       />
@@ -211,13 +228,13 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
           {maxLeverage ? <LeverageBadge leverage={maxLeverage} /> : null}
           {gtMd ? (
             <>
-              <StockSourceLogo stock={stock} />
+              {hideVariantChrome ? null : <StockSourceLogo stock={stock} />}
               {communityRecognized ? <CommunityRecognizedBadge /> : null}
             </>
           ) : (
             <TokenTagsPopover
               communityRecognized={communityRecognized}
-              stock={stock}
+              stock={hideVariantChrome ? undefined : stock}
             />
           )}
         </XStack>

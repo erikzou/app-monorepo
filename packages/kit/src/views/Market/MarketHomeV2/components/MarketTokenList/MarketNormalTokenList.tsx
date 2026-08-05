@@ -7,6 +7,10 @@ import {
   markMarketReactPerf,
   useMarketRenderCommitProbe,
 } from '../../../utils/marketReactPerf';
+import {
+  collapseStockEntityRows,
+  hasAlwaysOnStockVariant,
+} from '../../utils/marketStockEntityRow';
 
 import { useMarketTokenList } from './hooks/useMarketTokenList';
 import { type IMarketToken } from './MarketTokenData';
@@ -36,6 +40,7 @@ type IMarketNormalTokenListProps = {
   pollingInterval?: number;
   rowBg?: string;
   onStockDataChange?: (categoryId: string, isStockData: boolean) => void;
+  onStockAlwaysOnVariantsChange?: (hasAlwaysOnVariants: boolean) => void;
 };
 
 function MarketNormalTokenList({
@@ -56,6 +61,7 @@ function MarketNormalTokenList({
   pollingInterval,
   rowBg,
   onStockDataChange,
+  onStockAlwaysOnVariantsChange,
 }: IMarketNormalTokenListProps) {
   useMarketRenderCommitProbe('MarketNormalTokenList', {
     networkId,
@@ -79,11 +85,31 @@ function MarketNormalTokenList({
     [normalResult.data],
   );
 
+  // One stock, one row. Paging still happens against the raw token list; only
+  // what gets rendered is collapsed, so scroll and websocket updates are
+  // untouched.
+  const result = useMemo(() => {
+    if (!isStockData) {
+      return normalResult;
+    }
+    return {
+      ...normalResult,
+      data: collapseStockEntityRows(normalResult.data),
+    };
+  }, [isStockData, normalResult]);
+
   useEffect(() => {
     if (selectedCategory) {
       onStockDataChange?.(selectedCategory, isStockData);
     }
   }, [isStockData, onStockDataChange, selectedCategory]);
+
+  useEffect(() => {
+    if (!isStockData) {
+      return;
+    }
+    onStockAlwaysOnVariantsChange?.(hasAlwaysOnStockVariant(normalResult.data));
+  }, [isStockData, normalResult.data, onStockAlwaysOnVariantsChange]);
 
   useEffect(() => {
     if (!platformEnv.isWeb || normalResult.data.length === 0) {
@@ -111,7 +137,7 @@ function MarketNormalTokenList({
       networkId={networkId}
       onItemPress={onItemPress}
       toolbar={toolbar}
-      result={normalResult}
+      result={result}
       isWatchlistMode={false}
       showEndReachedIndicator
       tabIntegrated={tabIntegrated}
