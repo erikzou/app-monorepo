@@ -1584,3 +1584,11 @@ lookback
 xstock
 financials
 tradability
+
+# Stock fundamentals vocabulary and competitor venues
+OHLC
+EBITDA
+Ebitda
+Intraday
+Bitget
+Futu

@@ -165,13 +165,27 @@ export interface IMarketTokenListItemExtraData {
   [key: string]: unknown;
 }
 
+/**
+ * Fields marked "awaiting FMP quote / key-metrics" have no source in the stock
+ * index yet (spike G3). They are declared so the cells can render `--` and the
+ * wiring is already in place when the backend adds them — the alternative,
+ * hiding the cells, is how the day's OHLC silently went missing before.
+ */
 export interface IMarketStockAssetAnalysis {
   volume24h?: string;
   volumeShares?: string;
   turnoverRate?: string;
+  // Named after the period the original spec claimed. The window the vendor
+  // actually returns is unconfirmed (spike G3), so the label must state
+  // whatever period ships rather than assuming a year.
   avgDailyVolume1y?: string;
   weekHigh52?: string;
   weekLow52?: string;
+  // Awaiting FMP quote.
+  dayOpen?: string;
+  dayHigh?: string;
+  dayLow?: string;
+  previousClose?: string;
 }
 
 export interface IMarketStockTradingActivity {
@@ -183,6 +197,10 @@ export interface IMarketStockTradingActivity {
   netProfitMargin?: string;
   debtToEquity?: string;
   dividendYield?: string;
+  // Awaiting FMP key-metrics.
+  enterpriseValue?: string;
+  evToEbitda?: string;
+  freeCashFlow?: string;
 }
 
 export interface IMarketStockInfo {

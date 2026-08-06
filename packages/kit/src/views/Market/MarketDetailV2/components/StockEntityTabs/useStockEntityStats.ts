@@ -33,6 +33,30 @@ function deriveEps(underlyingPrice?: string, peRatio?: string) {
   return priceBN.dividedBy(peBN).toFixed();
 }
 
+/**
+ * Intraday swing, (high − low) ÷ previous close. Derived rather than fetched:
+ * once the day's OHLC arrives this needs no extra field.
+ */
+function deriveAmplitude(
+  dayHigh?: string,
+  dayLow?: string,
+  previousClose?: string,
+) {
+  if (!dayHigh || !dayLow || !previousClose) {
+    return undefined;
+  }
+  const highBN = new BigNumber(dayHigh);
+  const lowBN = new BigNumber(dayLow);
+  const closeBN = new BigNumber(previousClose);
+  if (!highBN.isFinite() || !lowBN.isFinite() || !closeBN.isFinite()) {
+    return undefined;
+  }
+  if (closeBN.lte(0)) {
+    return undefined;
+  }
+  return highBN.minus(lowBN).dividedBy(closeBN).times(100).toFixed();
+}
+
 export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
   const intl = useIntl();
 
@@ -48,37 +72,48 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
       new BigNumber(peRatio).gt(0),
     );
     const eps = deriveEps(entity?.underlyingPrice, peRatio);
+    const amplitude = deriveAmplitude(
+      analysis?.dayHigh,
+      analysis?.dayLow,
+      analysis?.previousClose,
+    );
 
-    // The eight cells the spec pins to Overview. Everything else lives in the
-    // Financials tab.
+    /**
+     * Key Data: four cells answering "how is it trading today" over four
+     * answering "is it worth holding".
+     *
+     * Crypto-native venues (Bitget's collapsed strip, Binance's Stats order)
+     * lead with the day's price and volume because that matches what our users
+     * already read on a token page; a stock-native venue like Futu leads with
+     * valuation. This page serves the former, but the page's job is deciding
+     * whether to buy, not watching the tape — hence the split rather than
+     * copying either one.
+     *
+     * The day's high/low have no source yet (spike G3) and render `--`. That
+     * is deliberate: a visible gap in the most prominent row is the point.
+     */
     const keyData: IStockStatItem[] = [
+      {
+        key: 'dayHigh',
+        label: "Today's High",
+        value: formatCurrencyStatValue(analysis?.dayHigh),
+      },
+      {
+        key: 'dayLow',
+        label: "Today's Low",
+        value: formatCurrencyStatValue(analysis?.dayLow),
+      },
+      {
+        key: 'volume24h',
+        label: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_24h_volume,
+        }),
+        value: formatCurrencyStatValue(analysis?.volume24h),
+      },
       {
         key: 'marketCap',
         label: intl.formatMessage({ id: ETranslations.dexmarket_market_cap }),
         value: formatCurrencyStatValue(stock?.marketCap),
-      },
-      {
-        key: 'peRatio',
-        label: intl.formatMessage({ id: ETranslations.dexmarket_stock_pe_ttm }),
-        value: isPeUsable ? formatRatioValue(peRatio) : STAT_FALLBACK_VALUE,
-        tooltip: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_pe_ttm_desc,
-        }),
-      },
-      {
-        key: 'eps',
-        label: 'EPS',
-        value: eps ? formatCurrencyStatValue(eps) : STAT_FALLBACK_VALUE,
-      },
-      {
-        key: 'dividendYield',
-        label: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_dividend_yield,
-        }),
-        value: formatPercentValue(activity?.dividendYield),
-        tooltip: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_dividend_yield_desc,
-        }),
       },
       {
         key: 'weekHigh52',
@@ -95,11 +130,49 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         value: formatCurrencyStatValue(analysis?.weekLow52),
       },
       {
-        key: 'volume24h',
-        label: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_24h_volume,
+        key: 'peRatio',
+        label: intl.formatMessage({ id: ETranslations.dexmarket_stock_pe_ttm }),
+        value: isPeUsable ? formatRatioValue(peRatio) : STAT_FALLBACK_VALUE,
+        tooltip: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_pe_ttm_desc,
         }),
-        value: formatCurrencyStatValue(analysis?.volume24h),
+      },
+      {
+        key: 'dividendYield',
+        label: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_dividend_yield,
+        }),
+        value: formatPercentValue(activity?.dividendYield),
+        tooltip: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_dividend_yield_desc,
+        }),
+      },
+    ];
+
+    /**
+     * The "More" expander, ordered day → volume → valuation → profitability →
+     * capital → advanced valuation. Capped at 20 cells; the financial-statement
+     * derivations (EV, EV/EBITDA, FCF, margin, ROE, ROA) move to a Financials
+     * tab once the three statements have a source.
+     *
+     * Cells without a source render `--` rather than disappearing, so the gap
+     * stays visible and reviewable.
+     */
+    const financials: IStockStatItem[] = [
+      {
+        key: 'dayOpen',
+        label: 'Open',
+        value: formatCurrencyStatValue(analysis?.dayOpen),
+      },
+      {
+        key: 'previousClose',
+        label: 'Prev. Close',
+        value: formatCurrencyStatValue(analysis?.previousClose),
+      },
+      {
+        key: 'amplitude',
+        label: 'Amplitude',
+        value: formatPercentPointValue(amplitude),
       },
       {
         key: 'volumeShares',
@@ -108,9 +181,13 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         }),
         value: formatMarketCapValue(analysis?.volumeShares),
       },
-    ];
-
-    const financials: IStockStatItem[] = [
+      {
+        // Sits next to the day's share volume on purpose: the pair only reads
+        // as a ratio ("today ran at 1.8x normal") when both are visible.
+        key: 'avgDailyVolume',
+        label: 'Avg. Vol',
+        value: formatMarketCapValue(analysis?.avgDailyVolume1y),
+      },
       {
         // Already in percentage points — see `formatPercentPointValue`.
         key: 'turnoverRate',
@@ -118,6 +195,11 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
           id: ETranslations.dexmarket_stock_turnover_rate,
         }),
         value: formatPercentPointValue(analysis?.turnoverRate),
+      },
+      {
+        key: 'eps',
+        label: 'EPS',
+        value: eps ? formatCurrencyStatValue(eps) : STAT_FALLBACK_VALUE,
       },
       {
         key: 'pbRatio',
@@ -170,14 +252,29 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         }),
       },
       {
-        // No API field yet (gated on the FMP capability pack, spike G3), so
-        // this cell is permanently `--`. Kept rather than dropped so the gap
-        // stays visible.
-        key: 'avgDailyVolume1y',
-        label: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_1y_avg_daily_vol,
-        }),
-        value: formatMarketCapValue(analysis?.avgDailyVolume1y),
+        key: 'sharesOutstanding',
+        label: 'Shares Outstanding',
+        value: formatMarketCapValue(stock?.sharesOutstanding),
+      },
+      {
+        key: 'dividendPerShare',
+        label: 'Dividend TTM',
+        value: formatCurrencyStatValue(stock?.dividendPerShare),
+      },
+      {
+        key: 'enterpriseValue',
+        label: 'EV',
+        value: formatCurrencyStatValue(activity?.enterpriseValue),
+      },
+      {
+        key: 'evToEbitda',
+        label: 'EV/EBITDA',
+        value: formatRatioValue(activity?.evToEbitda),
+      },
+      {
+        key: 'freeCashFlow',
+        label: 'FCF',
+        value: formatCurrencyStatValue(activity?.freeCashFlow),
       },
     ];
 
