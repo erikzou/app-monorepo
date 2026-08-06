@@ -40,6 +40,8 @@ import { ESwapDirection } from './hooks/useTradeType';
 import SwapPanelFooterButtons from './SwapPanelFooterButtons';
 import { SwapPanelWrap } from './SwapPanelWrap';
 
+import type { ISwapPanelVariant } from './types';
+
 const SWAP_PRO_ENTRY_DIRECTION_MAP: Record<
   ESwapProJumpTokenDirection,
   ESwapDirection
@@ -97,11 +99,13 @@ export function SwapPanel({
   disableTrade,
   portfolioData,
   onShowSwapDialog,
+  panelVariant,
 }: {
   swapToken: ISwapToken;
   disableTrade?: boolean;
   portfolioData?: IMarketAccountPortfolioItem[];
   onShowSwapDialog?: (swapToken?: ISwapToken) => void;
+  panelVariant?: ISwapPanelVariant;
 }) {
   const intl = useIntl();
   const media = useMedia();
@@ -277,7 +281,7 @@ export function SwapPanel({
           <MarketWatchListProviderMirrorV2
             storeName={EJotaiContextStoreNames.marketWatchListV2}
           >
-            <SwapPanelWrap />
+            <SwapPanelWrap panelVariant={panelVariant} />
           </MarketWatchListProviderMirrorV2>
         )}
       </AccountSelectorProviderMirror>

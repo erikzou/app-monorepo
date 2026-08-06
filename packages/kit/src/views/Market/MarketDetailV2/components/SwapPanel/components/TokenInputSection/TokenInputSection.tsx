@@ -27,13 +27,17 @@ import { ESwapDirection, type ITradeType } from '../../hooks/useTradeType';
 import { QuickAmountSelector } from './QuickAmountSelector';
 import { TokenSelectorPopover } from './TokenSelectorPopover';
 
-import type { IToken } from '../../types';
+import type { ISwapPanelVariant, IToken } from '../../types';
 import type { IAmountEnterSource } from '../../types/analytics';
 import type BigNumber from 'bignumber.js';
 
 export interface ITokenInputSectionRef {
   setValue: (value: string) => void;
 }
+
+// The stock detail design shows a numeric placeholder rather than a sentence
+// (Figma 25314:9160), so it needs no translation key.
+const STOCK_AMOUNT_PLACEHOLDER = '0.0';
 
 export interface ITokenInputSectionProps {
   onChange: (value: string) => void;
@@ -47,6 +51,7 @@ export interface ITokenInputSectionProps {
   onAmountEnterTypeChange?: (source: IAmountEnterSource) => void;
   style?: IYStackProps;
   disableNativeToken?: boolean;
+  panelVariant?: ISwapPanelVariant;
 }
 
 function TokenInputSectionComponent(
@@ -61,9 +66,11 @@ function TokenInputSectionComponent(
     onAmountEnterTypeChange,
     style,
     disableNativeToken,
+    panelVariant = 'default',
   }: ITokenInputSectionProps,
   ref: Ref<ITokenInputSectionRef>,
 ) {
+  const isStockDesktop = panelVariant === 'stockDesktop';
   const intl = useIntl();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [internalValue, setInternalValue] = useState('');
@@ -124,7 +131,12 @@ function TokenInputSectionComponent(
         });
 
   const placeholderText = (
-    <SizableText size="$bodyMdMedium" color="$textSubdued" userSelect="none">
+    <SizableText
+      // Design label is regular weight (Figma 25314:9157).
+      size={isStockDesktop ? '$bodyMd' : '$bodyMdMedium'}
+      color="$textSubdued"
+      userSelect="none"
+    >
       {placeholderLabel}
     </SizableText>
   );
@@ -184,7 +196,13 @@ function TokenInputSectionComponent(
 
   return (
     <YStack {...style}>
-      <YStack borderRadius="$2" bg="$bgApp" gap="$px" overflow="hidden">
+      <YStack
+        borderRadius={isStockDesktop ? 10 : '$2'}
+        borderCurve="continuous"
+        bg="$bgApp"
+        gap={isStockDesktop ? 0 : '$px'}
+        overflow="hidden"
+      >
         <Input
           testID="market-handle-dismiss-keyboard-input"
           ref={inputRef}
@@ -192,20 +210,36 @@ function TokenInputSectionComponent(
           containerProps={{
             flex: 1,
             borderWidth: 0,
-            h: 44,
+            // Design row is 12px padding around a 24px value line.
+            h: isStockDesktop ? 48 : 44,
             alignItems: 'center',
             borderRadius: 0,
             bg: '$bgStrong',
           }}
           keyboardType="decimal-pad"
           value={internalValue}
-          placeholder={intl.formatMessage({
-            id: ETranslations.dexmarket_enter_amount,
-          })}
+          placeholder={
+            isStockDesktop
+              ? STOCK_AMOUNT_PLACEHOLDER
+              : intl.formatMessage({
+                  id: ETranslations.dexmarket_enter_amount,
+                })
+          }
           onChangeText={handleInternalChange}
           leftAddOnProps={{
             label: placeholderText,
+            // Design pads the "Total" label by 12 (Figma 25314:9157).
+            ...(isStockDesktop ? { px: '$3' } : undefined),
           }}
+          // Value line is right-aligned 16px medium with 8px side padding.
+          {...(isStockDesktop
+            ? {
+                fontSize: 16,
+                fontWeight: '500',
+                px: '$2',
+                textAlign: 'right' as const,
+              }
+            : undefined)}
           addOnsContainerProps={{
             borderRadius: 0,
           }}
@@ -214,9 +248,12 @@ function TokenInputSectionComponent(
               renderContent: (
                 <XStack
                   alignItems="center"
-                  h={44}
+                  h={isStockDesktop ? 48 : 44}
                   gap="$1"
-                  px="$2"
+                  // Symbol sits 8 from the value, chevron 6 from the edge
+                  // (Figma 25314:9162 / 25314:9163).
+                  pl="$2"
+                  pr={isStockDesktop ? 6 : '$2'}
                   {...(isTokenSelectorVisible && {
                     onPress: () => setIsPopoverOpen(true),
                     userSelect: 'none',
@@ -225,7 +262,12 @@ function TokenInputSectionComponent(
                     borderCurve: 'continuous',
                   })}
                 >
-                  <SizableText size="$bodyMd" numberOfLines={1} maxWidth="$16">
+                  <SizableText
+                    size={isStockDesktop ? '$bodyLg' : '$bodyMd'}
+                    color="$text"
+                    numberOfLines={1}
+                    maxWidth="$16"
+                  >
                     {selectedToken?.symbol}
                   </SizableText>
                   {isTokenSelectorVisible ? (
@@ -262,6 +304,7 @@ function TokenInputSectionComponent(
           tradeType={tradeType}
           balance={balance}
           swapNativeTokenReserveGas={swapNativeTokenReserveGas}
+          panelVariant={panelVariant}
         />
       </YStack>
     </YStack>

@@ -243,9 +243,13 @@ const StockIsOpenBadge = memo(
   ({
     stock,
     disableTooltip,
+    size = 'sm',
   }: {
     stock: IMarketStockInfo;
     disableTooltip?: boolean;
+    // 'lg' is the standalone badge used next to the stock detail price
+    // (Figma 25277:9373): standard Badge geometry, status color, no icon.
+    size?: 'sm' | 'lg';
   }) => {
     const intl = useIntl();
     const { source, isOpen, isPaused, description } = stock;
@@ -272,21 +276,37 @@ const StockIsOpenBadge = memo(
     }
     const chip = STOCK_MARKET_STATUS_CHIPS[variant];
 
-    const badge = (
-      <XStack
-        borderRadius="$1"
-        bg={chip.bg}
-        justifyContent="center"
-        alignItems="center"
-        gap={3}
-        px="$1"
-      >
-        <Icon name={chip.icon} size="$3" color={chip.color} />
-        <SizableText fontSize={10} color={chip.color} lineHeight={16}>
-          {intl.formatMessage({ id: chip.titleId })}
-        </SizableText>
-      </XStack>
-    );
+    const badge =
+      size === 'lg' ? (
+        <XStack
+          borderRadius="$1"
+          borderCurve="continuous"
+          bg={chip.bg}
+          justifyContent="center"
+          alignItems="center"
+          minWidth={36}
+          px="$2"
+          py="$0.5"
+        >
+          <SizableText size="$bodySmMedium" color={chip.color}>
+            {intl.formatMessage({ id: chip.titleId })}
+          </SizableText>
+        </XStack>
+      ) : (
+        <XStack
+          borderRadius="$1"
+          bg={chip.bg}
+          justifyContent="center"
+          alignItems="center"
+          gap={3}
+          px="$1"
+        >
+          <Icon name={chip.icon} size="$3" color={chip.color} />
+          <SizableText fontSize={10} color={chip.color} lineHeight={16}>
+            {intl.formatMessage({ id: chip.titleId })}
+          </SizableText>
+        </XStack>
+      );
 
     if (disableTooltip || !description || platformEnv.isNative) {
       return badge;
@@ -311,14 +331,16 @@ StockIsOpenBadge.displayName = 'StockIsOpenBadge';
  * non-Ondo issuers render no chip (see StockIsOpenBadge).
  */
 const StockMarketStatusBadge = memo(
-  ({ stock }: { stock?: IMarketStockInfo }) => {
+  ({ stock, size }: { stock?: IMarketStockInfo; size?: 'sm' | 'lg' }) => {
     if (!stock) {
       return null;
     }
     return (
       <TradingHoursTrigger
         stock={stock}
-        renderTrigger={<StockIsOpenBadge stock={stock} disableTooltip />}
+        renderTrigger={
+          <StockIsOpenBadge stock={stock} size={size} disableTooltip />
+        }
       />
     );
   },
@@ -326,15 +348,21 @@ const StockMarketStatusBadge = memo(
 StockMarketStatusBadge.displayName = 'StockMarketStatusBadge';
 
 const StockSourceLogo = memo(
-  ({ stock }: { stock: IMarketStockInfo | undefined }) => {
+  ({
+    stock,
+    size = 14,
+  }: {
+    stock: IMarketStockInfo | undefined;
+    size?: number;
+  }) => {
     if (!stock?.sourceLogoUri) {
       return null;
     }
 
     const image = (
       <Image
-        width={14}
-        height={14}
+        width={size}
+        height={size}
         borderRadius="$full"
         source={{ uri: stock.sourceLogoUri }}
       />

@@ -36,23 +36,16 @@ import {
 import { useTradingViewNativeInMarketDetail } from '../hooks/useTradingViewNativeInMarketDetail';
 import { getMarketDetailTradingViewNativeSource } from '../utils/getMarketDetailTradingViewNativeSource';
 
+import {
+  MARKET_CHART_FULLSCREEN_STYLE,
+  MARKET_DETAIL_LAYOUT,
+  SCROLL_CONTAINER_STYLE,
+} from './marketDetailLayoutConsts';
+import { StockDesktopLayout } from './StockDesktopLayout';
+
 import type { DesktopInformationTabs } from '../components/InformationTabs/layout/DesktopInformationTabs';
 import type { IMarketTradingViewProps } from '../components/MarketTradingView/MarketTradingView';
 
-const MARKET_DETAIL_LAYOUT = {
-  chartHeight: 550,
-  chartFullscreenHeaderFillHeight: 48,
-  infoTabsHeight: 480,
-} as const;
-
-const SCROLL_CONTAINER_STYLE = { overflowY: 'auto' } as const;
-const MARKET_CHART_FULLSCREEN_STYLE = {
-  position: 'fixed',
-  left: 0,
-  top: 0,
-  right: 0,
-  bottom: platformEnv.isWeb ? 40 : 0,
-} as const;
 const IFRAME_WHEEL_EVENT_TYPE = 'wheelEvent' as const;
 
 type IDesktopInformationTabsProps = ComponentProps<
@@ -298,6 +291,25 @@ export function DesktopLayout({
     tradingViewNativeSource,
     useTradingViewNative,
   ]);
+  if (isStockToken) {
+    return (
+      <Stack
+        ref={scrollContainerRef as any}
+        flex={1}
+        style={SCROLL_CONTAINER_STYLE}
+      >
+        <StockDesktopLayout
+          chart={marketTradingView}
+          isChartFullscreen={isChartFullscreen}
+          chartFullscreenZIndex={chartFullscreenZIndex}
+          swapToken={swapToken}
+          portfolioData={portfolioData}
+          showFavoriteButton={showFavoriteButton}
+        />
+      </Stack>
+    );
+  }
+
   return (
     <Stack
       ref={scrollContainerRef as any}

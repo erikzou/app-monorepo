@@ -4,11 +4,14 @@ import { SizableText, Skeleton, XStack } from '@onekeyhq/components';
 import type { INumberFormatProps } from '@onekeyhq/shared/src/utils/numberUtils';
 import { numberFormat } from '@onekeyhq/shared/src/utils/numberUtils';
 
+import type { ISwapPanelVariant } from '../types';
+
 export interface IRateDisplayProps {
   rate?: number;
   fromTokenSymbol?: string;
   toTokenSymbol?: string;
   loading?: boolean;
+  panelVariant?: ISwapPanelVariant;
 }
 
 // Truncate symbol if it exceeds 20 characters
@@ -25,7 +28,11 @@ export function RateDisplay({
   fromTokenSymbol,
   toTokenSymbol,
   loading,
+  panelVariant = 'default',
 }: IRateDisplayProps) {
+  // The stock detail design puts the rate where "Est. Receive" sits
+  // (Figma 25293:8391): 20px row, 2px side padding, bodyMd instead of bodySm.
+  const isStockDesktop = panelVariant === 'stockDesktop';
   const truncatedFromSymbol = useMemo(
     () => truncateSymbol(fromTokenSymbol),
     [fromTokenSymbol],
@@ -50,11 +57,19 @@ export function RateDisplay({
   );
 
   return (
-    <XStack alignItems="center" height="$4">
+    <XStack
+      alignItems="center"
+      height={isStockDesktop ? '$5' : '$4'}
+      px={isStockDesktop ? '$0.5' : '$0'}
+    >
       {loading ? (
-        <Skeleton width="$32" height="$4" />
+        <Skeleton width="$32" height={isStockDesktop ? '$5' : '$4'} />
       ) : (
-        <SizableText size="$bodySm" userSelect="none" color="$textSubdued">
+        <SizableText
+          size={isStockDesktop ? '$bodyMd' : '$bodySm'}
+          userSelect="none"
+          color="$textSubdued"
+        >
           {`1 ${truncatedFromSymbol} = ${rateFormatted}`}
         </SizableText>
       )}

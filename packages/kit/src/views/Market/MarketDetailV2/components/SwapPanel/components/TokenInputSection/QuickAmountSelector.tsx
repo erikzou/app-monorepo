@@ -7,7 +7,11 @@ import type { ISwapNativeTokenReserveGas } from '@onekeyhq/shared/types/swap/typ
 
 import { ESwapDirection, type ITradeType } from '../../hooks/useTradeType';
 
+import type { ISwapPanelVariant } from '../../types';
 import type { IAmountEnterSource } from '../../types/analytics';
+
+// radius/2.5 in the design tokens.
+const QUICK_AMOUNT_STOCK_RADIUS = 10;
 
 export interface IQuickAmountSelectorProps {
   onSelect: (value: string) => void;
@@ -19,6 +23,7 @@ export interface IQuickAmountSelectorProps {
   selectedTokenNetworkId?: string;
   selectedTokenIsNative?: boolean;
   swapNativeTokenReserveGas: ISwapNativeTokenReserveGas[];
+  panelVariant?: ISwapPanelVariant;
 }
 
 const sellPercentages = [
@@ -38,6 +43,7 @@ export function QuickAmountSelector({
   swapNativeTokenReserveGas,
   selectedTokenNetworkId,
   selectedTokenIsNative,
+  panelVariant = 'default',
 }: IQuickAmountSelectorProps) {
   const amounts =
     tradeType === ESwapDirection.BUY ? buyAmounts : sellPercentages;
@@ -107,6 +113,60 @@ export function QuickAmountSelector({
     return amounts;
   }, [amounts]);
   const amountsLength = amountItems.length;
+  const isDisabled = tradeType === ESwapDirection.SELL && !balance;
+
+  // Stock detail design (Figma 25314:9168): the grid is attached under the
+  // amount input as one outlined block — transparent cells, hairline
+  // dividers, and only the bottom corners rounded.
+  if (panelVariant === 'stockDesktop') {
+    return (
+      <XStack
+        borderWidth={1}
+        borderColor="$borderDisabled"
+        borderBottomLeftRadius={QUICK_AMOUNT_STOCK_RADIUS}
+        borderBottomRightRadius={QUICK_AMOUNT_STOCK_RADIUS}
+        borderCurve="continuous"
+        overflow="hidden"
+      >
+        {amountItems.map((amount, index) => (
+          <Fragment key={`item-${amount.value}`}>
+            <Stack
+              testID="market-amounts-length-btn"
+              flex={1}
+              alignItems="center"
+              justifyContent="center"
+              pt={6}
+              pb={7}
+              px={11}
+              cursor={isDisabled ? undefined : 'pointer'}
+              userSelect="none"
+              disabled={isDisabled}
+              hoverStyle={isDisabled ? undefined : { bg: '$bgHover' }}
+              pressStyle={isDisabled ? undefined : { bg: '$bgActive' }}
+              onPress={() => handleAmountSelect(amount, index)}
+            >
+              <SizableText
+                size="$bodyMd"
+                color={isDisabled ? '$textDisabled' : '$text'}
+                textAlign="center"
+              >
+                {amount.label}
+              </SizableText>
+            </Stack>
+            {index !== amountsLength - 1 ? (
+              <Stack
+                key={`divider-${index}`}
+                w={1}
+                bg="$borderDisabled"
+                alignSelf="stretch"
+              />
+            ) : null}
+          </Fragment>
+        ))}
+      </XStack>
+    );
+  }
+
   return (
     <XStack gap="$0" h="$8">
       {amountItems.map((amount, index) => (
@@ -124,7 +184,7 @@ export function QuickAmountSelector({
             borderBottomRightRadius={index !== amountsLength - 1 ? 0 : '$2'}
             borderTopLeftRadius={0}
             borderBottomLeftRadius={index !== 0 ? 0 : '$2'}
-            disabled={tradeType === ESwapDirection.SELL && !balance}
+            disabled={isDisabled}
             onPress={() => handleAmountSelect(amount, index)}
           >
             <SizableText size="$bodyMdMedium" color="$textSubdued">

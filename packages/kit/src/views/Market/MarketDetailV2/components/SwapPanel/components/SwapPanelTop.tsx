@@ -6,7 +6,7 @@ import { ETranslations } from '@onekeyhq/shared/src/locale';
 
 import { BalanceDisplay } from './BalanceDisplay';
 
-import type { IToken } from '../types';
+import type { ISwapPanelVariant, IToken } from '../types';
 import type BigNumber from 'bignumber.js';
 
 interface ISwapPanelTopProps {
@@ -16,6 +16,7 @@ interface ISwapPanelTopProps {
   balanceToken?: IToken;
   balanceLoading: boolean;
   handleBalanceClick: () => void;
+  panelVariant?: ISwapPanelVariant;
 }
 
 const SwapPanelTop = ({
@@ -25,8 +26,38 @@ const SwapPanelTop = ({
   balanceLoading,
   activeAccount,
   handleBalanceClick,
+  panelVariant = 'default',
 }: ISwapPanelTopProps) => {
   const intl = useIntl();
+  const isStockDesktop = panelVariant === 'stockDesktop';
+
+  const balanceDisplay = (
+    <BalanceDisplay
+      activeAccount={activeAccount}
+      balance={balance}
+      enableAddressTypeSelector={enableAddressTypeSelector}
+      token={balanceToken}
+      isLoading={balanceLoading}
+      onBalanceClick={handleBalanceClick}
+      useIcon
+    />
+  );
+
+  // Stock detail design (Figma 25206:18426): a 32px tab row with 2px side
+  // padding and no rule — neither the active underline nor the divider.
+  if (isStockDesktop) {
+    return (
+      <XStack px="$0.5" alignItems="center" justifyContent="space-between">
+        <XStack h="$8" alignItems="center" justifyContent="center">
+          <SizableText size="$bodyMdMedium" color="$text" cursor="default">
+            {intl.formatMessage({ id: ETranslations.perp_trade_market })}
+          </SizableText>
+        </XStack>
+        {balanceDisplay}
+      </XStack>
+    );
+  }
+
   return (
     <YStack>
       <XStack justifyContent="space-between">
@@ -39,15 +70,7 @@ const SwapPanelTop = ({
             {intl.formatMessage({ id: ETranslations.perp_trade_market })}
           </SizableText>
         </XStack>
-        <BalanceDisplay
-          activeAccount={activeAccount}
-          balance={balance}
-          enableAddressTypeSelector={enableAddressTypeSelector}
-          token={balanceToken}
-          isLoading={balanceLoading}
-          onBalanceClick={handleBalanceClick}
-          useIcon
-        />
+        {balanceDisplay}
       </XStack>
       <Divider />
     </YStack>

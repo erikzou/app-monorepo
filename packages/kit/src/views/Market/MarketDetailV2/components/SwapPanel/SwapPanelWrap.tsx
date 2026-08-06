@@ -50,13 +50,17 @@ import type {
   IEstimateMarketPresetPriorityFeeFiatValues,
   IMarketPresetPriorityFeeFiatEstimateMap,
 } from './components/MarketPresetSelector';
-import type { IToken } from './types';
+import type { ISwapPanelVariant, IToken } from './types';
 
 interface ISwapPanelWrapProps {
   onCloseDialog?: () => void;
+  panelVariant?: ISwapPanelVariant;
 }
 
-export function SwapPanelWrap({ onCloseDialog }: ISwapPanelWrapProps) {
+export function SwapPanelWrap({
+  onCloseDialog,
+  panelVariant,
+}: ISwapPanelWrapProps) {
   const {
     networkId,
     tokenAddress,
@@ -729,6 +733,7 @@ export function SwapPanelWrap({ onCloseDialog }: ISwapPanelWrapProps) {
       disableNativeToken={disableNativeToken}
       marketPresetSettings={marketPresetSettings}
       estimatePriorityFeeFiatValues={estimatePriorityFeeFiatValues}
+      panelVariant={panelVariant}
     />
   );
 }
