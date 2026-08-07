@@ -150,10 +150,14 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
     ];
 
     /**
-     * The "More" expander, ordered day → volume → valuation → profitability →
-     * capital → advanced valuation. Capped at 20 cells; the financial-statement
-     * derivations (EV, EV/EBITDA, FCF, margin, ROE, ROA) move to a Financials
-     * tab once the three statements have a source.
+     * The "More" expander, 12 cells. The cap is 20 cells for the whole of
+     * Overview — 8 core plus 12 here fills a 4x5 grid, matching what Binance
+     * shows in one screen.
+     *
+     * Ordered day → volume → valuation → capital. Turnover rate leads the
+     * volume group so that share volume and average volume land side by side
+     * in the 4-column grid: the pair only reads as a ratio ("today ran at 1.8x
+     * normal") when both are visible at once.
      *
      * Cells without a source render `--` rather than disappearing, so the gap
      * stays visible and reviewable.
@@ -175,6 +179,14 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         value: formatPercentPointValue(amplitude),
       },
       {
+        // Already in percentage points — see `formatPercentPointValue`.
+        key: 'turnoverRate',
+        label: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_turnover_rate,
+        }),
+        value: formatPercentPointValue(analysis?.turnoverRate),
+      },
+      {
         key: 'volumeShares',
         label: intl.formatMessage({
           id: ETranslations.dexmarket_stock_volume_shares,
@@ -182,19 +194,9 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         value: formatMarketCapValue(analysis?.volumeShares),
       },
       {
-        // Sits next to the day's share volume on purpose: the pair only reads
-        // as a ratio ("today ran at 1.8x normal") when both are visible.
         key: 'avgDailyVolume',
         label: 'Avg. Vol',
         value: formatMarketCapValue(analysis?.avgDailyVolume1y),
-      },
-      {
-        // Already in percentage points — see `formatPercentPointValue`.
-        key: 'turnoverRate',
-        label: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_turnover_rate,
-        }),
-        value: formatPercentPointValue(analysis?.turnoverRate),
       },
       {
         key: 'eps',
@@ -217,6 +219,36 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
           id: ETranslations.dexmarket_stock_ps_desc,
         }),
       },
+      {
+        key: 'sharesOutstanding',
+        label: 'Shares Outstanding',
+        value: formatMarketCapValue(stock?.sharesOutstanding),
+      },
+      {
+        key: 'dividendPerShare',
+        label: 'Dividend TTM',
+        value: formatCurrencyStatValue(stock?.dividendPerShare),
+      },
+      {
+        key: 'debtToEquity',
+        label: intl.formatMessage({ id: ETranslations.dexmarket_stock_de }),
+        value: formatRatioValue(activity?.debtToEquity),
+        tooltip: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_de_desc,
+        }),
+      },
+    ];
+
+    /**
+     * Built but not rendered. Profitability and advanced valuation are what
+     * someone reads when they go digging through the statements, so they are
+     * the Financials tab's first batch rather than expander filler — and three
+     * of them would sit at `--` until the key-metrics source lands.
+     *
+     * Kept here so the tab is a wiring change rather than a rewrite; the
+     * percentage conventions in particular are easy to get wrong twice.
+     */
+    const financialStatementStats: IStockStatItem[] = [
       {
         key: 'roe',
         label: intl.formatMessage({ id: ETranslations.dexmarket_stock_roe }),
@@ -244,24 +276,6 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         }),
       },
       {
-        key: 'debtToEquity',
-        label: intl.formatMessage({ id: ETranslations.dexmarket_stock_de }),
-        value: formatRatioValue(activity?.debtToEquity),
-        tooltip: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_de_desc,
-        }),
-      },
-      {
-        key: 'sharesOutstanding',
-        label: 'Shares Outstanding',
-        value: formatMarketCapValue(stock?.sharesOutstanding),
-      },
-      {
-        key: 'dividendPerShare',
-        label: 'Dividend TTM',
-        value: formatCurrencyStatValue(stock?.dividendPerShare),
-      },
-      {
         key: 'enterpriseValue',
         label: 'EV',
         value: formatCurrencyStatValue(activity?.enterpriseValue),
@@ -278,6 +292,6 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
       },
     ];
 
-    return { keyData, financials };
+    return { keyData, financials, financialStatementStats };
   }, [entity, intl]);
 }

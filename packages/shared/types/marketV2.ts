@@ -197,7 +197,9 @@ export interface IMarketStockTradingActivity {
   netProfitMargin?: string;
   debtToEquity?: string;
   dividendYield?: string;
-  // Awaiting FMP key-metrics.
+  // Reserved for the Financials tab, awaiting FMP key-metrics. Not rendered in
+  // Overview: statement-derived figures belong with the statements, and these
+  // three would sit at `--` until that source lands.
   enterpriseValue?: string;
   evToEbitda?: string;
   freeCashFlow?: string;
