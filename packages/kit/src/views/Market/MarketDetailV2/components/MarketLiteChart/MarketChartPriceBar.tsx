@@ -8,12 +8,10 @@ import {
   XStack,
   YStack,
 } from '@onekeyhq/components';
+import type { IMarketPriceSource } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import type { IMarketStockInfo } from '@onekeyhq/shared/types/marketV2';
 
 import { StockMarketStatusBadge } from '../../../components/PerpsBadges';
-
-/** Which price series the chart header describes (Figma 25476:89067). */
-export type IMarketPriceSource = 'share' | 'token';
 
 const PRICE_SOURCE_OPTIONS: { value: IMarketPriceSource; label: string }[] = [
   // No translation keys yet — demo copy straight from the design.

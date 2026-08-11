@@ -10,7 +10,11 @@ import {
   useOverlayZIndex,
 } from '@onekeyhq/components';
 import { TradingViewNative } from '@onekeyhq/kit/src/components/TradingView/TradingViewNative';
-import { useMarketChartModeAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
+import {
+  useMarketChartModeAtom,
+  useMarketPriceSourceAtom,
+} from '@onekeyhq/kit-bg/src/states/jotai/atoms';
+import type { IMarketPriceSource } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import {
   TRADING_VIEW_LOCALHOST_ORIGIN,
   TRADING_VIEW_URL,
@@ -49,10 +53,7 @@ import { useTradingViewNativeInMarketDetail } from '../hooks/useTradingViewNativ
 import { getMarketDetailTradingViewNativeSource } from '../utils/getMarketDetailTradingViewNativeSource';
 
 import type { DesktopInformationTabs } from '../components/InformationTabs/layout/DesktopInformationTabs';
-import type {
-  IMarketLiteChartRange,
-  IMarketPriceSource,
-} from '../components/MarketLiteChart';
+import type { IMarketLiteChartRange } from '../components/MarketLiteChart';
 import type { IMarketTradingViewProps } from '../components/MarketTradingView/MarketTradingView';
 
 const MARKET_DETAIL_LAYOUT = {
@@ -238,8 +239,13 @@ export function DesktopLayout({
   const [{ mode: chartMode }] = useMarketChartModeAtom();
   // Share price is the underlying equity, token price is the tokenized
   // instrument. Only the token series is charted today; the toggle switches the
-  // header figures and is mirrored by the trade panel's chart button.
-  const [priceSource, setPriceSource] = useState<IMarketPriceSource>('share');
+  // header figures and is mirrored by the trade panel's chart button, which is
+  // why the selection lives in a shared atom.
+  const [{ source: priceSource }, setPriceSource] = useMarketPriceSourceAtom();
+  const handlePriceSourceChange = useCallback(
+    (source: IMarketPriceSource) => setPriceSource({ source }),
+    [setPriceSource],
+  );
   const [liteChartRange, setLiteChartRange] = useState<IMarketLiteChartRange>(
     MARKET_LITE_CHART_DEFAULT_RANGE,
   );
@@ -423,7 +429,7 @@ export function DesktopLayout({
               }
               stock={tokenDetail?.stock}
               priceSource={priceSource}
-              onPriceSourceChange={setPriceSource}
+              onPriceSourceChange={handlePriceSourceChange}
             />
           ) : null}
 

@@ -86,3 +86,19 @@ export const { target: marketChartModeAtom, use: useMarketChartModeAtom } =
     name: EAtomNames.marketChartModeAtom,
     initialValue: { mode: 'lite' },
   });
+
+export type IMarketPriceSource = 'share' | 'token';
+
+export interface IMarketPriceSourceAtom {
+  source: IMarketPriceSource;
+}
+
+// Which price series the stock detail page shows: the underlying share or the
+// tokenized instrument. Shared state because two controls drive it — the chart
+// header toggle and the trade panel's chart button. Session-only: every visit
+// starts on the share price the page is named after.
+export const { target: marketPriceSourceAtom, use: useMarketPriceSourceAtom } =
+  globalAtom<IMarketPriceSourceAtom>({
+    name: EAtomNames.marketPriceSourceAtom,
+    initialValue: { source: 'share' },
+  });

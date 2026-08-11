@@ -5,7 +5,10 @@ import { useIntl } from 'react-intl';
 import type { IDialogInstance } from '@onekeyhq/components';
 import {
   EInPageDialogType,
+  Icon,
+  Stack,
   Toast,
+  XStack,
   useInPageDialog,
   useIsOverlayPage,
 } from '@onekeyhq/components';
@@ -23,6 +26,7 @@ import {
 import { isOndoStockSource } from '@onekeyhq/kit/src/views/Market/components/utils/stockSource';
 import { usePerpsNavigation } from '@onekeyhq/kit/src/views/Market/hooks/usePerpsNavigation';
 import type { ISwapReviewAdapter } from '@onekeyhq/kit/src/views/Swap/utils/swapReviewState';
+import { useMarketPriceSourceAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { dismissKeyboard } from '@onekeyhq/shared/src/keyboard';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import { EPerpPageEnterSource } from '@onekeyhq/shared/src/logger/scopes/perp/perpPageSource';
@@ -126,6 +130,15 @@ export function SwapPanelWrap({
     speedConfigReady,
   });
   const { activeAccount } = useActiveAccount({ num: 0 });
+
+  // Shared with the chart header toggle (Figma 25344:9152): the chart button
+  // next to the variant dropdown switches the page between the underlying
+  // share price and this token's price.
+  const [{ source: priceSource }, setPriceSource] = useMarketPriceSourceAtom();
+  const isTokenPriceSource = priceSource === 'token';
+  const handleTogglePriceSource = useCallback(() => {
+    setPriceSource({ source: isTokenPriceSource ? 'share' : 'token' });
+  }, [isTokenPriceSource, setPriceSource]);
 
   const { result: accountNetworkNotSupported } = usePromiseResult(
     async () => {
@@ -712,10 +725,37 @@ export function SwapPanelWrap({
       hideMarketPresetButtons={isStockEntity}
       orderHeaderSlot={
         isStockEntity ? (
-          <StockVariantSelector
-            instruments={stockInstruments}
-            selectedInstrument={selectedStockInstrument}
-          />
+          <XStack gap="$2" alignItems="center">
+            <Stack flex={1} minWidth={0}>
+              <StockVariantSelector
+                instruments={stockInstruments}
+                selectedInstrument={selectedStockInstrument}
+              />
+            </Stack>
+            {/* Chart button: same toggle as the chart header's Share/Token
+                Price switch, so both stay in sync through the atom. */}
+            <Stack
+              testID="market-stock-price-source-chart"
+              w="$8"
+              h="$8"
+              borderRadius="$2"
+              borderCurve="continuous"
+              alignItems="center"
+              justifyContent="center"
+              cursor="pointer"
+              userSelect="none"
+              bg={isTokenPriceSource ? '$bgStrong' : '$transparent'}
+              hoverStyle={{ bg: isTokenPriceSource ? '$bgStrong' : '$bgHover' }}
+              pressStyle={{ bg: '$bgActive' }}
+              onPress={handleTogglePriceSource}
+            >
+              <Icon
+                name="TradingViewCandlesOutline"
+                size="$5"
+                color={isTokenPriceSource ? '$icon' : '$iconSubdued'}
+              />
+            </Stack>
+          </XStack>
         ) : undefined
       }
       activeAccount={activeAccount}
