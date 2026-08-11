@@ -1,12 +1,14 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
+import BigNumber from 'bignumber.js';
 import { useIntl } from 'react-intl';
 
 import {
+  Badge,
   Button,
   Icon,
   NumberSizeableText,
-  Select,
+  Popover,
   SizableText,
   XStack,
   YStack,
@@ -18,7 +20,10 @@ import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import { useUSMarketStatus } from '@onekeyhq/kit/src/hooks/useUSMarketStatus';
 import { useTokenDetailActions } from '@onekeyhq/kit/src/states/jotai/contexts/marketV2';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
-import type { IMarketStockInstrument } from '@onekeyhq/shared/types/marketV2';
+import type {
+  IMarketStockInfo,
+  IMarketStockInstrument,
+} from '@onekeyhq/shared/types/marketV2';
 
 import { StockSourceLogo } from '../../../components/PerpsBadges';
 import { MarketTestIDs } from '../../../testIDs';
@@ -30,19 +35,108 @@ import {
   isVariantTradableNow,
 } from './variantTradability';
 
-const ISSUER_LABELS: Record<string, string> = {
-  ondo: 'Ondo',
-  xstock: 'xStock',
+// No translation key yet — demo copy straight from the design.
+const VARIANT_GROUP_LABEL = 'Tokenized stock';
+const VARIANT_PANEL_PROPS = { width: 320 } as const;
+
+type IStockVariantRow = {
+  instrument: IMarketStockInstrument;
+  tradable: boolean;
+  networkLogoUri?: string;
+  holding: string;
 };
 
-function formatIssuer(issuer: string) {
-  return ISSUER_LABELS[issuer.toLowerCase()] ?? issuer;
-}
+function StockVariantRow({
+  row,
+  isActive,
+  issuerStock,
+  onSelect,
+}: {
+  row: IStockVariantRow;
+  isActive: boolean;
+  issuerStock?: IMarketStockInfo;
+  onSelect: (instrument: IMarketStockInstrument) => void;
+}) {
+  const { instrument, holding, networkLogoUri, tradable } = row;
+  const handlePress = useCallback(
+    () => onSelect(instrument),
+    [instrument, onSelect],
+  );
+  const changeColor = new BigNumber(
+    instrument.priceChange24H ?? '',
+  ).isNegative()
+    ? '$textCritical'
+    : '$textSuccess';
 
-function describeInstrument(instrument: IMarketStockInstrument) {
-  return [instrument.chainName, formatIssuer(instrument.issuer)]
-    .filter(Boolean)
-    .join(' · ');
+  return (
+    <XStack
+      testID={`market-stock-variant-row-${instrument.instrumentId}`}
+      p="$2.5"
+      gap="$2"
+      alignItems="center"
+      borderRadius="$2"
+      borderCurve="continuous"
+      bg={isActive ? '$bgActive' : undefined}
+      hoverStyle={{ bg: '$bgHover' }}
+      pressStyle={{ bg: '$bgActive' }}
+      cursor="pointer"
+      userSelect="none"
+      onPress={handlePress}
+    >
+      <XStack flex={1} minWidth={0} gap="$3" alignItems="center">
+        <Token
+          size="md"
+          tokenImageUri={instrument.logoUrl}
+          networkImageUri={networkLogoUri}
+          fallbackIcon="CryptoCoinOutline"
+        />
+        <YStack flex={1} minWidth={0} gap="$0.5">
+          <XStack gap="$1" alignItems="center">
+            <SizableText size="$bodyMdMedium" color="$text" numberOfLines={1}>
+              {instrument.tokenSymbol || instrument.instrumentId}
+            </SizableText>
+            <StockSourceLogo stock={issuerStock} size={16} />
+            {/* 24/7 instruments trade outside the US session, which is the one
+                property that changes whether the row is actionable right now. */}
+            {tradable && instrument.tradingDays ? (
+              <Badge badgeType="success" badgeSize="sm" px="$1.5">
+                <Badge.Text>{instrument.tradingDays}</Badge.Text>
+              </Badge>
+            ) : null}
+          </XStack>
+          <SizableText size="$bodySm" color="$textSubdued" numberOfLines={1}>
+            {holding}
+          </SizableText>
+        </YStack>
+      </XStack>
+      <YStack alignItems="flex-end" gap="$0.5">
+        {instrument.price ? (
+          <NumberSizeableText
+            size="$bodyMdMedium"
+            color="$text"
+            formatter="price"
+            formatterOptions={{ currency: '$' }}
+          >
+            {instrument.price}
+          </NumberSizeableText>
+        ) : (
+          <SizableText size="$bodyMdMedium" color="$text">
+            --
+          </SizableText>
+        )}
+        {instrument.priceChange24H ? (
+          <NumberSizeableText
+            size="$bodySm"
+            color={changeColor}
+            formatter="priceChange"
+            formatterOptions={{ showPlusMinusSigns: true }}
+          >
+            {instrument.priceChange24H}
+          </NumberSizeableText>
+        ) : null}
+      </YStack>
+    </XStack>
+  );
 }
 
 /**
@@ -53,10 +147,15 @@ function describeInstrument(instrument: IMarketStockInstrument) {
 export function StockVariantSelector({
   instruments,
   selectedInstrument,
+  holdingByInstrumentId,
 }: {
   instruments: IMarketStockInstrument[];
   selectedInstrument?: IMarketStockInstrument;
+  // Holding amount per variant, shown as the row subtitle. Falls back to 0
+  // until the position data is wired in.
+  holdingByInstrumentId?: Record<string, string>;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const intl = useIntl();
   const tokenDetailActions = useTokenDetailActions();
   const { tokenDetail } = useTokenDetail();
@@ -125,30 +224,18 @@ export function StockVariantSelector({
 
   // Closed variants stay selectable — the spec is "mark, don't block". During
   // the US session nothing is marked at all.
-  const items = useMemo(
+  // Rows of the dropdown (Figma 25497:17813): token avatar, symbol with the
+  // issuer mark, holding amount underneath, price and 24h change on the right.
+  // Closed variants stay selectable — the spec is "mark, don't block".
+  const rows = useMemo(
     () =>
-      instruments.map((instrument) => {
-        const tradable = isVariantTradableNow({ instrument, isUsMarketOpen });
-        return {
-          label: instrument.tokenSymbol || instrument.instrumentId,
-          value: instrument.instrumentId,
-          // The issuer stays as text here: the index carries no per-instrument
-          // issuer logo, and the only real source describes the selected token
-          // rather than the other rows.
-          description: tradable
-            ? describeInstrument(instrument)
-            : `${describeInstrument(instrument)} · Closed`,
-          leading: (
-            <Token
-              size="md"
-              tokenImageUri={instrument.logoUrl}
-              networkImageUri={networkLogoUris?.[instrument.networkId]}
-              fallbackIcon="CryptoCoinOutline"
-            />
-          ),
-        };
-      }),
-    [instruments, isUsMarketOpen, networkLogoUris],
+      instruments.map((instrument) => ({
+        instrument,
+        tradable: isVariantTradableNow({ instrument, isUsMarketOpen }),
+        networkLogoUri: networkLogoUris?.[instrument.networkId],
+        holding: holdingByInstrumentId?.[instrument.instrumentId] ?? '0',
+      })),
+    [holdingByInstrumentId, instruments, isUsMarketOpen, networkLogoUris],
   );
 
   const selectVariant = useCallback(
@@ -168,13 +255,12 @@ export function StockVariantSelector({
     [selectedInstrument?.instrumentId, tokenDetailActions],
   );
 
-  const handleChange = useCallback(
-    (instrumentId: string) => {
-      selectVariant(
-        instruments.find((item) => item.instrumentId === instrumentId),
-      );
+  const handleSelectRow = useCallback(
+    (instrument: IMarketStockInstrument) => {
+      setIsOpen(false);
+      selectVariant(instrument);
     },
-    [instruments, selectVariant],
+    [selectVariant],
   );
 
   const handleSwitchToAlternative = useCallback(() => {
@@ -284,28 +370,43 @@ export function StockVariantSelector({
 
   return (
     <YStack>
-      <Select
-        testID="market-stock-variant-selector"
+      <Popover
         title={intl.formatMessage({ id: ETranslations.dexmarket_select_token })}
-        items={items}
-        value={active.instrumentId}
-        onChange={handleChange}
         placement="bottom-end"
-        floatingPanelProps={{ width: 300 }}
-        renderTrigger={({ onPress, disabled }) => (
+        floatingPanelProps={VARIANT_PANEL_PROPS}
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        renderTrigger={
+          // eslint-disable-next-line props-checker/validator -- Popover injects the trigger press handler.
           <XStack
             testID="market-stock-variant-selector-trigger"
             {...frameProps}
-            opacity={disabled ? 0.5 : 1}
             hoverStyle={{ bg: '$bgHover' }}
             pressStyle={{ bg: '$bgActive' }}
-            cursor={disabled ? 'not-allowed' : 'pointer'}
+            cursor="pointer"
             userSelect="none"
-            onPress={onPress}
           >
             {content}
           </XStack>
-        )}
+        }
+        renderContent={
+          <YStack p="$1" bg="$bg" borderRadius="$3" borderCurve="continuous">
+            <XStack p="$2">
+              <SizableText size="$bodySmMedium" color="$textSubdued" flex={1}>
+                {VARIANT_GROUP_LABEL}
+              </SizableText>
+            </XStack>
+            {rows.map((row) => (
+              <StockVariantRow
+                key={row.instrument.instrumentId}
+                row={row}
+                isActive={row.instrument.instrumentId === active.instrumentId}
+                issuerStock={tokenDetail?.stock}
+                onSelect={handleSelectRow}
+              />
+            ))}
+          </YStack>
+        }
       />
       {closedNotice}
     </YStack>
