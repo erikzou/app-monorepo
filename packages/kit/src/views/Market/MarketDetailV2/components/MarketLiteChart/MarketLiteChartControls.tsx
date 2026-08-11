@@ -48,7 +48,9 @@ export function MarketLiteChartControls({
   return (
     <Stack
       bg="$bgApp"
-      px="$4"
+      // Figma 25476:88858: the toolbar starts on the column's own 20px gutter,
+      // with no inset of its own.
+      px="$5"
       py="$1"
       h={MARKET_CHART_TOOLBAR_HEIGHT}
       justifyContent="center"

@@ -61,6 +61,12 @@ export interface ITradingViewChartControlsProps {
   // Slot rendered in the right-hand control group, immediately after the
   // price/market-cap select. Desktop layout only.
   rightGroupTrailingControl?: ReactNode;
+  /**
+   * Horizontal inset of the desktop toolbar. Pages that already place the
+   * chart inside their own gutter pass 0 so the toolbar lines up with the rest
+   * of the column instead of sitting one padding further in.
+   */
+  desktopPaddingHorizontal?: number | string;
   onIntervalChange: (interval: string) => void;
   onIndicatorPress: (indicator: ITradingViewIndicatorOption) => void;
   onShowIndicatorsDialog: () => void;
@@ -114,6 +120,7 @@ export const TradingViewChartControls = memo(
     isFullscreen,
     fullscreenHeader,
     rightGroupTrailingControl,
+    desktopPaddingHorizontal,
     onIntervalChange,
     onIndicatorPress,
     onShowIndicatorsDialog,
@@ -342,7 +349,9 @@ export const TradingViewChartControls = memo(
       return (
         <Stack
           bg="$bgApp"
-          px={desktopFullscreenHeader ? '$2' : '$4'}
+          px={
+            desktopPaddingHorizontal ?? (desktopFullscreenHeader ? '$2' : '$4')
+          }
           py="$1"
           h={
             desktopFullscreenHeader

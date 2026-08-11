@@ -1,5 +1,6 @@
 import {
   Empty,
+  NumberSizeableText,
   SizableText,
   Spinner,
   Stack,
@@ -113,9 +114,17 @@ function PositionRow({
         <SizableText size="$bodyMdMedium" color="$text">
           {formatUsd(item.totalPrice)}
         </SizableText>
-        <SizableText size="$bodySm" color="$textSubdued">
-          {`${item.amount} ${item.symbol}`}
-        </SizableText>
+        {/* Raw on-chain amounts run to 18 decimals; left unformatted they wrap
+            onto a third line and knock this column off the row's baseline. */}
+        <NumberSizeableText
+          size="$bodySm"
+          color="$textSubdued"
+          formatter="balance"
+          formatterOptions={{ tokenSymbol: item.symbol }}
+          numberOfLines={1}
+        >
+          {item.amount}
+        </NumberSizeableText>
       </YStack>
 
       <Stack {...cellProps(COLUMNS[2])}>

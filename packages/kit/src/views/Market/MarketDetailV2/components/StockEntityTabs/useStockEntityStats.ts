@@ -79,15 +79,14 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
     );
 
     /**
-     * Key Data: four cells answering "how is it trading today" over four
-     * answering "is it worth holding".
+     * Key Data: a 3x2 block — the day's range and volume over size and the
+     * 52-week band.
      *
      * Crypto-native venues (Bitget's collapsed strip, Binance's Stats order)
      * lead with the day's price and volume because that matches what our users
      * already read on a token page; a stock-native venue like Futu leads with
-     * valuation. This page serves the former, but the page's job is deciding
-     * whether to buy, not watching the tape — hence the split rather than
-     * copying either one.
+     * valuation. This page serves the former, so the valuation ratios sit in
+     * the expander below rather than in the collapsed block.
      *
      * The day's high/low have no source yet (spike G3) and render `--`. That
      * is deliberate: a visible gap in the most prominent row is the point.
@@ -129,6 +128,23 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         }),
         value: formatCurrencyStatValue(analysis?.weekLow52),
       },
+    ];
+
+    /**
+     * The "More" expander, 14 cells. The cap is 20 cells for the whole of
+     * Overview — 6 core plus 14 here, matching what Binance shows in one
+     * screen. The two valuation ratios lead: they are the first thing someone
+     * expands this for.
+     *
+     * Ordered day → volume → valuation → capital. Turnover rate leads the
+     * volume group so that share volume and average volume land side by side
+     * in the 4-column grid: the pair only reads as a ratio ("today ran at 1.8x
+     * normal") when both are visible at once.
+     *
+     * Cells without a source render `--` rather than disappearing, so the gap
+     * stays visible and reviewable.
+     */
+    const financials: IStockStatItem[] = [
       {
         key: 'peRatio',
         label: intl.formatMessage({ id: ETranslations.dexmarket_stock_pe_ttm }),
@@ -147,22 +163,6 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
           id: ETranslations.dexmarket_stock_dividend_yield_desc,
         }),
       },
-    ];
-
-    /**
-     * The "More" expander, 12 cells. The cap is 20 cells for the whole of
-     * Overview — 8 core plus 12 here fills a 4x5 grid, matching what Binance
-     * shows in one screen.
-     *
-     * Ordered day → volume → valuation → capital. Turnover rate leads the
-     * volume group so that share volume and average volume land side by side
-     * in the 4-column grid: the pair only reads as a ratio ("today ran at 1.8x
-     * normal") when both are visible at once.
-     *
-     * Cells without a source render `--` rather than disappearing, so the gap
-     * stays visible and reviewable.
-     */
-    const financials: IStockStatItem[] = [
       {
         key: 'dayOpen',
         label: 'Open',

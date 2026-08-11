@@ -13,7 +13,8 @@ export interface IStockStatItem {
   tooltip?: string;
 }
 
-const COLUMNS = 4;
+// Figma 25314:8898: six cells in a 3x2 block, the rest behind "Show more".
+const COLUMNS = 3;
 
 function chunk<T>(items: T[], size: number): T[][] {
   const rows: T[][] = [];

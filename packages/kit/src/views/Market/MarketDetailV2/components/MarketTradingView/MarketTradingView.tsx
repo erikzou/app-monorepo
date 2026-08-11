@@ -91,6 +91,7 @@ export interface IMarketTradingViewProps {
   nativePriceMarketCapControlMode?: 'settings' | 'select';
   nativeControlsLayoutMode?: 'mobile' | 'desktop';
   chartModeControl?: ReactNode;
+  chartControlsPaddingHorizontal?: number | string;
   isNativeChartFullscreen?: boolean;
   showNativeIndicatorQuickBar?: boolean;
   onTouchScroll?: (deltaY: number) => void;
@@ -116,6 +117,7 @@ export const MarketTradingView = memo(
     nativePriceMarketCapControlMode,
     nativeControlsLayoutMode,
     chartModeControl,
+    chartControlsPaddingHorizontal,
     isNativeChartFullscreen,
     showNativeIndicatorQuickBar,
     onTouchScroll,
@@ -185,6 +187,7 @@ export const MarketTradingView = memo(
         nativePriceMarketCapControlMode={nativePriceMarketCapControlMode}
         nativeControlsLayoutMode={nativeControlsLayoutMode}
         nativeChartRightGroupTrailingControl={chartModeControl}
+        nativeChartControlsPaddingHorizontal={chartControlsPaddingHorizontal}
         isNativeChartFullscreen={isNativeChartFullscreen}
         nativeChartFullscreenHeader={
           !platformEnv.isNative && nativeControlsLayoutMode === 'desktop' ? (

@@ -360,6 +360,7 @@ export function DesktopLayout({
         chartModeControl={
           showChartModeSwitch ? <MarketChartModeSwitch /> : undefined
         }
+        chartControlsPaddingHorizontal={isStockPage ? 0 : undefined}
         isNativeChartFullscreen={isChartFullscreen}
         showNativeIndicatorQuickBar={false}
         onNativeChartFullscreenChange={chartFullscreenChangeHandler}
@@ -369,6 +370,7 @@ export function DesktopLayout({
     chartFullscreenChangeHandler,
     handleTradingViewTouchScroll,
     isChartFullscreen,
+    isStockPage,
     marketTradingViewParams,
     networkId,
     showChartModeSwitch,
@@ -511,7 +513,15 @@ export function DesktopLayout({
                   frontend team's call.
                 */}
                 {showLiteChart ? null : (
-                  <Stack flex={1} px={STOCK_LAYOUT.contentPadding}>
+                  // The gutter lives here rather than inside the toolbar
+                  // (hence the 0 below), so the toolbar row and the chart body
+                  // sit on the same line as the price bar and the tabs.
+                  <Stack
+                    flex={1}
+                    px={STOCK_LAYOUT.contentPadding}
+                    pb="$4"
+                    minWidth={0}
+                  >
                     {marketTradingView}
                   </Stack>
                 )}
