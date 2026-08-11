@@ -32,7 +32,7 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
 
   return (
     <Tabs.ScrollView>
-      <YStack px="$5" py="$6" gap="$8">
+      <YStack px="$5" py="$6" gap="$10">
         <YStack gap="$6">
           <StockStatGrid items={keyData} />
 
@@ -84,6 +84,8 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
  * ratios live in the Overview "More" expander meanwhile. On-chain tabs
  * (transactions, liquidity, holders list) are deliberately absent.
  */
+const TAB_BAR_CONTAINER_STYLE = { px: '$5' } as const;
+
 export function StockEntityTabs({
   entity,
   portfolioData,
@@ -110,8 +112,17 @@ export function StockEntityTabs({
     return positionCount > 0 ? `${base} (${positionCount})` : base;
   }, [intl, positionCount]);
 
+  // Design's tab row (Figma 25233:40821): 16px medium labels, 20px side
+  // padding, and no rule under the row — only the active item is underlined.
   const renderTabBar = useCallback(
-    (props: any) => <Tabs.TabBar {...props} textSize="$bodyMdMedium" />,
+    (props: any) => (
+      <Tabs.TabBar
+        {...props}
+        divider={false}
+        textSize="$bodyLgMedium"
+        containerStyle={TAB_BAR_CONTAINER_STYLE}
+      />
+    ),
     [],
   );
 

@@ -37,7 +37,6 @@ import {
 } from '../components/MarketLiteChart';
 import { MarketChartFullscreenHeader } from '../components/MarketTradingView/MarketChartFullscreenHeader';
 import { PerpetualTradingBanner } from '../components/PerpetualTradingBanner/PerpetualTradingBanner';
-import { StockDisclaimerBanner } from '../components/StockDisclaimerBanner/StockDisclaimerBanner';
 import { StockEntityTabs } from '../components/StockEntityTabs/StockEntityTabs';
 import { StockTradePanel } from '../components/StockTradePanel/StockTradePanel';
 import { StockTrustPanel } from '../components/StockTrustPanel/StockTrustPanel';
@@ -379,14 +378,28 @@ export function DesktopLayout({
       flex={1}
       style={SCROLL_CONTAINER_STYLE}
     >
-      {/* Page-level, above both columns and above the chart's fullscreen
-          layer, so it stays visible for the whole stock page. */}
-      {isStockPage && !isChartFullscreen ? <StockDisclaimerBanner /> : null}
-
       {/* Stock pages follow the design's centered 1140 content frame
           (Figma 25271:8054: 772 + 24 + 344). The 20px side padding keeps the
           content off the window edge below that width, so the inner box is
           still exactly 1140 on a 1440 viewport. Crypto pages stay full-width. */}
+      {isStockPage ? (
+        <YStack
+          width="100%"
+          maxWidth={
+            STOCK_LAYOUT.contentMaxWidth + STOCK_LAYOUT.contentPadding * 2
+          }
+          alignSelf="center"
+          px="$5"
+        >
+          <TokenDetailHeader
+            showFavoriteButton={showFavoriteButton}
+            stockEntityIdentity={stockEntityIdentity}
+            isStockLayout={isStockPage}
+            showMediaAndSecurity={!isStockPage}
+          />
+        </YStack>
+      ) : null}
+
       <XStack
         {...(isStockPage
           ? {
@@ -411,12 +424,14 @@ export function DesktopLayout({
                 borderRightColor: '$borderSubdued',
               })}
         >
-          <TokenDetailHeader
-            showFavoriteButton={showFavoriteButton}
-            stockEntityIdentity={stockEntityIdentity}
-            isStockLayout={isStockPage}
-            showMediaAndSecurity={!isStockPage}
-          />
+          {isStockPage ? null : (
+            <TokenDetailHeader
+              showFavoriteButton={showFavoriteButton}
+              stockEntityIdentity={stockEntityIdentity}
+              isStockLayout={isStockPage}
+              showMediaAndSecurity={!isStockPage}
+            />
+          )}
 
           {showChartModeSwitch ? (
             <MarketChartPriceBar
@@ -451,6 +466,7 @@ export function DesktopLayout({
                 ? MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom
                 : undefined
             }
+            px={isStockPage && !isChartFullscreen ? '$5' : undefined}
             overflow="hidden"
             bg="$bgApp"
             zIndex={isChartFullscreen ? chartFullscreenZIndex : undefined}
@@ -467,12 +483,15 @@ export function DesktopLayout({
             ) : null}
             {isStockPage ? (
               <>
+                {showChartModeSwitch ? (
+                  <MarketLiteChartControls
+                    range={liteChartRange}
+                    onRangeChange={setLiteChartRange}
+                    showRanges={showLiteChart}
+                  />
+                ) : null}
                 {showLiteChart ? (
                   <>
-                    <MarketLiteChartControls
-                      range={liteChartRange}
-                      onRangeChange={setLiteChartRange}
-                    />
                     <MarketLiteChart
                       networkId={networkId}
                       tokenAddress={tokenAddress}
@@ -549,7 +568,7 @@ export function DesktopLayout({
               </Stack>
             )}
 
-            <Divider my="$1" />
+            {isStockPage ? null : <Divider my="$1" />}
 
             {isStockPage && stockEntity ? (
               <StockTrustPanel

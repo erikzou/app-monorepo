@@ -34,10 +34,10 @@ const MOCK_EVENTS: IStockEvent[] = [
 export function StockEvents() {
   return (
     <YStack gap="$4">
-      <SizableText size="$headingMd" color="$text">
+      <SizableText size="$headingLg" color="$text">
         Events
       </SizableText>
-      <YStack gap="$3">
+      <YStack gap="$2">
         {MOCK_EVENTS.map((event) => (
           <XStack key={event.key} gap="$3" alignItems="center">
             <Stack

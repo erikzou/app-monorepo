@@ -195,7 +195,8 @@ const STOCK_MARKET_STATUS_CHIPS: Record<
   },
   [EUSMarketStatusVariant.Open]: {
     icon: 'SunOutline',
-    titleId: ETranslations.market_status_open,
+    // Matches the wording the trading-hours popover uses for this session.
+    titleId: ETranslations.trading_hours_regular_market,
     bg: '$bgSuccess',
     color: '$textSuccess',
   },

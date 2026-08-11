@@ -9,7 +9,6 @@ import {
   IconButton,
   Image,
   Input,
-  SegmentControl,
   SizableText,
   Stack,
   XStack,
@@ -22,32 +21,50 @@ import type { IMarketStockInstrument } from '@onekeyhq/shared/types/marketV2';
 import { useMarketStockEntity } from '../../hooks/useMarketStockEntity';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
 import { StockVariantSelector } from '../StockVariantSelector/StockVariantSelector';
+import { TokenSelectorPopover } from '../SwapPanel/components/TokenInputSection/TokenSelectorPopover';
+import { TradeTypeSelector } from '../SwapPanel/components/TradeTypeSelector';
+import { useSpeedSwapInit } from '../SwapPanel/hooks/useSpeedSwapInit';
+import { ESwapDirection } from '../SwapPanel/hooks/useTradeType';
+
+import type { IToken } from '../SwapPanel/types';
 
 // TODO(data): demo figures until the panel is wired to the swap quote flow.
-const DEMO_PAY_TOKEN = { symbol: 'USDC', balance: '10000.01' };
+const DEMO_BALANCE = '10000.01';
 const DEMO_PROVIDER_LABEL = 'Best';
+const SIDE_SWITCH_WIDTH = 176;
 
 const AMOUNT_INPUT_CONTAINER_PROPS = {
   borderWidth: 0,
   bg: '$transparent',
 } as const;
 
-enum EStockTradeSide {
-  Buy = 'buy',
-  Sell = 'sell',
-}
-
 function AmountCard({
   amount,
   onAmountChange,
   onMaxPress,
   fiatValue,
+  payToken,
+  payTokens,
+  onPayTokenChange,
 }: {
   amount: string;
   onAmountChange: (value: string) => void;
   onMaxPress: () => void;
   fiatValue: string;
+  payToken?: IToken;
+  payTokens: IToken[];
+  onPayTokenChange: (token: IToken) => void;
 }) {
+  const [isTokenListOpen, setIsTokenListOpen] = useState(false);
+  const handleTokenPress = useCallback(
+    (token: IToken) => {
+      onPayTokenChange(token);
+      setIsTokenListOpen(false);
+    },
+    [onPayTokenChange],
+  );
+  const handleOpenTokenList = useCallback(() => setIsTokenListOpen(true), []);
+
   return (
     <YStack bg="$bgSubdued" borderRadius="$3" borderCurve="continuous">
       <XStack pt="$2.5" px="$3.5">
@@ -74,17 +91,38 @@ function AmountCard({
             containerProps={AMOUNT_INPUT_CONTAINER_PROPS}
           />
         </Stack>
-        <XStack px="$3.5" py="$4" gap="$2" alignItems="center">
+        <XStack
+          px="$3.5"
+          py="$4"
+          gap="$2"
+          alignItems="center"
+          cursor={payTokens.length > 1 ? 'pointer' : undefined}
+          userSelect="none"
+          onPress={payTokens.length > 1 ? handleOpenTokenList : undefined}
+          testID="market-stock-trade-pay-token"
+        >
           <Token
             size="sm"
-            tokenImageUri={undefined}
-            fallbackIcon="DollarOutline"
+            tokenImageUri={payToken?.logoURI}
+            fallbackIcon="CryptoCoinOutline"
           />
           <SizableText size="$headingXl" color="$text">
-            {DEMO_PAY_TOKEN.symbol}
+            {payToken?.symbol ?? '--'}
           </SizableText>
-          <Icon name="ChevronDownSmallOutline" size="$5" color="$iconSubdued" />
+          {payTokens.length > 1 ? (
+            <Icon
+              name="ChevronDownSmallOutline"
+              size="$5"
+              color="$iconSubdued"
+            />
+          ) : null}
         </XStack>
+        <TokenSelectorPopover
+          isOpen={isTokenListOpen}
+          onOpenChange={setIsTokenListOpen}
+          tokens={payTokens}
+          onTokenPress={handleTokenPress}
+        />
       </XStack>
 
       <XStack pb="$2" px="$3.5" alignItems="center">
@@ -93,7 +131,7 @@ function AmountCard({
         </SizableText>
         <XStack gap="$1" alignItems="center">
           <SizableText size="$bodySm" color="$textSubdued">
-            {DEMO_PAY_TOKEN.balance}
+            {DEMO_BALANCE}
           </SizableText>
           <SizableText
             size="$bodySmMedium"
@@ -120,7 +158,7 @@ export function StockTradePanel() {
   const { tokenDetail } = useTokenDetail();
   const { entity, selectedInstrument } = useMarketStockEntity();
   const [{ source: priceSource }, setPriceSource] = useMarketPriceSourceAtom();
-  const [side, setSide] = useState<EStockTradeSide>(EStockTradeSide.Buy);
+  const [side, setSide] = useState<ESwapDirection>(ESwapDirection.BUY);
   const [amount, setAmount] = useState('');
 
   const instruments = useMemo<IMarketStockInstrument[]>(
@@ -132,26 +170,29 @@ export function StockTradePanel() {
     activeInstrument?.tokenSymbol ?? tokenDetail?.symbol ?? '';
   const tokenPrice = activeInstrument?.price ?? tokenDetail?.price;
 
+  // Reuses the market panel's payment token list so the icon and the picker
+  // match what the previous version of this input offered.
+  const { defaultTokens } = useSpeedSwapInit(
+    activeInstrument?.networkId ?? tokenDetail?.networkId ?? '',
+    true,
+  );
+  const payTokens = useMemo(() => defaultTokens ?? [], [defaultTokens]);
+  const [selectedPayToken, setSelectedPayToken] = useState<IToken | undefined>(
+    undefined,
+  );
+  const payToken = selectedPayToken ?? payTokens[0];
+
   const isTokenPriceSource = priceSource === 'token';
   const handleTogglePriceSource = useCallback(() => {
     setPriceSource({ source: isTokenPriceSource ? 'share' : 'token' });
   }, [isTokenPriceSource, setPriceSource]);
 
-  const sideOptions = useMemo(
-    () => [
-      { label: 'Buy', value: EStockTradeSide.Buy },
-      { label: 'Sell', value: EStockTradeSide.Sell },
-    ],
-    [],
-  );
-  const handleSideChange = useCallback(
-    (value: string | number) => setSide(value as EStockTradeSide),
-    [],
-  );
-  const handleMaxPress = useCallback(
-    () => setAmount(DEMO_PAY_TOKEN.balance),
-    [],
-  );
+  const handleSideChange = useCallback((value?: ESwapDirection) => {
+    if (value) {
+      setSide(value);
+    }
+  }, []);
+  const handleMaxPress = useCallback(() => setAmount(DEMO_BALANCE), []);
 
   const amountBN = new BigNumber(amount || '');
   const hasAmount = amountBN.isFinite() && amountBN.gt(0);
@@ -168,12 +209,13 @@ export function StockTradePanel() {
   return (
     <YStack bg="$bgApp" gap="$4">
       <XStack pt="$6" px="$5" gap="$4" alignItems="center">
-        <Stack w={176} h="$8">
-          <SegmentControl
-            fullWidth
+        {/* Same control the Trade > Stocks panel uses. */}
+        <Stack w={SIDE_SWITCH_WIDTH}>
+          <TradeTypeSelector
             value={side}
-            options={sideOptions}
             onChange={handleSideChange}
+            size="small"
+            preventTextWrap
           />
         </Stack>
         <XStack flex={1} minWidth={0} justifyContent="flex-end">
@@ -223,6 +265,9 @@ export function StockTradePanel() {
           onAmountChange={setAmount}
           onMaxPress={handleMaxPress}
           fiatValue={hasAmount ? `$${amountBN.toFixed(2)}` : '$0.00'}
+          payToken={payToken}
+          payTokens={payTokens}
+          onPayTokenChange={setSelectedPayToken}
         />
 
         <XStack h={48} px="$0.5" gap="$2" alignItems="center">
@@ -255,38 +300,41 @@ export function StockTradePanel() {
           {hasAmount ? 'Review' : 'Enter amount'}
         </Button>
 
-        <XStack pt="$5" pl="$0.5" gap="$2" alignItems="center">
-          <XStack gap="$1" alignItems="center" flexShrink={1} minWidth={0}>
-            <Icon
-              name="RotateClockwiseOutline"
-              size="$4.5"
-              color="$iconSubdued"
-            />
-            <SizableText size="$bodyMd" color="$text" numberOfLines={1}>
-              {rate
-                ? `1 ${DEMO_PAY_TOKEN.symbol} = ${rate.toFixed(6)} ${tokenSymbol}`
-                : '--'}
-            </SizableText>
-          </XStack>
-          <XStack flex={1} minWidth={0} gap="$1" justifyContent="flex-end">
-            <Badge badgeType="success" badgeSize="sm">
-              <Badge.Text>{DEMO_PROVIDER_LABEL}</Badge.Text>
-            </Badge>
-            {activeInstrument?.logoUrl ? (
-              <Image
-                width={20}
-                height={20}
-                borderRadius="$1"
-                source={{ uri: activeInstrument.logoUrl }}
+        {/* Swap only surfaces the rate once there is an amount to price. */}
+        {hasAmount ? (
+          <XStack pt="$5" pl="$0.5" gap="$2" alignItems="center">
+            <XStack gap="$1" alignItems="center" flexShrink={1} minWidth={0}>
+              <Icon
+                name="RotateClockwiseOutline"
+                size="$4.5"
+                color="$iconSubdued"
               />
-            ) : null}
-            <Icon
-              name="ChevronDownSmallOutline"
-              size="$5"
-              color="$iconSubdued"
-            />
+              <SizableText size="$bodyMd" color="$text" numberOfLines={1}>
+                {rate
+                  ? `1 ${payToken?.symbol ?? '--'} = ${rate.toFixed(6)} ${tokenSymbol}`
+                  : '--'}
+              </SizableText>
+            </XStack>
+            <XStack flex={1} minWidth={0} gap="$1" justifyContent="flex-end">
+              <Badge badgeType="success" badgeSize="sm">
+                <Badge.Text>{DEMO_PROVIDER_LABEL}</Badge.Text>
+              </Badge>
+              {activeInstrument?.logoUrl ? (
+                <Image
+                  width={20}
+                  height={20}
+                  borderRadius="$1"
+                  source={{ uri: activeInstrument.logoUrl }}
+                />
+              ) : null}
+              <Icon
+                name="ChevronDownSmallOutline"
+                size="$5"
+                color="$iconSubdued"
+              />
+            </XStack>
           </XStack>
-        </XStack>
+        ) : null}
       </YStack>
     </YStack>
   );

@@ -40,8 +40,8 @@ export function StockAbout({ entity }: { entity: IMarketStockEntity }) {
   }
 
   return (
-    <YStack gap="$3">
-      <SizableText size="$headingMd" color="$text">
+    <YStack gap="$4">
+      <SizableText size="$headingLg" color="$text">
         About
       </SizableText>
 

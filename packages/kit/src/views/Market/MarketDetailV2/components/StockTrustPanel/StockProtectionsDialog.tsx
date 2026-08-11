@@ -116,6 +116,8 @@ function ProtectionRow({ row }: { row: IProtectionRow }) {
   );
 }
 
+export const STOCK_PROTECTION_COUNT = PROTECTION_ROWS.length;
+
 export function showStockProtectionsDialog() {
   Dialog.show({
     title: PROTECTIONS_TITLE,

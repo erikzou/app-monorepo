@@ -20,9 +20,13 @@ import type { IMarketLiteChartRange } from './constants';
 export function MarketLiteChartControls({
   range,
   onRangeChange,
+  showRanges = true,
 }: {
   range: IMarketLiteChartRange;
   onRangeChange: (range: IMarketLiteChartRange) => void;
+  // Pro owns its own interval picker, but the Lite/Pro switch has to stay
+  // reachable or the user cannot get back out of Pro.
+  showRanges?: boolean;
 }) {
   const rangeOptions = useMemo(
     () =>
@@ -52,12 +56,14 @@ export function MarketLiteChartControls({
     >
       <XStack alignItems="center" width="100%" gap="$2">
         <XStack flex={1} minWidth={0} alignItems="center">
-          <SegmentControl
-            value={range}
-            options={rangeOptions}
-            onChange={handleRangeChange}
-            {...MARKET_CHART_TOOLBAR_SEGMENT_STYLE}
-          />
+          {showRanges ? (
+            <SegmentControl
+              value={range}
+              options={rangeOptions}
+              onChange={handleRangeChange}
+              {...MARKET_CHART_TOOLBAR_SEGMENT_STYLE}
+            />
+          ) : null}
         </XStack>
 
         <XStack gap="$2" alignItems="center" flexShrink={0}>

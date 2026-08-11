@@ -18,12 +18,12 @@ import type {
 import { StockSourceLogo } from '../../../components/PerpsBadges';
 import { MarketTestIDs } from '../../../testIDs';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
-import {
-  STAT_FALLBACK_VALUE,
-  formatMarketCapValue,
-} from '../../utils/statValue';
+import { STAT_FALLBACK_VALUE } from '../../utils/statValue';
 
-import { showStockProtectionsDialog } from './StockProtectionsDialog';
+import {
+  STOCK_PROTECTION_COUNT,
+  showStockProtectionsDialog,
+} from './StockProtectionsDialog';
 import { TokenLinkRow } from './TokenLinkRow';
 
 const ISSUER_LABELS: Record<string, string> = {
@@ -87,7 +87,6 @@ export function StockTrustPanel({
   instrument?: IMarketStockInstrument;
 }) {
   const { tokenDetail } = useTokenDetail();
-  const holders = tokenDetail?.holders;
 
   const rows = useMemo<ITrustRow[]>(() => {
     if (!instrument) {
@@ -95,16 +94,7 @@ export function StockTrustPanel({
     }
     const issuer =
       ISSUER_LABELS[instrument.issuer.toLowerCase()] ?? instrument.issuer;
-    const limit = [instrument.minTradeUsd, instrument.maxTradeUsd]
-      .filter(Boolean)
-      .map((value) => `$${value ?? ''}`);
-
     return [
-      {
-        key: 'ticker',
-        label: 'Asset ticker',
-        value: entity.ticker || STAT_FALLBACK_VALUE,
-      },
       {
         key: 'issuer',
         label: 'Issuer',
@@ -112,11 +102,12 @@ export function StockTrustPanel({
         // Same source as the variant switcher's issuer mark. It renders
         // nothing when the token detail has no `stock` block, so the row
         // degrades to plain text rather than to a broken image.
-        valuePrefix: <StockSourceLogo stock={tokenDetail?.stock} />,
+        valuePrefix: <StockSourceLogo stock={tokenDetail?.stock} size={16} />,
       },
       {
         key: 'ratio',
         label: 'Shares Per Token',
+        tooltip: `How much of ${entity.ticker} one token represents.`,
         value: instrument.tokenToAssetRatio
           ? `${instrument.tokenToAssetRatio} ${entity.ticker}`
           : STAT_FALLBACK_VALUE,
@@ -125,18 +116,6 @@ export function StockTrustPanel({
         key: 'tradingHours',
         label: 'Trading Hours',
         value: instrument.tradingDays || STAT_FALLBACK_VALUE,
-      },
-      {
-        key: 'tradingLimit',
-        label: 'Trading Limit',
-        value: limit.length ? limit.join(' – ') : STAT_FALLBACK_VALUE,
-      },
-      {
-        // Holders' only home now that the on-chain tabs are gone: a count, not
-        // a list.
-        key: 'holders',
-        label: 'Holders',
-        value: holders ? formatMarketCapValue(holders) : STAT_FALLBACK_VALUE,
       },
       {
         key: 'contract',
@@ -151,21 +130,22 @@ export function StockTrustPanel({
         copyValue: instrument.contractAddress || undefined,
       },
     ];
-  }, [entity.ticker, holders, instrument, tokenDetail?.stock]);
+  }, [entity.ticker, instrument, tokenDetail?.stock]);
 
   if (rows.length === 0) {
     return null;
   }
 
   return (
-    <YStack pl="$3" pr="$5" py="$4" gap="$3">
+    <YStack p="$5" gap="$3.5">
       {rows.map((row) => (
         <TrustRow key={row.key} row={row} />
       ))}
 
-      {/* Opens the protections breakdown (Figma 25348:103122). */}
+      {/* Opens the protections breakdown (Figma 25497:17775). */}
       <XStack
         testID="market-stock-protections-row"
+        px="$0.5"
         alignItems="center"
         gap="$2"
         cursor="pointer"
@@ -175,7 +155,14 @@ export function StockTrustPanel({
         <SizableText size="$bodyMd" color="$textSubdued" flex={1} minWidth={0}>
           Tokenholder Protections
         </SizableText>
-        <Icon name="ChevronRightSmallOutline" size="$5" color="$iconSubdued" />
+        <SizableText size="$bodyMdMedium" color="$textSubdued">
+          {`${STOCK_PROTECTION_COUNT} items`}
+        </SizableText>
+        <Icon
+          name="ChevronRightSmallOutline"
+          size="$4.5"
+          color="$iconSubdued"
+        />
       </XStack>
 
       {/* The disclaimer lives in the page-level banner, not here. */}

@@ -37,6 +37,10 @@ import {
 
 // No translation key yet — demo copy straight from the design.
 const VARIANT_GROUP_LABEL = 'Tokenized stock';
+
+function isAlwaysOnTradingDays(tradingDays?: string) {
+  return Boolean(tradingDays && /7\s*[x×]\s*24/i.test(tradingDays));
+}
 const VARIANT_PANEL_PROPS = { width: 320 } as const;
 
 type IStockVariantRow = {
@@ -96,9 +100,10 @@ function StockVariantRow({
               {instrument.tokenSymbol || instrument.instrumentId}
             </SizableText>
             <StockSourceLogo stock={issuerStock} size={16} />
-            {/* 24/7 instruments trade outside the US session, which is the one
-                property that changes whether the row is actionable right now. */}
-            {tradable && instrument.tradingDays ? (
+            {/* Only 24/7 instruments get a badge: trading outside the US
+                session is the exception worth calling out, while 5x24 is the
+                default and would just add noise. */}
+            {tradable && isAlwaysOnTradingDays(instrument.tradingDays) ? (
               <Badge badgeType="success" badgeSize="sm" px="$1.5">
                 <Badge.Text>{instrument.tradingDays}</Badge.Text>
               </Badge>
