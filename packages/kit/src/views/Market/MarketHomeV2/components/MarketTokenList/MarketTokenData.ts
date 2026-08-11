@@ -25,6 +25,10 @@ export interface IMarketToken {
   isNative?: boolean;
   communityRecognized?: boolean;
   stock?: import('@onekeyhq/shared/types/marketV2').IMarketStockInfo;
+  // Set by the Stocks tab's one-row-per-stock collapse: the underlying ticker
+  // this row stands for, and how many tokenized variants collapsed into it.
+  stockTicker?: string;
+  stockVariantCount?: number;
   // Perps watchlist: coin name (e.g. "BTC"). When set, this is a perps token.
   perpsCoin?: string;
   // Perps: max leverage (e.g. 40)

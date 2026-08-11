@@ -107,13 +107,19 @@ function renderLightweightText(value: unknown) {
 }
 
 function renderLightweightTokenIdentity(record: IMarketToken) {
-  const subtitle = record.address
-    ? accountUtils.shortenAddress({
-        address: record.address,
-        leadingLength: 6,
-        trailingLength: 4,
-      })
-    : record.name;
+  let subtitle: string;
+  if (record.stockTicker) {
+    // Collapsed stock rows carry the company name, never a contract address.
+    subtitle = record.stock?.subtitle || record.name;
+  } else if (record.address) {
+    subtitle = accountUtils.shortenAddress({
+      address: record.address,
+      leadingLength: 6,
+      trailingLength: 4,
+    });
+  } else {
+    subtitle = record.name;
+  }
 
   return (
     <XStack
@@ -132,7 +138,7 @@ function renderLightweightTokenIdentity(record: IMarketToken) {
           flexShrink={1}
           ellipsizeMode="tail"
         >
-          {record.symbol}
+          {record.stockTicker || record.symbol}
         </SizableText>
         <SizableText
           size="$bodySm"
@@ -262,8 +268,12 @@ export const useColumnsDesktop = (
               tokenLogoURIs={record.tokenImageUris}
               networkLogoURI={record.networkLogoUri}
               networkId={record.networkId}
-              symbol={record.symbol}
+              // A collapsed stock row stands for the company, so it shows the
+              // underlying ticker and drops the per-token contract address.
+              symbol={record.stockTicker || record.symbol}
               address={record.address}
+              hideAddress={Boolean(record.stockTicker)}
+              hideVariantChrome={Boolean(record.stockTicker)}
               showCopyButton
               copyFrom={copyFrom || ECopyFrom.Homepage}
               communityRecognized={record.communityRecognized}

@@ -1,4 +1,5 @@
-import { memo, useCallback, useMemo, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useRoute } from '@react-navigation/native';
 import { useIntl } from 'react-intl';
@@ -8,7 +9,6 @@ import {
   Popover,
   SearchBar,
   SizableText,
-  Stack,
   XStack,
   YStack,
   usePopoverContext,
@@ -21,13 +21,13 @@ import { useMarketBasicConfig } from '@onekeyhq/kit/src/views/Market/hooks';
 import { usePerpsNavigation } from '@onekeyhq/kit/src/views/Market/hooks/usePerpsNavigation';
 import type { IMarketToken } from '@onekeyhq/kit/src/views/Market/MarketHomeV2/components/MarketTokenList/MarketTokenData';
 import type { IMarketCategoryItem } from '@onekeyhq/kit/src/views/Market/MarketHomeV2/types';
+import { isMarketStockCategory } from '@onekeyhq/kit/src/views/Market/MarketHomeV2/utils';
 import { useSwapProTokenSearch } from '@onekeyhq/kit/src/views/Swap/hooks/useSwapPro';
 import { useMarketTokenSelectorConfigAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import type { IMarketTokenDetailPreview } from '@onekeyhq/shared/types/marketV2';
 
-import { StockSourceLogo } from '../../../components/PerpsBadges';
 import { useMarketDetailHeaderDisplayData } from '../../hooks/useMarketDetailDisplayData';
 import { buildMarketTokenDetailPreview } from '../../utils/marketDetailPreview';
 
@@ -38,13 +38,6 @@ import { navigateToMarketTokenDetail } from './navigateToMarketTokenDetail';
 type IMarketTokenSelectorItem = IMarketToken & {
   tokenDetailPreview?: IMarketTokenDetailPreview;
 };
-
-const TRIGGER_TOKEN_SIZE = {
-  default: 'md',
-  address: 'md',
-  nameStacked: 'lg',
-  compact: 'sm',
-} as const;
 
 function normalizeRouteBooleanParam(value: boolean | string | undefined) {
   if (typeof value === 'string') {
@@ -89,7 +82,11 @@ const SelectorTabItem = memo(
 );
 SelectorTabItem.displayName = 'SelectorTabItem';
 
-function BaseMarketTokenSelectorContent() {
+function BaseMarketTokenSelectorContent({
+  stockMode = false,
+}: {
+  stockMode?: boolean;
+}) {
   const intl = useIntl();
   const route = useRoute();
   const tokenDetailActions = useTokenDetailActions();
@@ -106,7 +103,9 @@ function BaseMarketTokenSelectorContent() {
     useMarketTokenSelectorConfigAtom();
   const { isWatchlistMode } = selectorConfig;
 
-  const [startListSelect, setStartListSelect] = useState(isWatchlistMode);
+  const [startListSelect, setStartListSelect] = useState(
+    stockMode ? false : isWatchlistMode,
+  );
   const [selectedCategory, setSelectedCategory] = useState('trending');
 
   const allNetworkId = ALL_NETWORK_ID;
@@ -129,6 +128,21 @@ function BaseMarketTokenSelectorContent() {
       },
     ];
   }, [apiSpotCategories, intl]);
+
+  // A stock page opens the switcher already on the existing Stocks tab; the
+  // strip itself is untouched, so every other tab stays reachable.
+  const hasSeededStockTab = useRef(false);
+  useEffect(() => {
+    if (!stockMode || hasSeededStockTab.current) {
+      return;
+    }
+    const stockCategory = categories.find(isMarketStockCategory);
+    if (stockCategory) {
+      hasSeededStockTab.current = true;
+      setStartListSelect(false);
+      setSelectedCategory(stockCategory.id);
+    }
+  }, [categories, stockMode]);
 
   const [searchValue, setSearchValue] = useState('');
   const searchValueDebounce = useDebounce(searchValue, 500);
@@ -258,29 +272,42 @@ function BaseMarketTokenSelectorContent() {
 }
 
 // Only render content when open to avoid stale state on reopen
-function MarketTokenSelectorContent({ isOpen }: { isOpen: boolean }) {
-  return isOpen ? <BaseMarketTokenSelectorContent /> : null;
+function MarketTokenSelectorContent({
+  isOpen,
+  stockMode,
+}: {
+  isOpen: boolean;
+  stockMode?: boolean;
+}) {
+  return isOpen ? (
+    <BaseMarketTokenSelectorContent stockMode={stockMode} />
+  ) : null;
 }
 
 const MarketTokenSelectorContentMemo = memo(MarketTokenSelectorContent);
 
-/**
- * Trigger layouts:
- * - `default`   symbol + chevron (token detail header)
- * - `address`   symbol + chevron over the shortened address (chart fullscreen)
- * - `nameStacked` 40px token, symbol over the full token name (stock detail header)
- * - `compact`   24px token, symbol + issuer logo (stock trading widget)
- */
-type IMarketTokenSelectorTriggerVariant =
-  | 'default'
-  | 'address'
-  | 'nameStacked'
-  | 'compact';
-
 function BaseMarketTokenSelector({
-  triggerVariant = 'default',
+  showAddress = false,
+  titleOverride,
+  hideNetworkBadge = false,
+  titleSuffix,
+  subtitleSlot,
+  stockSwitcher = false,
 }: {
-  triggerVariant?: IMarketTokenSelectorTriggerVariant;
+  showAddress?: boolean;
+  // Stock entity pages label the trigger with the ticker (AAPL) rather than
+  // the routed variant's token symbol (AAPLon).
+  titleOverride?: string;
+  // The entity page represents the stock, which lives on no single chain, so
+  // the logo drops its network badge there.
+  hideNetworkBadge?: boolean;
+  // Rendered right after the ticker, before the chevron.
+  titleSuffix?: ReactNode;
+  // Rendered under the ticker inside the trigger, so the whole identity block
+  // (logo, ticker, status, company name) is one button.
+  subtitleSlot?: ReactNode;
+  // On a stock page the trigger switches stocks, not arbitrary tokens.
+  stockSwitcher?: boolean;
 }) {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
@@ -292,12 +319,12 @@ function BaseMarketTokenSelector({
   });
 
   const {
-    symbol = '',
-    name = '',
+    symbol: tokenSymbol = '',
     address = '',
     logoUrl = '',
     logoUrls,
   } = tokenDetail || {};
+  const symbol = titleOverride || tokenSymbol;
   const logoUrlsCacheKey = useMemo(() => logoUrls?.join('|') ?? '', [logoUrls]);
   const stableLogoUrlsRef = useRef(logoUrls);
   const stableLogoUrlsKeyRef = useRef(logoUrlsCacheKey);
@@ -308,6 +335,90 @@ function BaseMarketTokenSelector({
   }
 
   const stableLogoUrls = stableLogoUrlsRef.current;
+
+  // Three trigger shapes: the stock entity (name over a status subtitle), the
+  // token page (symbol over its contract address), and the bare symbol.
+  const triggerTitle = useMemo(() => {
+    if (subtitleSlot) {
+      return (
+        <YStack minWidth={0} flexShrink={1} gap="$0.5">
+          <XStack alignItems="center" gap="$1">
+            <SizableText
+              size="$headingLg"
+              color="$text"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxWidth="$48"
+              flexShrink={1}
+            >
+              {symbol}
+            </SizableText>
+            {titleSuffix}
+            <Icon
+              name="ChevronDownSmallOutline"
+              size="$5"
+              color="$iconSubdued"
+            />
+          </XStack>
+          {subtitleSlot}
+        </YStack>
+      );
+    }
+
+    if (showAddress) {
+      return (
+        <YStack minWidth={0} flexShrink={1}>
+          <XStack alignItems="center" gap="$1">
+            <SizableText
+              size="$headingLg"
+              color="$text"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              maxWidth="$48"
+              flexShrink={1}
+            >
+              {symbol}
+            </SizableText>
+            <Icon
+              name="ChevronDownSmallOutline"
+              size="$5"
+              color="$iconSubdued"
+            />
+          </XStack>
+          {address ? (
+            <SizableText
+              size="$bodySm"
+              color="$textSubdued"
+              numberOfLines={1}
+              pr="$1"
+            >
+              {accountUtils.shortenAddress({
+                address,
+                leadingLength: 6,
+                trailingLength: 4,
+              })}
+            </SizableText>
+          ) : null}
+        </YStack>
+      );
+    }
+
+    return (
+      <>
+        <SizableText
+          size="$heading2xl"
+          color="$text"
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          maxWidth="$48"
+          flexShrink={1}
+        >
+          {symbol}
+        </SizableText>
+        <Icon name="ChevronDownSmallOutline" size="$5" color="$iconSubdued" />
+      </>
+    );
+  }, [address, showAddress, subtitleSlot, symbol, titleSuffix]);
 
   // Keep the popover element stable during token detail polling.
   // `logoUrls` is often returned as a fresh array on each refresh even when
@@ -324,159 +435,46 @@ function BaseMarketTokenSelector({
         renderTrigger={
           // eslint-disable-next-line props-checker/validator -- Popover injects the trigger press handler.
           <XStack
-            gap={triggerVariant === 'nameStacked' ? '$2.5' : '$2'}
+            gap="$2"
             alignItems="center"
             cursor="pointer"
             bg="$bgApp"
-            // Compact row keeps the design's 2/6 side padding (Figma
-            // 25296:8558) instead of the pill padding the other triggers use.
-            px={triggerVariant === 'compact' ? undefined : '$2'}
-            pl={triggerVariant === 'compact' ? '$0.5' : undefined}
-            pr={triggerVariant === 'compact' ? 6 : undefined}
+            px="$2"
             py="$1.5"
-            mx={triggerVariant === 'nameStacked' ? '$-2' : undefined}
-            width={triggerVariant === 'compact' ? '100%' : undefined}
             borderRadius="$full"
             hoverStyle={{ bg: '$bgHover' }}
             pressStyle={{ bg: '$bgActive' }}
           >
             <Token
-              size={TRIGGER_TOKEN_SIZE[triggerVariant]}
+              size={subtitleSlot ? 'lg' : 'md'}
               tokenImageUri={logoUrl}
               tokenImageUris={stableLogoUrls}
-              networkImageUri={effectiveNetworkLogoUri}
+              networkImageUri={
+                hideNetworkBadge ? undefined : effectiveNetworkLogoUri
+              }
               fallbackIcon="CryptoCoinOutline"
             />
-            {triggerVariant === 'compact' ? (
-              <XStack flex={1} minWidth={0} gap="$1" alignItems="center">
-                <SizableText
-                  size="$headingSm"
-                  color="$text"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  flexShrink={1}
-                >
-                  {symbol}
-                </SizableText>
-                <StockSourceLogo stock={tokenDetail?.stock} size={16} />
-                <Stack flex={1} />
-                <Icon
-                  name="ChevronDownSmallOutline"
-                  size="$4"
-                  color="$iconSubdued"
-                />
-              </XStack>
-            ) : null}
-            {triggerVariant === 'nameStacked' ? (
-              <XStack
-                gap="$1.5"
-                alignItems="center"
-                minWidth={0}
-                flexShrink={1}
-              >
-                <YStack minWidth={0} flexShrink={1}>
-                  <SizableText
-                    size="$headingLg"
-                    color="$text"
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    maxWidth="$48"
-                    flexShrink={1}
-                  >
-                    {symbol}
-                  </SizableText>
-                  {name ? (
-                    <SizableText
-                      size="$bodyMdMedium"
-                      color="$textSubdued"
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                      maxWidth="$48"
-                      flexShrink={1}
-                    >
-                      {name}
-                    </SizableText>
-                  ) : null}
-                </YStack>
-                <Icon
-                  name="ChevronDownSmallOutline"
-                  size="$5"
-                  color="$iconSubdued"
-                />
-              </XStack>
-            ) : null}
-            {triggerVariant === 'address' ? (
-              <YStack minWidth={0} flexShrink={1}>
-                <XStack alignItems="center" gap="$1">
-                  <SizableText
-                    size="$headingLg"
-                    color="$text"
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    maxWidth="$48"
-                    flexShrink={1}
-                  >
-                    {symbol}
-                  </SizableText>
-                  <Icon
-                    name="ChevronDownSmallOutline"
-                    size="$5"
-                    color="$iconSubdued"
-                  />
-                </XStack>
-                {address ? (
-                  <SizableText
-                    size="$bodySm"
-                    color="$textSubdued"
-                    numberOfLines={1}
-                    pr="$1"
-                  >
-                    {accountUtils.shortenAddress({
-                      address,
-                      leadingLength: 6,
-                      trailingLength: 4,
-                    })}
-                  </SizableText>
-                ) : null}
-              </YStack>
-            ) : null}
-            {triggerVariant === 'default' ? (
-              <>
-                <SizableText
-                  size="$heading2xl"
-                  color="$text"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                  maxWidth="$48"
-                  flexShrink={1}
-                >
-                  {symbol}
-                </SizableText>
-                <Icon
-                  name="ChevronDownSmallOutline"
-                  size="$5"
-                  color="$iconSubdued"
-                />
-              </>
-            ) : null}
+            {triggerTitle}
           </XStack>
         }
         renderContent={({ isOpen: isOpenProp }) => (
-          <MarketTokenSelectorContentMemo isOpen={isOpenProp ?? false} />
+          <MarketTokenSelectorContentMemo
+            isOpen={isOpenProp ?? false}
+            stockMode={stockSwitcher}
+          />
         )}
       />
     ),
     [
-      address,
       effectiveNetworkLogoUri,
+      hideNetworkBadge,
       intl,
       isOpen,
       logoUrl,
-      name,
       stableLogoUrls,
-      symbol,
-      tokenDetail?.stock,
-      triggerVariant,
+      subtitleSlot,
+      triggerTitle,
+      stockSwitcher,
     ],
   );
 

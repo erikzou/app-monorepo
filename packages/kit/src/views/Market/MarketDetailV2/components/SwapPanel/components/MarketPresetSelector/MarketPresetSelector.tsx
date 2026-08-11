@@ -99,7 +99,7 @@ type IMarketPresetSelectorProps = {
   slippageIconName?: IIconProps['name'];
   showAutoSlippageLabel?: boolean;
   variant?: ITradingWidgetMainButtonVariant;
-  hidePresetOptions?: boolean;
+  hidePresetButtons?: boolean;
 };
 
 type IDraftPresetSettings = Partial<
@@ -1548,7 +1548,7 @@ export function MarketPresetSelector({
   slippageIconName = 'SliderVerOutline',
   showAutoSlippageLabel = false,
   variant,
-  hidePresetOptions,
+  hidePresetButtons,
 }: IMarketPresetSelectorProps) {
   const intl = useIntl();
   const { gtMd } = useMedia();
@@ -1644,7 +1644,7 @@ export function MarketPresetSelector({
       onPresetChange={onPresetChange}
       onOpenSettings={openPresetDialog}
       onQuickPresetPress={handleQuickPresetSwitch}
-      hidePresetOptions={hidePresetOptions}
+      hidePresetButtons={hidePresetButtons}
       testID="market-preset-selector"
     />
   );

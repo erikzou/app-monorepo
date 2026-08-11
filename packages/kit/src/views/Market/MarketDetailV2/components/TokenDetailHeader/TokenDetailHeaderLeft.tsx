@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { SUI_TYPE_ARG } from '@mysten/sui/utils';
 
 import {
@@ -35,6 +37,12 @@ interface ITokenDetailHeaderLeftProps {
   showMediaAndSecurity?: boolean;
   isNative?: boolean;
   showFavoriteButton?: boolean;
+  // When the page renders as a stock entity, the header identifies the stock
+  // (AAPL / Apple Inc.) instead of the variant it was routed with (AAPLon),
+  // and the contract address moves to the trust block.
+  stockEntityIdentity?: { ticker: string; name: string };
+  // Stock layers surface the contract address in the trust block instead.
+  hideContractAddress?: boolean;
 }
 
 export function TokenDetailHeaderLeft({
@@ -44,6 +52,8 @@ export function TokenDetailHeaderLeft({
   showMediaAndSecurity = true,
   isNative = false,
   showFavoriteButton = true,
+  stockEntityIdentity,
+  hideContractAddress = false,
 }: ITokenDetailHeaderLeftProps) {
   const { md } = useMedia();
 
@@ -73,6 +83,20 @@ export function TokenDetailHeaderLeft({
   } = tokenDetail || {};
 
   const { website, twitter } = extraData || {};
+
+  // Company name and market status share the line under the ticker.
+  const entitySubtitle = useMemo(
+    () =>
+      stockEntityIdentity ? (
+        <XStack ai="center" gap="$2">
+          <SizableText size="$bodyMd" color="$textSubdued" numberOfLines={1}>
+            {stockEntityIdentity.name}
+          </SizableText>
+          <StockMarketStatusBadge stock={stock} />
+        </XStack>
+      ) : undefined,
+    [stock, stockEntityIdentity],
+  );
 
   const marketStar =
     showFavoriteButton && networkId ? (
@@ -110,7 +134,12 @@ export function TokenDetailHeaderLeft({
         ) : (
           <>
             {marketStar}
-            <MarketTokenSelector />
+            <MarketTokenSelector
+              titleOverride={stockEntityIdentity?.ticker}
+              hideNetworkBadge={Boolean(stockEntityIdentity)}
+              stockSwitcher={Boolean(stockEntityIdentity)}
+              subtitleSlot={entitySubtitle}
+            />
           </>
         )}
 
@@ -125,7 +154,7 @@ export function TokenDetailHeaderLeft({
                 maxWidth="$48"
                 flexShrink={1}
               >
-                {symbol}
+                {stockEntityIdentity?.ticker || symbol}
               </SizableText>
             ) : null}
             {md ? (
@@ -140,18 +169,24 @@ export function TokenDetailHeaderLeft({
               </>
             ) : (
               <>
-                <StockSourceLogo stock={stock} />
-                {communityRecognized ? <CommunityRecognizedBadge /> : null}
-                {stock?.subtitle ? (
-                  <SubtitleBadge subtitle={stock.subtitle} noTruncate />
-                ) : null}
-                <StockMarketStatusBadge stock={stock} />
+                {/* The entity trigger carries its own name + status line, so
+                    nothing token-specific is repeated out here. */}
+                {stockEntityIdentity ? null : (
+                  <>
+                    <StockSourceLogo stock={stock} />
+                    {communityRecognized ? <CommunityRecognizedBadge /> : null}
+                    {stock?.subtitle ? (
+                      <SubtitleBadge subtitle={stock.subtitle} noTruncate />
+                    ) : null}
+                    <StockMarketStatusBadge stock={stock} />
+                  </>
+                )}
               </>
             )}
           </XStack>
 
           <XStack gap="$2" ai="center">
-            {address ? (
+            {address && !stockEntityIdentity && !hideContractAddress ? (
               <XStack borderRadius="$1" ai="center" gap="$1">
                 <SizableText
                   size="$bodySm"

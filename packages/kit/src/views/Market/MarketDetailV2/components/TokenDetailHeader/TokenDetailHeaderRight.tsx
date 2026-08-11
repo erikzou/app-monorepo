@@ -48,6 +48,9 @@ interface ITokenDetailHeaderRightProps {
   showStats: boolean;
   isPreviewTokenDetail?: boolean;
   isStockToken?: boolean;
+  // Stock layouts render the price in the dedicated price block below the
+  // header, so repeating it here is noise; the remaining metrics move right.
+  hidePrice?: boolean;
 }
 
 export function TokenDetailHeaderRight({
@@ -57,6 +60,7 @@ export function TokenDetailHeaderRight({
   showStats,
   isPreviewTokenDetail,
   isStockToken,
+  hidePrice = false,
 }: ITokenDetailHeaderRightProps) {
   const intl = useIntl();
   const currencyInfo = useCurrency();
@@ -257,42 +261,44 @@ export function TokenDetailHeaderRight({
   return (
     <XStack gap="$8" ai="center">
       {/* Price and Price Change */}
-      <XStack ai="center" gap="$1.5">
-        <XStack ai="center" jc="center" gap="$3">
-          <YStack ai="flex-end">
-            {isPreviewTokenDetail ? (
-              <BaseMarketTokenPrice
-                size="$bodyLgMedium"
-                price={currentPrice}
-                tokenName={name}
-                tokenSymbol={symbol}
-              />
-            ) : (
-              <MarketTokenPrice
-                size="$bodyLgMedium"
-                price={currentPrice}
-                tokenName={name}
-                tokenSymbol={symbol}
-                lastUpdated={tokenDetail?.lastUpdated?.toString()}
-              />
-            )}
-            {priceConverted ? (
-              <NumberSizeableText
-                size="$bodySm"
-                color="$textSubdued"
-                formatter="price"
-                formatterOptions={{ currency: currencyInfo.symbol }}
-              >
-                {priceConverted}
-              </NumberSizeableText>
-            ) : null}
-          </YStack>
+      {hidePrice ? null : (
+        <XStack ai="center" gap="$1.5">
+          <XStack ai="center" jc="center" gap="$3">
+            <YStack ai="flex-end">
+              {isPreviewTokenDetail ? (
+                <BaseMarketTokenPrice
+                  size="$bodyLgMedium"
+                  price={currentPrice}
+                  tokenName={name}
+                  tokenSymbol={symbol}
+                />
+              ) : (
+                <MarketTokenPrice
+                  size="$bodyLgMedium"
+                  price={currentPrice}
+                  tokenName={name}
+                  tokenSymbol={symbol}
+                  lastUpdated={tokenDetail?.lastUpdated?.toString()}
+                />
+              )}
+              {priceConverted ? (
+                <NumberSizeableText
+                  size="$bodySm"
+                  color="$textSubdued"
+                  formatter="price"
+                  formatterOptions={{ currency: currencyInfo.symbol }}
+                >
+                  {priceConverted}
+                </NumberSizeableText>
+              ) : null}
+            </YStack>
 
-          <PriceChangePercentage size="$headingXs">
-            {priceChange24hPercent}
-          </PriceChangePercentage>
+            <PriceChangePercentage size="$headingXs">
+              {priceChange24hPercent}
+            </PriceChangePercentage>
+          </XStack>
         </XStack>
-      </XStack>
+      )}
 
       {statsContent}
 

@@ -32,7 +32,9 @@ import {
   type ISwapToken,
 } from '@onekeyhq/shared/types/swap/types';
 
+import { useMarketStockEntity } from '../../hooks/useMarketStockEntity';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
+import { StockVariantSelector } from '../StockVariantSelector/StockVariantSelector';
 
 import {
   EMarketPresetTradeSide,
@@ -107,6 +109,12 @@ export function SwapPanelWrap({
     provider,
     swapMevNetConfig,
   } = useSpeedSwapInit(networkId || '', true);
+  const {
+    entity: stockEntity,
+    instruments: stockInstruments,
+    selectedInstrument: selectedStockInstrument,
+  } = useMarketStockEntity();
+  const isStockEntity = Boolean(stockEntity);
   const marketPresetSettings = useMarketPresetSettings({
     networkId: networkId || '',
     defaultSlippage: speedConfig?.slippage,
@@ -701,6 +709,15 @@ export function SwapPanelWrap({
 
   return (
     <SwapPanelContent
+      hideMarketPresetButtons={isStockEntity}
+      orderHeaderSlot={
+        isStockEntity ? (
+          <StockVariantSelector
+            instruments={stockInstruments}
+            selectedInstrument={selectedStockInstrument}
+          />
+        ) : undefined
+      }
       activeAccount={activeAccount}
       enableAddressTypeSelector={!!mergeDeriveAssetsEnabled}
       currentMarketToken={{

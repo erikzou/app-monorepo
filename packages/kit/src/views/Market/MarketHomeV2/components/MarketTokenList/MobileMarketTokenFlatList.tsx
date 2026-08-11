@@ -14,6 +14,7 @@ import { ETranslations } from '@onekeyhq/shared/src/locale';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { getMarketNativeCompactListStyle } from '../../layouts/mobileLayoutUtils';
+import { collapseStockEntityRows } from '../../utils/marketStockEntityRow';
 
 import { TokenListItem } from './components/TokenListItem';
 import { TokenListSkeleton } from './components/TokenListSkeleton';
@@ -77,6 +78,13 @@ function MobileMarketTokenFlatListBase({
     [data],
   );
 
+  // One stock, one row — see MarketNormalTokenList for the desktop twin.
+  // Paging keeps running against the raw token list.
+  const rows = useMemo(
+    () => (isStockData ? collapseStockEntityRows(data) : data),
+    [data, isStockData],
+  );
+
   useEffect(() => {
     if (selectedCategory) {
       onStockDataChange?.(selectedCategory, isStockData);
@@ -128,15 +136,15 @@ function MobileMarketTokenFlatListBase({
       );
     }
 
-    if (!isProvisionalFirstPageResult && !canLoadMore && data.length > 0) {
+    if (!isProvisionalFirstPageResult && !canLoadMore && rows.length > 0) {
       return <ListEndIndicator />;
     }
 
     return null;
-  }, [isLoadingMore, isProvisionalFirstPageResult, canLoadMore, data.length]);
+  }, [isLoadingMore, isProvisionalFirstPageResult, canLoadMore, rows.length]);
 
   const showSkeleton =
-    (Boolean(isLoading) && data.length === 0) || Boolean(isNetworkSwitching);
+    (Boolean(isLoading) && rows.length === 0) || Boolean(isNetworkSwitching);
 
   const ListEmptyComponent = useMemo(() => {
     if (showSkeleton) {
@@ -158,7 +166,7 @@ function MobileMarketTokenFlatListBase({
   return (
     <Tabs.FlatList<IMarketToken>
       showsVerticalScrollIndicator={false}
-      data={showSkeleton ? EMPTY_DATA : data}
+      data={showSkeleton ? EMPTY_DATA : rows}
       renderItem={renderItem}
       keyExtractor={keyExtractor}
       onEndReached={handleEndReached}

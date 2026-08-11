@@ -16,6 +16,7 @@ import { markMarketPerf } from '../../utils/marketPerf';
 import { useMarketRenderCommitProbe } from '../../utils/marketReactPerf';
 import { CompactNetworkSelector } from '../components/CompactNetworkSelector';
 import { MarketBannerList } from '../components/MarketBanner';
+import { MarketStockMarketStatusChip } from '../components/MarketStockMarketStatusChip';
 import { MarketNormalTokenList } from '../components/MarketTokenList/MarketNormalTokenList';
 import { MarketStockCategorySelector } from '../components/MarketTokenList/MarketStockCategorySelector';
 import { TimeRangeDropdown } from '../components/TimeRangeDropdown';
@@ -142,6 +143,19 @@ export function DesktopLayout({
       );
     }
   }, [selectedStockCategoryId, stockCategories]);
+  // Drives the "24/7 tokens keep trading" half of the closed-state chip copy.
+  // Reported by the list because only it knows which issuers are on screen.
+  const [hasAlwaysOnStockVariants, setHasAlwaysOnStockVariants] =
+    useState(false);
+  const handleStockAlwaysOnVariantsChange = useCallback(
+    (hasAlwaysOn: boolean) => {
+      setHasAlwaysOnStockVariants((prev) =>
+        prev === hasAlwaysOn ? prev : hasAlwaysOn,
+      );
+    },
+    [],
+  );
+
   const handleStockDataChange = useCallback(
     (categoryId: string, isStockData: boolean) => {
       setStockDataCategoryMap((prev) => {
@@ -282,9 +296,14 @@ export function DesktopLayout({
         categories={stockCategories}
         selectedCategoryId={selectedStockCategoryId}
         onSelectCategory={setSelectedStockCategoryId}
+        leading={
+          <MarketStockMarketStatusChip
+            hasAlwaysOnVariants={hasAlwaysOnStockVariants}
+          />
+        }
       />
     );
-  }, [selectedStockCategoryId, stockCategories]);
+  }, [hasAlwaysOnStockVariants, selectedStockCategoryId, stockCategories]);
 
   const stickyHeaderCtx = useMemo(
     () => ({ portalTarget, activeTabName }),
@@ -342,6 +361,7 @@ export function DesktopLayout({
                 item.categoryId,
               )}
               onStockDataChange={handleStockDataChange}
+              onStockAlwaysOnVariantsChange={handleStockAlwaysOnVariantsChange}
               enableWebSocket={activeTabName === item.tabName}
             />
           ) : null}

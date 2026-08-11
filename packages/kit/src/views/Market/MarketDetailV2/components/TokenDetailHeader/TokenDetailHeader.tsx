@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   GradientMask,
+  IconButton,
   ScrollView,
   Stack,
   XStack,
@@ -11,6 +12,7 @@ import {
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
 
+import { MarketTestIDs } from '../../../testIDs';
 import { useMarketDetailHeaderDisplayData } from '../../hooks/useMarketDetailDisplayData';
 
 import { ShareButton } from './ShareButton';
@@ -29,11 +31,17 @@ export function TokenDetailHeader({
   showStats = true,
   showMediaAndSecurity = true,
   showFavoriteButton = true,
+  stockEntityIdentity,
+  isStockLayout = false,
   containerProps,
 }: {
   showStats?: boolean;
   showMediaAndSecurity?: boolean;
   showFavoriteButton?: boolean;
+  stockEntityIdentity?: { ticker: string; name: string };
+  // True on both stock layers (entity page and variant page): the contract,
+  // audit and social links all live in the trust block there.
+  isStockLayout?: boolean;
   containerProps?: ComponentProps<typeof XStack>;
 }) {
   const { lg, md } = useMedia();
@@ -74,13 +82,27 @@ export function TokenDetailHeader({
     setContentWidth(width);
   }, []);
 
+  // The stock header carries no price/stats block, and the token header drops
+  // it on narrow native screens when stats are off.
+  const showHeaderRight =
+    !stockEntityIdentity &&
+    !(showStats === false && platformEnv.isNative && md);
+
+  // Stock headers are short and their actions must sit flush right, so they
+  // skip the horizontal scroller the token header needs — inside it the row
+  // would shrink to its content and never reach the edge.
+  const useHorizontalScroller = !isStockLayout && !platformEnv.isNative && !md;
+
   const renderHeaderContent = () => (
     <XStack
       position="relative"
       width={lg ? '90%' : '100%'}
       px="$5"
       py="$4"
-      h={54}
+      // The entity trigger is two lines tall, so the fixed single-line height
+      // would clip its name + status row.
+      h={stockEntityIdentity ? undefined : 54}
+      minHeight={54}
       jc="flex-start"
       ai="center"
       gap="$6"
@@ -93,9 +115,11 @@ export function TokenDetailHeader({
         showMediaAndSecurity={showMediaAndSecurity}
         isNative={isNative}
         showFavoriteButton={showFavoriteButton}
+        stockEntityIdentity={stockEntityIdentity}
+        hideContractAddress={isStockLayout}
       />
 
-      {showStats === false && platformEnv.isNative && md ? null : (
+      {showHeaderRight ? (
         <TokenDetailHeaderRight
           tokenDetail={tokenDetail}
           networkId={networkId}
@@ -103,11 +127,40 @@ export function TokenDetailHeader({
           showStats={showStats}
           isPreviewTokenDetail={isPreviewTokenDetail}
           isStockToken={isStockToken}
+          hidePrice={isStockLayout}
         />
-      )}
+      ) : null}
+
+      {/* Stock headers keep only share plus a placeholder overflow button;
+          everything token-specific moved into the trust block. */}
+      {isStockLayout && !platformEnv.isNative && !md ? (
+        <>
+          {networkId ? (
+            <ShareButton
+              networkId={networkId}
+              address={tokenDetail?.address ?? ''}
+              isNative={isNative}
+              useIconButton
+              size="$5"
+            />
+          ) : null}
+          <IconButton
+            testID={MarketTestIDs.detailMoreButton}
+            size="small"
+            variant="tertiary"
+            icon="DotHorOutline"
+            iconSize="$5"
+            title="More"
+          />
+        </>
+      ) : null}
 
       {/* Share button pushed to the right on desktop */}
-      {!platformEnv.isNative && !md && networkId && isNative ? (
+      {!stockEntityIdentity &&
+      !platformEnv.isNative &&
+      !md &&
+      networkId &&
+      isNative ? (
         <>
           <Stack flex={1} />
           <ShareButton
@@ -124,10 +177,16 @@ export function TokenDetailHeader({
   return (
     <XStack
       position="relative"
-      borderBottomWidth="$px"
+      // The stock header renders without the horizontal scroller, so it needs
+      // an explicit full width to stretch across the column — otherwise it
+      // shrinks to its content and the trailing metrics never reach the edge.
+      width={isStockLayout ? '100%' : undefined}
+      // The stock header runs straight into the price block, with no rule
+      // between them.
+      borderBottomWidth={isStockLayout ? 0 : '$px'}
       borderBottomColor="$borderSubdued"
     >
-      {!platformEnv.isNative && !md ? (
+      {useHorizontalScroller ? (
         <>
           <ScrollView
             horizontal

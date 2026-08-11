@@ -100,7 +100,10 @@ export function StockDetailHeader({
             isNative={isNative}
           />
         ) : null}
-        <MarketTokenSelector triggerVariant="nameStacked" />
+        {/* TODO(design): the merged selector exposes showAddress/subtitleSlot
+            instead of the trigger variants this header used; the header is
+            being rebuilt against the updated Figma frame. */}
+        <MarketTokenSelector />
       </XStack>
 
       <XStack gap="$5" alignItems="center">

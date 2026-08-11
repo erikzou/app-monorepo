@@ -136,6 +136,7 @@ interface IBaseTradingViewV2Props {
   nativeControlsLayoutMode?: ITradingViewNativeControlsLayoutMode;
   isNativeChartFullscreen?: boolean;
   nativeChartFullscreenHeader?: ReactNode;
+  nativeChartRightGroupTrailingControl?: ReactNode;
   showNativeIndicatorQuickBar?: boolean;
   onNativeIndicatorQuickBarChange?: (quickBar: ReactNode | null) => void;
   onNativeChartFullscreenChange?: (isFullscreen: boolean) => void;
@@ -201,6 +202,7 @@ export const TradingViewV2 = (props: ITradingViewV2Props & WebViewProps) => {
     nativeControlsLayoutMode,
     isNativeChartFullscreen,
     nativeChartFullscreenHeader,
+    nativeChartRightGroupTrailingControl,
     showNativeIndicatorQuickBar = true,
     onNativeIndicatorQuickBarChange,
     onNativeChartFullscreenChange,
@@ -785,6 +787,7 @@ export const TradingViewV2 = (props: ITradingViewV2Props & WebViewProps) => {
           chartTimezone={tradingViewTimezone}
           isFullscreen={isNativeChartFullscreen}
           fullscreenHeader={nativeChartFullscreenHeader}
+          rightGroupTrailingControl={nativeChartRightGroupTrailingControl}
           onIntervalChange={handleNativeIntervalChange}
           onIndicatorSelect={handleNativeIndicatorSelect}
           onChartTypeChange={handleNativeChartTypeChange}

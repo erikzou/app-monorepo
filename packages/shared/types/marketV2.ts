@@ -165,13 +165,27 @@ export interface IMarketTokenListItemExtraData {
   [key: string]: unknown;
 }
 
+/**
+ * Fields marked "awaiting FMP quote / key-metrics" have no source in the stock
+ * index yet (spike G3). They are declared so the cells can render `--` and the
+ * wiring is already in place when the backend adds them — the alternative,
+ * hiding the cells, is how the day's OHLC silently went missing before.
+ */
 export interface IMarketStockAssetAnalysis {
   volume24h?: string;
   volumeShares?: string;
   turnoverRate?: string;
+  // Named after the period the original spec claimed. The window the vendor
+  // actually returns is unconfirmed (spike G3), so the label must state
+  // whatever period ships rather than assuming a year.
   avgDailyVolume1y?: string;
   weekHigh52?: string;
   weekLow52?: string;
+  // Awaiting FMP quote.
+  dayOpen?: string;
+  dayHigh?: string;
+  dayLow?: string;
+  previousClose?: string;
 }
 
 export interface IMarketStockTradingActivity {
@@ -183,6 +197,12 @@ export interface IMarketStockTradingActivity {
   netProfitMargin?: string;
   debtToEquity?: string;
   dividendYield?: string;
+  // Reserved for the Financials tab, awaiting FMP key-metrics. Not rendered in
+  // Overview: statement-derived figures belong with the statements, and these
+  // three would sit at `--` until that source lands.
+  enterpriseValue?: string;
+  evToEbitda?: string;
+  freeCashFlow?: string;
 }
 
 export interface IMarketStockInfo {
@@ -212,6 +232,47 @@ export interface IMarketStockDetail {
   introduction?: string;
   underlyingUpdatedAt?: string;
   stock: IMarketStockInfo;
+}
+
+/**
+ * One tradable tokenization of a stock: a single issuer on a single chain.
+ * Several of these collapse under one `IMarketStockEntity`.
+ */
+export interface IMarketStockInstrument {
+  instrumentId: string;
+  issuer: string;
+  tokenSymbol: string;
+  tokenName?: string;
+  networkId: string;
+  chainName?: string;
+  contractAddress: string;
+  logoUrl?: string;
+  tokenToAssetRatio?: string;
+  tradingDays?: string;
+  isMarketOpen?: boolean;
+  minTradeUsd?: string;
+  maxTradeUsd?: string;
+  price?: string;
+  priceChange24H?: string;
+  volume24h?: string;
+  liquidityUsd?: string;
+}
+
+/**
+ * The stock entity page's payload: the underlying stock plus every tokenized
+ * variant of it. Keyed by ticker, not by contract address.
+ */
+export interface IMarketStockEntity {
+  ticker: string;
+  name: string;
+  logoUrl?: string;
+  introduction?: string;
+  category?: string[];
+  underlyingPrice?: string;
+  underlyingPriceChange24H?: string;
+  underlyingUpdatedAt?: string;
+  stock: IMarketStockInfo;
+  instruments: IMarketStockInstrument[];
 }
 
 export interface IMarketTokenListItem extends IMarketTokenHistoricalPriceFields {

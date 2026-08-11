@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import BigNumber from 'bignumber.js';
 import { useIntl } from 'react-intl';
 
-import { SizableText, Stack, Toast, YStack } from '@onekeyhq/components';
+import { SizableText, Toast, YStack } from '@onekeyhq/components';
 import type { IAccountSelectorActiveAccountInfo } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
 import { validateAmountInput } from '@onekeyhq/kit/src/utils/validateAmountInput';
 import type { useSwapPanel } from '@onekeyhq/kit/src/views/Market/MarketDetailV2/components/SwapPanel/hooks/useSwapPanel';
@@ -17,8 +17,6 @@ import type {
   ISwapTokenBase,
 } from '@onekeyhq/shared/types/swap/types';
 import { ESwapSlippageSegmentKey } from '@onekeyhq/shared/types/swap/types';
-
-import { MarketTokenSelector } from '../TokenSelector/MarketTokenSelector';
 
 import { ActionButton } from './components/ActionButton';
 import {
@@ -80,6 +78,14 @@ export type ISwapPanelContentProps = {
   disableNativeToken?: boolean;
   marketPresetSettings?: IMarketPresetSettingsState;
   estimatePriorityFeeFiatValues?: IEstimateMarketPresetPriorityFeeFiatValues;
+  // Slot right under the order-type row, above the amount input. Stock pages
+  // put the variant switcher here so picking the token reads as part of the
+  // order rather than as page chrome.
+  orderHeaderSlot?: ReactNode;
+  // Drop the Auto/P1/P2/P3 shortcut row above the preset summary line. The
+  // summary line's own press target already opens the settings dialog, which
+  // holds the same presets, so the row is a duplicate entry point.
+  hideMarketPresetButtons?: boolean;
   panelVariant?: ISwapPanelVariant;
 };
 
@@ -109,10 +115,11 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
     disableNativeToken,
     marketPresetSettings,
     estimatePriorityFeeFiatValues,
+    orderHeaderSlot,
+    hideMarketPresetButtons,
+    panelVariant,
     onCloseDialog,
-    panelVariant = 'default',
   } = props;
-  const isStockDesktop = panelVariant === 'stockDesktop';
 
   const {
     paymentAmount,
@@ -276,59 +283,12 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
     resetAnalytics,
   ]);
 
-  const presetSelector =
-    showMarketPresetSelector && marketPresetSettings ? (
-      <MarketPresetSelector
-        antiMEV={isMEV}
-        estimatePriorityFeeFiatValues={estimatePriorityFeeFiatValues}
-        presetSettings={marketPresetSettings}
-        variant={onCloseDialog ? 'compact' : 'full'}
-        hidePresetOptions={isStockDesktop}
-      />
-    ) : null;
-
-  const amountBlock = (
-    <>
-      {isStockDesktop ? <MarketTokenSelector triggerVariant="compact" /> : null}
-      <TokenInputSection
-        ref={tokenBuyInputRef}
-        style={tradeType === ESwapDirection.BUY ? {} : { display: 'none' }}
-        tradeType={ESwapDirection.BUY}
-        swapNativeTokenReserveGas={swapNativeTokenReserveGas}
-        onChange={(amount) => setPaymentAmount(new BigNumber(amount))}
-        selectedToken={paymentToken}
-        selectableTokens={defaultTokens}
-        onTokenChange={(token) => setPaymentToken(token)}
-        balance={balance}
-        onAmountEnterTypeChange={setAmountEnterType}
-        disableNativeToken={disableNativeToken}
-        panelVariant={panelVariant}
-      />
-      <TokenInputSection
-        ref={tokenSellInputRef}
-        style={tradeType === ESwapDirection.SELL ? {} : { display: 'none' }}
-        tradeType={ESwapDirection.SELL}
-        swapNativeTokenReserveGas={swapNativeTokenReserveGas}
-        onChange={(amount) => setSellAmount(new BigNumber(amount))}
-        selectedToken={balanceToken}
-        selectableTokens={defaultTokens}
-        onTokenChange={(token) => setPaymentToken(token)}
-        balance={balance}
-        onAmountEnterTypeChange={setAmountEnterType}
-        panelVariant={panelVariant}
-      />
-    </>
-  );
-
   return (
-    // Stock detail spacing (Figma 25206:18422): 14 between the Buy/Sell
-    // segment and the rest, 8 down to the amount block, 20 inside it, 20
-    // before the rate row and 20 before the action button.
-    <YStack gap={isStockDesktop ? 14 : '$4'}>
+    <YStack gap="$4">
       {/* Trade type selector */}
       <TradeTypeSelector value={tradeType} onChange={setTradeType} />
 
-      <YStack gap={isStockDesktop ? '$2' : '$3'}>
+      <YStack gap="$3">
         {/* Token input section */}
         <SwapPanelTop
           enableAddressTypeSelector={enableAddressTypeSelector}
@@ -339,18 +299,43 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
           handleBalanceClick={handleBalanceClick}
           panelVariant={panelVariant}
         />
-        {isStockDesktop ? <YStack gap="$5">{amountBlock}</YStack> : amountBlock}
+        {orderHeaderSlot}
+        <TokenInputSection
+          ref={tokenBuyInputRef}
+          style={tradeType === ESwapDirection.BUY ? {} : { display: 'none' }}
+          tradeType={ESwapDirection.BUY}
+          swapNativeTokenReserveGas={swapNativeTokenReserveGas}
+          onChange={(amount) => setPaymentAmount(new BigNumber(amount))}
+          selectedToken={paymentToken}
+          selectableTokens={defaultTokens}
+          onTokenChange={(token) => setPaymentToken(token)}
+          balance={balance}
+          onAmountEnterTypeChange={setAmountEnterType}
+          disableNativeToken={disableNativeToken}
+          panelVariant={panelVariant}
+        />
+        <TokenInputSection
+          ref={tokenSellInputRef}
+          style={tradeType === ESwapDirection.SELL ? {} : { display: 'none' }}
+          tradeType={ESwapDirection.SELL}
+          swapNativeTokenReserveGas={swapNativeTokenReserveGas}
+          onChange={(amount) => setSellAmount(new BigNumber(amount))}
+          selectedToken={balanceToken}
+          selectableTokens={defaultTokens}
+          onTokenChange={(token) => setPaymentToken(token)}
+          balance={balance}
+          onAmountEnterTypeChange={setAmountEnterType}
+          panelVariant={panelVariant}
+        />
 
         {/* Rate display */}
-        <Stack pt={isStockDesktop ? '$3' : '$0'}>
-          <RateDisplay
-            rate={priceRate?.rate}
-            fromTokenSymbol={priceRate?.fromTokenSymbol}
-            toTokenSymbol={priceRate?.toTokenSymbol}
-            loading={priceRate?.loading}
-            panelVariant={panelVariant}
-          />
-        </Stack>
+        <RateDisplay
+          rate={priceRate?.rate}
+          fromTokenSymbol={priceRate?.fromTokenSymbol}
+          toTokenSymbol={priceRate?.toTokenSymbol}
+          loading={priceRate?.loading}
+          panelVariant={panelVariant}
+        />
 
         {/* Balance display */}
         {tradeType === ESwapDirection.SELL ? (
@@ -371,40 +356,42 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
         </SizableText>
       ) : null}
 
-      {isStockDesktop ? null : presetSelector}
-
-      <Stack pt={isStockDesktop ? '$1.5' : '$0'}>
-        <ActionButton
-          supportSpeedSwap={!!supportSpeedSwap?.enabled}
-          isAccountNetworkSupported={supportSpeedSwap.isAccountNetworkSupported}
-          onlySupportCrossChain={!!supportSpeedSwap?.onlySupportCrossChain}
-          loading={isLoading}
-          actionToken={supportSpeedSwap?.actionToken}
-          actionOtherToken={supportSpeedSwap?.actionOtherToken}
-          tradeType={tradeType}
-          onPress={isWrapped ? onWrappedSwap : onSwap}
-          amount={currentInputAmount.toFixed()}
-          token={balanceToken}
-          paymentToken={paymentToken}
-          balance={balance}
-          isWrapped={isWrapped}
-          networkId={networkId}
-          disabled={!!speedCheckError || isLoading || !!isActionDisabled}
-          forceDisabled={!!stockMarketClosedAlert}
-          onSwapAction={() =>
-            logSwapAction({
-              tradeType,
-              networkId,
-              paymentToken,
-              balanceToken,
-            })
-          }
+      {showMarketPresetSelector && marketPresetSettings ? (
+        <MarketPresetSelector
+          antiMEV={isMEV}
+          estimatePriorityFeeFiatValues={estimatePriorityFeeFiatValues}
+          presetSettings={marketPresetSettings}
+          variant={onCloseDialog ? 'compact' : 'full'}
+          hidePresetButtons={hideMarketPresetButtons}
         />
-      </Stack>
+      ) : null}
 
-      {/* Design places the summary row 20px under the button; the wrapper
-          YStack already contributes 14px of gap. */}
-      {isStockDesktop ? <Stack pt="$1.5">{presetSelector}</Stack> : null}
+      <ActionButton
+        supportSpeedSwap={!!supportSpeedSwap?.enabled}
+        isAccountNetworkSupported={supportSpeedSwap.isAccountNetworkSupported}
+        onlySupportCrossChain={!!supportSpeedSwap?.onlySupportCrossChain}
+        loading={isLoading}
+        actionToken={supportSpeedSwap?.actionToken}
+        actionOtherToken={supportSpeedSwap?.actionOtherToken}
+        tradeType={tradeType}
+        onPress={isWrapped ? onWrappedSwap : onSwap}
+        amount={currentInputAmount.toFixed()}
+        token={balanceToken}
+        paymentToken={paymentToken}
+        balance={balance}
+        isWrapped={isWrapped}
+        networkId={networkId}
+        disabled={!!speedCheckError || isLoading || !!isActionDisabled}
+        forceDisabled={!!stockMarketClosedAlert}
+        onSwapAction={() =>
+          logSwapAction({
+            tradeType,
+            networkId,
+            paymentToken,
+            balanceToken,
+          })
+        }
+      />
 
       {/* Slippage setting */}
       {suppressStandaloneSlippage ? null : (

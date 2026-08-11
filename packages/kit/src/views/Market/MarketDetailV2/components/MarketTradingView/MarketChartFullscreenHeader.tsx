@@ -27,7 +27,7 @@ export function MarketChartFullscreenHeader() {
       alignItems="center"
       gap="$2"
     >
-      <MarketTokenSelector triggerVariant="address" />
+      <MarketTokenSelector showAddress />
 
       <YStack flexShrink={0} pointerEvents="none">
         <BaseMarketTokenPrice

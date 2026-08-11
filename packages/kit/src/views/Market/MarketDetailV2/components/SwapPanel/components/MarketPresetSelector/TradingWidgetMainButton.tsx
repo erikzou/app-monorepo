@@ -32,10 +32,11 @@ type ITradingWidgetMainButtonProps<T extends string> = {
   onPresetChange: (value: T) => void;
   onOpenSettings: () => void;
   onQuickPresetPress?: (event?: ITradingWidgetMainButtonPressEvent) => void;
+  // Drop the preset shortcut row and keep the summary line unchanged. The
+  // summary line already opens the settings dialog, which holds the same
+  // presets, so the row is a duplicate entry point on some surfaces.
+  hidePresetButtons?: boolean;
   testID?: string;
-  // Keeps the full-variant summary row but drops the preset quick-switch
-  // buttons above it (stock detail desktop panel, Figma 25294:8534).
-  hidePresetOptions?: boolean;
 };
 
 function TradingWidgetPresetButton<T extends string>({
@@ -209,8 +210,8 @@ export function TradingWidgetMainButton<T extends string>({
   onPresetChange,
   onOpenSettings,
   onQuickPresetPress,
+  hidePresetButtons,
   testID,
-  hidePresetOptions,
 }: ITradingWidgetMainButtonProps<T>) {
   if (variant === 'compact') {
     return (
@@ -231,7 +232,7 @@ export function TradingWidgetMainButton<T extends string>({
 
   return (
     <YStack gap="$3" width="100%" testID={testID}>
-      {hidePresetOptions ? null : (
+      {hidePresetButtons ? null : (
         <XStack
           alignItems="center"
           gap="$2"

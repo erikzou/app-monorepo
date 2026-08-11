@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps, RefObject } from 'react';
 
 import {
@@ -10,6 +10,7 @@ import {
   useOverlayZIndex,
 } from '@onekeyhq/components';
 import { TradingViewNative } from '@onekeyhq/kit/src/components/TradingView/TradingViewNative';
+import { useMarketChartModeAtom } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import {
   TRADING_VIEW_LOCALHOST_ORIGIN,
   TRADING_VIEW_URL,
@@ -22,13 +23,24 @@ import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
 import { MarketTestIDs } from '../../testIDs';
 import { usePortfolioData } from '../components/InformationTabs/components/Portfolio/hooks/usePortfolioData';
 import { useNetworkAccount } from '../components/InformationTabs/hooks/useNetworkAccount';
+import {
+  MARKET_CHART_TOOLBAR_HEIGHT,
+  MARKET_LITE_CHART_DEFAULT_RANGE,
+  MarketChartModeSwitch,
+  MarketChartPriceBar,
+  MarketLiteChart,
+  MarketLiteChartControls,
+} from '../components/MarketLiteChart';
 import { MarketChartFullscreenHeader } from '../components/MarketTradingView/MarketChartFullscreenHeader';
 import { PerpetualTradingBanner } from '../components/PerpetualTradingBanner/PerpetualTradingBanner';
+import { StockDisclaimerBanner } from '../components/StockDisclaimerBanner/StockDisclaimerBanner';
+import { StockEntityTabs } from '../components/StockEntityTabs/StockEntityTabs';
+import { StockTrustPanel } from '../components/StockTrustPanel/StockTrustPanel';
 import { SwapPanel } from '../components/SwapPanel/SwapPanel';
 import { TokenActivityOverview } from '../components/TokenActivityOverview/TokenActivityOverview';
 import { TokenDetailHeader } from '../components/TokenDetailHeader/TokenDetailHeader';
-import { StockTradingActivity } from '../components/TokenSupplementaryInfo/StockTradingActivity';
 import { TokenSupplementaryInfo } from '../components/TokenSupplementaryInfo/TokenSupplementaryInfo';
+import { useMarketStockEntity } from '../hooks/useMarketStockEntity';
 import {
   useMarketTradingViewParams,
   useTokenDetail,
@@ -36,16 +48,27 @@ import {
 import { useTradingViewNativeInMarketDetail } from '../hooks/useTradingViewNativeInMarketDetail';
 import { getMarketDetailTradingViewNativeSource } from '../utils/getMarketDetailTradingViewNativeSource';
 
-import {
-  MARKET_CHART_FULLSCREEN_STYLE,
-  MARKET_DETAIL_LAYOUT,
-  SCROLL_CONTAINER_STYLE,
-} from './marketDetailLayoutConsts';
-import { StockDesktopLayout } from './StockDesktopLayout';
-
 import type { DesktopInformationTabs } from '../components/InformationTabs/layout/DesktopInformationTabs';
+import type { IMarketLiteChartRange } from '../components/MarketLiteChart';
 import type { IMarketTradingViewProps } from '../components/MarketTradingView/MarketTradingView';
 
+const MARKET_DETAIL_LAYOUT = {
+  chartHeight: 550,
+  // The stock page carries a price bar above the chart and denser tabs below
+  // it, so it runs a shorter chart to keep Key Data closer to the fold.
+  stockChartHeight: 440,
+  chartFullscreenHeaderFillHeight: 48,
+  infoTabsHeight: 480,
+} as const;
+
+const SCROLL_CONTAINER_STYLE = { overflowY: 'auto' } as const;
+const MARKET_CHART_FULLSCREEN_STYLE = {
+  position: 'fixed',
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: platformEnv.isWeb ? 40 : 0,
+} as const;
 const IFRAME_WHEEL_EVENT_TYPE = 'wheelEvent' as const;
 
 type IDesktopInformationTabsProps = ComponentProps<
@@ -160,7 +183,6 @@ export function DesktopLayout({
     isNative,
     websocketConfig,
     perpsInfo,
-    isStockToken,
   } = useTokenDetail();
   const useTradingViewNative = useTradingViewNativeInMarketDetail();
   const networkId = storeNetworkId || routeNetworkId;
@@ -200,6 +222,31 @@ export function DesktopLayout({
     ],
   );
 
+  // Lite/Pro chart. Only the stock entity page carries it for now; crypto
+  // pages keep the Pro chart until the skeleton is rolled back to them.
+  const [{ mode: chartMode }] = useMarketChartModeAtom();
+  const [liteChartRange, setLiteChartRange] = useState<IMarketLiteChartRange>(
+    MARKET_LITE_CHART_DEFAULT_RANGE,
+  );
+  const { entity: stockEntity, selectedInstrument } = useMarketStockEntity();
+  const stockEntityIdentity = useMemo(
+    () =>
+      stockEntity
+        ? { ticker: stockEntity.ticker, name: stockEntity.name }
+        : undefined,
+    [stockEntity],
+  );
+
+  // Stock identity comes from the index, so the stock page lights up for every
+  // tokenized variant. There is only one layer: variants are expressed through
+  // the trade dropdown and the trust block, never a page of their own.
+  const isStockPage = Boolean(stockEntity);
+  const showChartModeSwitch = isStockPage && !isChartFullscreen;
+  const showLiteChart = showChartModeSwitch && chartMode === 'lite';
+  const chartHeight = isStockPage
+    ? MARKET_DETAIL_LAYOUT.stockChartHeight
+    : MARKET_DETAIL_LAYOUT.chartHeight;
+
   const scrollContainerRef = useRef<HTMLElement>(null);
   useIframeWheelPassthrough({
     disabled: isChartFullscreen || useTradingViewNative,
@@ -211,6 +258,12 @@ export function DesktopLayout({
     },
     [onChartFullscreenChange],
   );
+  // The stock page swaps its whole toolbar between Lite and Pro. Dropping the
+  // expand control there keeps the Lite/Pro switch as the last item in both
+  // toolbars, so toggling doesn't shift it sideways.
+  const chartFullscreenChangeHandler = isStockPage
+    ? undefined
+    : handleChartFullscreenChange;
   const handleTradingViewTouchScroll = useCallback(
     (deltaY: number) => {
       if (!isChartFullscreen) {
@@ -255,7 +308,7 @@ export function DesktopLayout({
           nativeControlsLayoutMode="desktop"
           isNativeChartFullscreen={isChartFullscreen}
           nativeChartFullscreenHeader={<MarketChartFullscreenHeader />}
-          onNativeChartFullscreenChange={handleChartFullscreenChange}
+          onNativeChartFullscreenChange={chartFullscreenChangeHandler}
         />
       ) : null;
     }
@@ -277,45 +330,34 @@ export function DesktopLayout({
         nativeIntervalControlMode="popover"
         nativePriceMarketCapControlMode="select"
         nativeControlsLayoutMode="desktop"
+        chartModeControl={
+          showChartModeSwitch ? <MarketChartModeSwitch /> : undefined
+        }
         isNativeChartFullscreen={isChartFullscreen}
         showNativeIndicatorQuickBar={false}
-        onNativeChartFullscreenChange={handleChartFullscreenChange}
+        onNativeChartFullscreenChange={chartFullscreenChangeHandler}
       />
     );
   }, [
-    handleChartFullscreenChange,
+    chartFullscreenChangeHandler,
     handleTradingViewTouchScroll,
     isChartFullscreen,
     marketTradingViewParams,
     networkId,
+    showChartModeSwitch,
     tradingViewNativeSource,
     useTradingViewNative,
   ]);
-  if (isStockToken) {
-    return (
-      <Stack
-        ref={scrollContainerRef as any}
-        flex={1}
-        style={SCROLL_CONTAINER_STYLE}
-      >
-        <StockDesktopLayout
-          chart={marketTradingView}
-          isChartFullscreen={isChartFullscreen}
-          chartFullscreenZIndex={chartFullscreenZIndex}
-          swapToken={swapToken}
-          portfolioData={portfolioData}
-          showFavoriteButton={showFavoriteButton}
-        />
-      </Stack>
-    );
-  }
-
   return (
     <Stack
       ref={scrollContainerRef as any}
       flex={1}
       style={SCROLL_CONTAINER_STYLE}
     >
+      {/* Page-level, above both columns and above the chart's fullscreen
+          layer, so it stays visible for the whole stock page. */}
+      {isStockPage && !isChartFullscreen ? <StockDisclaimerBanner /> : null}
+
       <XStack>
         {/* Left column */}
         <YStack
@@ -323,10 +365,25 @@ export function DesktopLayout({
           borderRightWidth="$px"
           borderRightColor="$borderSubdued"
         >
-          <TokenDetailHeader showFavoriteButton={showFavoriteButton} />
+          <TokenDetailHeader
+            showFavoriteButton={showFavoriteButton}
+            stockEntityIdentity={stockEntityIdentity}
+            isStockLayout={isStockPage}
+            showMediaAndSecurity={!isStockPage}
+          />
+
+          {showChartModeSwitch ? (
+            <MarketChartPriceBar
+              price={stockEntity?.underlyingPrice ?? tokenDetail?.price}
+              priceChangePercent={
+                stockEntity?.underlyingPriceChange24H ??
+                tokenDetail?.priceChange24hPercent
+              }
+            />
+          ) : null}
 
           <Stack
-            h={isChartFullscreen ? undefined : MARKET_DETAIL_LAYOUT.chartHeight}
+            h={isChartFullscreen ? undefined : chartHeight}
             overflow="hidden"
             bg="$bgApp"
             zIndex={isChartFullscreen ? chartFullscreenZIndex : undefined}
@@ -341,7 +398,50 @@ export function DesktopLayout({
                 flexShrink={0}
               />
             ) : null}
-            {marketTradingView}
+            {isStockPage ? (
+              <>
+                {showLiteChart ? (
+                  <>
+                    <MarketLiteChartControls
+                      range={liteChartRange}
+                      onRangeChange={setLiteChartRange}
+                    />
+                    <MarketLiteChart
+                      networkId={networkId}
+                      tokenAddress={tokenAddress}
+                      range={liteChartRange}
+                      height={chartHeight - MARKET_CHART_TOOLBAR_HEIGHT}
+                    />
+                  </>
+                ) : null}
+                {/*
+                  DEMO ONLY. Unmounting the Pro chart made every Lite/Pro
+                  toggle a cold start: new iframe document, charting library,
+                  bridge handshake and a full history backfill. Keeping it
+                  mounted and hidden makes switching instant.
+
+                  It is hidden with opacity rather than `display: none` so the
+                  iframe keeps its box: a 0x0 resize would make TradingView
+                  re-lay-out every time it came back. The cost is that the Pro
+                  chart also boots while the page sits in Lite. Owning that
+                  lifecycle properly (mount on first Pro use, then keep alive)
+                  is the frontend team's call.
+                */}
+                <Stack
+                  position="absolute"
+                  left={0}
+                  right={0}
+                  top={0}
+                  bottom={0}
+                  opacity={showLiteChart ? 0 : 1}
+                  pointerEvents={showLiteChart ? 'none' : 'auto'}
+                >
+                  {marketTradingView}
+                </Stack>
+              </>
+            ) : (
+              marketTradingView
+            )}
           </Stack>
 
           <Stack
@@ -349,12 +449,21 @@ export function DesktopLayout({
             borderTopWidth="$px"
             borderTopColor="$borderSubdued"
           >
-            <LazyDesktopInformationTabs
-              portfolioData={portfolioData}
-              isRefreshing={isRefreshing}
-              isBTCNetwork={isBTCNetwork}
-              tokenLogoUrl={tokenDetail?.logoUrl}
-            />
+            {isStockPage && stockEntity ? (
+              <StockEntityTabs
+                entity={stockEntity}
+                portfolioData={portfolioData}
+                isRefreshing={isRefreshing}
+                tokenLogoUrl={tokenDetail?.logoUrl}
+              />
+            ) : (
+              <LazyDesktopInformationTabs
+                portfolioData={portfolioData}
+                isRefreshing={isRefreshing}
+                isBTCNetwork={isBTCNetwork}
+                tokenLogoUrl={tokenDetail?.logoUrl}
+              />
+            )}
           </Stack>
         </YStack>
 
@@ -368,8 +477,11 @@ export function DesktopLayout({
 
             <Divider my="$1" />
 
-            {isStockToken ? (
-              <StockTradingActivity />
+            {isStockPage && stockEntity ? (
+              <StockTrustPanel
+                entity={stockEntity}
+                instrument={selectedInstrument}
+              />
             ) : (
               <>
                 {isBTCMainnet ? null : (

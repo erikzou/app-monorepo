@@ -117,8 +117,9 @@ const BasicTokenListItem: FC<ITokenListItemProps> = ({
           tokenLogoURIs={item.tokenImageUris}
           networkLogoURI={item.networkLogoUri}
           networkId={item.networkId}
-          symbol={item.symbol}
+          symbol={item.stockTicker || item.symbol}
           address={item.address}
+          hideVariantChrome={Boolean(item.stockTicker)}
           showVolume
           volume={item.turnover}
           communityRecognized={item.communityRecognized}

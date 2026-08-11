@@ -58,6 +58,9 @@ export interface ITradingViewChartControlsProps {
   calendarAvailableTimeRange?: ICalendarPanelAvailableTimeRange;
   isFullscreen: boolean;
   fullscreenHeader?: ReactNode;
+  // Slot rendered in the right-hand control group, immediately after the
+  // price/market-cap select. Desktop layout only.
+  rightGroupTrailingControl?: ReactNode;
   onIntervalChange: (interval: string) => void;
   onIndicatorPress: (indicator: ITradingViewIndicatorOption) => void;
   onShowIndicatorsDialog: () => void;
@@ -110,6 +113,7 @@ export const TradingViewChartControls = memo(
     calendarAvailableTimeRange,
     isFullscreen,
     fullscreenHeader,
+    rightGroupTrailingControl,
     onIntervalChange,
     onIndicatorPress,
     onShowIndicatorsDialog,
@@ -390,7 +394,10 @@ export const TradingViewChartControls = memo(
             <XStack gap="$2" alignItems="center" flexShrink={0}>
               {priceMarketCapControl}
 
-              {priceMarketCapControl && fullscreenControl ? (
+              {rightGroupTrailingControl}
+
+              {(priceMarketCapControl || rightGroupTrailingControl) &&
+              fullscreenControl ? (
                 <ToolbarSeparator />
               ) : null}
 
