@@ -171,6 +171,8 @@ export const useColumnsDesktop = (
 
   return useMemo<ITableColumn<IMarketToken>[]>(() => {
     const watchlistNameWidth = gtLg ? 340 : 260;
+    // Figma 25473:87750: the stock table sets its values in medium.
+    const valueTextSize = useStockMetadataColumns ? '$bodyMdMedium' : '$bodyMd';
     const shouldRenderRichCell = (index?: number) =>
       !shouldUseLightweightCell(index, deferRichRowAfterIndex);
 
@@ -309,7 +311,7 @@ export const useColumnsDesktop = (
 
           return (
             <NumberSizeableText
-              size="$bodyMd"
+              size={valueTextSize}
               formatter={Number(text) > 1_000_000 ? 'marketCap' : 'price'}
               formatterOptions={{ currency: '$', capAtMaxT: true }}
             >
@@ -336,7 +338,7 @@ export const useColumnsDesktop = (
 
           if (record.priceChangeRaw === '-') {
             return (
-              <SizableText size="$bodyMd" color="$textSubdued">
+              <SizableText size={valueTextSize} color="$textSubdued">
                 --
               </SizableText>
             );
@@ -347,7 +349,7 @@ export const useColumnsDesktop = (
           });
           return (
             <NumberSizeableText
-              size="$bodyMd"
+              size={valueTextSize}
               formatter="priceChange"
               color={changeColor}
               formatterOptions={{
@@ -377,7 +379,7 @@ export const useColumnsDesktop = (
 
               return (
                 <NumberSizeableText
-                  size="$bodyMd"
+                  size={valueTextSize}
                   formatter="marketCap"
                   formatterOptions={{ currency: '$', capAtMaxT: true }}
                 >
@@ -408,7 +410,7 @@ export const useColumnsDesktop = (
 
               return (
                 <NumberSizeableText
-                  size="$bodyMd"
+                  size={valueTextSize}
                   formatter="marketCap"
                   formatterOptions={{ currency: '$' }}
                 >
