@@ -61,7 +61,10 @@ const MARKET_DETAIL_LAYOUT = {
   chartHeight: 550,
   // The stock page carries a price bar above the chart and denser tabs below
   // it, so it runs a shorter chart to keep Key Data closer to the fold.
-  stockChartHeight: 440,
+  // Design's chart block is 506 tall: pt 20 + price header 70 + gap 24 +
+  // this chart area + pb 32 (Figma 25227:67414).
+  stockChartHeight: 360,
+  stockChartBlockPaddingBottom: 32,
   chartFullscreenHeaderFillHeight: 48,
   infoTabsHeight: 480,
 } as const;
@@ -435,7 +438,19 @@ export function DesktopLayout({
           ) : null}
 
           <Stack
-            h={isChartFullscreen ? undefined : chartHeight}
+            h={
+              isChartFullscreen
+                ? undefined
+                : chartHeight +
+                  (isStockPage
+                    ? MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom
+                    : 0)
+            }
+            pb={
+              isStockPage && !isChartFullscreen
+                ? MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom
+                : undefined
+            }
             overflow="hidden"
             bg="$bgApp"
             zIndex={isChartFullscreen ? chartFullscreenZIndex : undefined}
