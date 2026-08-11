@@ -330,6 +330,9 @@ export function DesktopLayout({
           source={tradingViewNativeSource}
           enableNativeChartSettings
           nativeControlsLayoutMode="desktop"
+          nativeChartRightGroupTrailingControl={
+            showChartModeSwitch ? <MarketChartModeSwitch /> : undefined
+          }
           isNativeChartFullscreen={isChartFullscreen}
           nativeChartFullscreenHeader={<MarketChartFullscreenHeader />}
           onNativeChartFullscreenChange={chartFullscreenChangeHandler}

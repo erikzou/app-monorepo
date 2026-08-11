@@ -352,57 +352,75 @@ export const TradingViewChartControls = memo(
           justifyContent="center"
           zIndex={3}
         >
-          <XStack
-            alignItems="center"
-            width="100%"
-            gap="$2"
-            opacity={isControlsReady ? 1 : 0}
-            pointerEvents={isControlsReady ? 'auto' : 'none'}
-          >
-            {desktopFullscreenHeader}
-
-            <ScrollView
-              horizontal
+          <XStack alignItems="center" width="100%" gap="$2">
+            {/* Everything the chart itself owns fades in with the chart, but
+                the caller's trailing control does not: it can be the only way
+                back out of this chart (the market Lite/Pro switch), so hiding
+                it until the handshake lands would trap the user here whenever
+                the chart is slow or fails to boot. */}
+            <XStack
               flex={1}
               minWidth={0}
-              showsHorizontalScrollIndicator={false}
+              alignItems="center"
+              gap="$2"
+              opacity={isControlsReady ? 1 : 0}
+              pointerEvents={isControlsReady ? 'auto' : 'none'}
             >
-              <XStack alignItems="center" gap="$2" flexShrink={0}>
-                {intervalSelector}
+              {desktopFullscreenHeader}
 
-                {intervalSelector && hasLeftChartTools ? (
-                  <ToolbarSeparator />
-                ) : null}
+              <ScrollView
+                horizontal
+                flex={1}
+                minWidth={0}
+                showsHorizontalScrollIndicator={false}
+              >
+                <XStack alignItems="center" gap="$2" flexShrink={0}>
+                  {intervalSelector}
 
-                {hasLeftChartTools ? (
-                  <XStack gap="$0.5" alignItems="center" flexShrink={0}>
-                    {chartTypeControl}
-                    {indicatorControl}
-                    {calendarControl}
-                    {settingsControl}
-                  </XStack>
-                ) : null}
+                  {intervalSelector && hasLeftChartTools ? (
+                    <ToolbarSeparator />
+                  ) : null}
 
-                {(intervalSelector || hasLeftChartTools) && undoRedoControls ? (
-                  <ToolbarSeparator />
-                ) : null}
+                  {hasLeftChartTools ? (
+                    <XStack gap="$0.5" alignItems="center" flexShrink={0}>
+                      {chartTypeControl}
+                      {indicatorControl}
+                      {calendarControl}
+                      {settingsControl}
+                    </XStack>
+                  ) : null}
 
-                {undoRedoControls}
+                  {(intervalSelector || hasLeftChartTools) &&
+                  undoRedoControls ? (
+                    <ToolbarSeparator />
+                  ) : null}
+
+                  {undoRedoControls}
+                </XStack>
+              </ScrollView>
+
+              <XStack gap="$2" alignItems="center" flexShrink={0}>
+                {priceMarketCapControl}
               </XStack>
-            </ScrollView>
-
-            <XStack gap="$2" alignItems="center" flexShrink={0}>
-              {priceMarketCapControl}
-
-              {rightGroupTrailingControl}
-
-              {(priceMarketCapControl || rightGroupTrailingControl) &&
-              fullscreenControl ? (
-                <ToolbarSeparator />
-              ) : null}
-
-              {fullscreenControl}
             </XStack>
+
+            {rightGroupTrailingControl}
+
+            {fullscreenControl ? (
+              <XStack
+                gap="$2"
+                alignItems="center"
+                flexShrink={0}
+                opacity={isControlsReady ? 1 : 0}
+                pointerEvents={isControlsReady ? 'auto' : 'none'}
+              >
+                {priceMarketCapControl || rightGroupTrailingControl ? (
+                  <ToolbarSeparator />
+                ) : null}
+
+                {fullscreenControl}
+              </XStack>
+            ) : null}
           </XStack>
         </Stack>
       );
@@ -415,20 +433,35 @@ export const TradingViewChartControls = memo(
           justifyContent="space-between"
           width="100%"
           gap="$2"
-          opacity={isControlsReady ? 1 : 0}
-          pointerEvents={isControlsReady ? 'auto' : 'none'}
         >
-          <XStack flex={1} minWidth={0} alignItems="center">
+          <XStack
+            flex={1}
+            minWidth={0}
+            alignItems="center"
+            opacity={isControlsReady ? 1 : 0}
+            pointerEvents={isControlsReady ? 'auto' : 'none'}
+          >
             {intervalSelector}
           </XStack>
 
           <XStack gap="$2" alignItems="center" justifyContent="flex-end">
-            {chartTypeControl}
-            {priceMarketCapControl}
-            {indicatorControl}
-            {calendarControl}
-            {settingsControl}
-            {fullscreenControl}
+            <XStack
+              gap="$2"
+              alignItems="center"
+              opacity={isControlsReady ? 1 : 0}
+              pointerEvents={isControlsReady ? 'auto' : 'none'}
+            >
+              {chartTypeControl}
+              {priceMarketCapControl}
+              {indicatorControl}
+              {calendarControl}
+              {settingsControl}
+              {fullscreenControl}
+            </XStack>
+
+            {/* Same reasoning as the desktop layout: the caller's control has
+                to survive a chart that never becomes ready. */}
+            {rightGroupTrailingControl}
           </XStack>
         </XStack>
       </Stack>

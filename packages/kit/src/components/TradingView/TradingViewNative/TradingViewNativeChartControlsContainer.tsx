@@ -23,6 +23,7 @@ interface ITradingViewNativeChartControlsContainerProps {
   layoutMode?: ITradingViewChartControlsProps['layoutMode'];
   isFullscreen?: boolean;
   fullscreenHeader?: ReactNode;
+  rightGroupTrailingControl?: ReactNode;
   onIntervalChange: ITradingViewChartControlsProps['onIntervalChange'];
   onCalendarPanelOpen?: ITradingViewChartControlsProps['onCalendarPanelOpen'];
   onCalendarPanelSubmit?: ITradingViewChartControlsProps['onCalendarPanelSubmit'];
@@ -37,6 +38,7 @@ export const TradingViewNativeChartControlsContainer = memo(
     layoutMode = 'mobile',
     isFullscreen = false,
     fullscreenHeader,
+    rightGroupTrailingControl,
     onIntervalChange,
     onCalendarPanelOpen,
     onCalendarPanelSubmit,
@@ -106,6 +108,7 @@ export const TradingViewNativeChartControlsContainer = memo(
         chartTimezone={getTradingViewTimezone()}
         isFullscreen={isFullscreen}
         fullscreenHeader={fullscreenHeader}
+        rightGroupTrailingControl={rightGroupTrailingControl}
         onIntervalChange={onIntervalChange}
         onIndicatorPress={noop}
         onShowIndicatorsDialog={noop}

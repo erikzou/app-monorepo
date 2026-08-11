@@ -27,6 +27,7 @@ export const TradingViewNativeContainer = memo(
     nativeControlsLayoutMode,
     isNativeChartFullscreen,
     nativeChartFullscreenHeader,
+    nativeChartRightGroupTrailingControl,
     onDataStateChange,
     onIntervalChange,
     onNativeSubIndicatorCountChange,
@@ -225,6 +226,7 @@ export const TradingViewNativeContainer = memo(
           layoutMode={nativeControlsLayoutMode}
           isFullscreen={isNativeChartFullscreen}
           fullscreenHeader={nativeChartFullscreenHeader}
+          rightGroupTrailingControl={nativeChartRightGroupTrailingControl}
           onIntervalChange={handleChartIntervalChange}
           onCalendarPanelOpen={handleHistoryBoundaryPrefetch}
           onCalendarPanelSubmit={handleCalendarPanelSubmit}
