@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import type { ReactNode } from 'react';
 
 import {
+  Icon,
   IconButton,
   SizableText,
   XStack,
@@ -22,6 +23,7 @@ import {
   formatMarketCapValue,
 } from '../../utils/statValue';
 
+import { showStockProtectionsDialog } from './StockProtectionsDialog';
 import { TokenLinkRow } from './TokenLinkRow';
 
 const ISSUER_LABELS: Record<string, string> = {
@@ -160,6 +162,21 @@ export function StockTrustPanel({
       {rows.map((row) => (
         <TrustRow key={row.key} row={row} />
       ))}
+
+      {/* Opens the protections breakdown (Figma 25348:103122). */}
+      <XStack
+        testID="market-stock-protections-row"
+        alignItems="center"
+        gap="$2"
+        cursor="pointer"
+        hoverStyle={{ opacity: 0.8 }}
+        onPress={showStockProtectionsDialog}
+      >
+        <SizableText size="$bodyMd" color="$textSubdued" flex={1} minWidth={0}>
+          Tokenholder Protections
+        </SizableText>
+        <Icon name="ChevronRightSmallOutline" size="$5" color="$iconSubdued" />
+      </XStack>
 
       {/* The disclaimer lives in the page-level banner, not here. */}
       {instrument ? <TokenLinkRow instrument={instrument} /> : null}

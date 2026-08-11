@@ -1584,6 +1584,7 @@ lookback
 xstock
 financials
 tradability
+Tokenholder
 
 # Stock fundamentals vocabulary and competitor venues
 OHLC
