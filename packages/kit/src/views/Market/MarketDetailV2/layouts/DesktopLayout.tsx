@@ -49,7 +49,10 @@ import { useTradingViewNativeInMarketDetail } from '../hooks/useTradingViewNativ
 import { getMarketDetailTradingViewNativeSource } from '../utils/getMarketDetailTradingViewNativeSource';
 
 import type { DesktopInformationTabs } from '../components/InformationTabs/layout/DesktopInformationTabs';
-import type { IMarketLiteChartRange } from '../components/MarketLiteChart';
+import type {
+  IMarketLiteChartRange,
+  IMarketPriceSource,
+} from '../components/MarketLiteChart';
 import type { IMarketTradingViewProps } from '../components/MarketTradingView/MarketTradingView';
 
 const MARKET_DETAIL_LAYOUT = {
@@ -225,6 +228,10 @@ export function DesktopLayout({
   // Lite/Pro chart. Only the stock entity page carries it for now; crypto
   // pages keep the Pro chart until the skeleton is rolled back to them.
   const [{ mode: chartMode }] = useMarketChartModeAtom();
+  // Share price is the underlying equity, token price is the tokenized
+  // instrument. Only the token series is charted today; the toggle switches the
+  // header figures and is mirrored by the trade panel's chart button.
+  const [priceSource, setPriceSource] = useState<IMarketPriceSource>('share');
   const [liteChartRange, setLiteChartRange] = useState<IMarketLiteChartRange>(
     MARKET_LITE_CHART_DEFAULT_RANGE,
   );
@@ -374,11 +381,20 @@ export function DesktopLayout({
 
           {showChartModeSwitch ? (
             <MarketChartPriceBar
-              price={stockEntity?.underlyingPrice ?? tokenDetail?.price}
-              priceChangePercent={
-                stockEntity?.underlyingPriceChange24H ??
-                tokenDetail?.priceChange24hPercent
+              price={
+                priceSource === 'token'
+                  ? tokenDetail?.price
+                  : (stockEntity?.underlyingPrice ?? tokenDetail?.price)
               }
+              priceChangePercent={
+                priceSource === 'token'
+                  ? tokenDetail?.priceChange24hPercent
+                  : (stockEntity?.underlyingPriceChange24H ??
+                    tokenDetail?.priceChange24hPercent)
+              }
+              stock={tokenDetail?.stock}
+              priceSource={priceSource}
+              onPriceSourceChange={setPriceSource}
             />
           ) : null}
 

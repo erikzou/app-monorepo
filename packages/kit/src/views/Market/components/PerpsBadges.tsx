@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useIntl } from 'react-intl';
@@ -249,7 +250,9 @@ const StockIsOpenBadge = memo(
     disableTooltip?: boolean;
     // 'lg' is the standalone badge used next to the stock detail price
     // (Figma 25277:9373): standard Badge geometry, status color, no icon.
-    size?: 'sm' | 'lg';
+    // 'dot' is the stock detail chart header (Figma 25503:18072): a ringed
+    // status dot followed by the label, with no badge background.
+    size?: 'sm' | 'lg' | 'dot';
   }) => {
     const intl = useIntl();
     const { source, isOpen, isPaused, description } = stock;
@@ -276,37 +279,53 @@ const StockIsOpenBadge = memo(
     }
     const chip = STOCK_MARKET_STATUS_CHIPS[variant];
 
-    const badge =
-      size === 'lg' ? (
-        <XStack
-          borderRadius="$1"
-          borderCurve="continuous"
-          bg={chip.bg}
-          justifyContent="center"
-          alignItems="center"
-          minWidth={36}
-          px="$2"
-          py="$0.5"
-        >
-          <SizableText size="$bodySmMedium" color={chip.color}>
-            {intl.formatMessage({ id: chip.titleId })}
-          </SizableText>
-        </XStack>
-      ) : (
-        <XStack
-          borderRadius="$1"
-          bg={chip.bg}
-          justifyContent="center"
-          alignItems="center"
-          gap={3}
-          px="$1"
-        >
-          <Icon name={chip.icon} size="$3" color={chip.color} />
-          <SizableText fontSize={10} color={chip.color} lineHeight={16}>
+    let badge: ReactNode = null;
+    if (size === 'dot') {
+      badge = (
+        <XStack gap="$1.5" alignItems="center">
+          <Stack p="$1">
+            <Stack bg={chip.bg} p="$1" borderRadius="$full">
+              <Stack w={6} h={6} borderRadius="$full" bg={chip.color} />
+            </Stack>
+          </Stack>
+          <SizableText size="$bodyMd" color={chip.color}>
             {intl.formatMessage({ id: chip.titleId })}
           </SizableText>
         </XStack>
       );
+    } else {
+      badge =
+        size === 'lg' ? (
+          <XStack
+            borderRadius="$1"
+            borderCurve="continuous"
+            bg={chip.bg}
+            justifyContent="center"
+            alignItems="center"
+            minWidth={36}
+            px="$2"
+            py="$0.5"
+          >
+            <SizableText size="$bodySmMedium" color={chip.color}>
+              {intl.formatMessage({ id: chip.titleId })}
+            </SizableText>
+          </XStack>
+        ) : (
+          <XStack
+            borderRadius="$1"
+            bg={chip.bg}
+            justifyContent="center"
+            alignItems="center"
+            gap={3}
+            px="$1"
+          >
+            <Icon name={chip.icon} size="$3" color={chip.color} />
+            <SizableText fontSize={10} color={chip.color} lineHeight={16}>
+              {intl.formatMessage({ id: chip.titleId })}
+            </SizableText>
+          </XStack>
+        );
+    }
 
     if (disableTooltip || !description || platformEnv.isNative) {
       return badge;
@@ -331,7 +350,13 @@ StockIsOpenBadge.displayName = 'StockIsOpenBadge';
  * non-Ondo issuers render no chip (see StockIsOpenBadge).
  */
 const StockMarketStatusBadge = memo(
-  ({ stock, size }: { stock?: IMarketStockInfo; size?: 'sm' | 'lg' }) => {
+  ({
+    stock,
+    size,
+  }: {
+    stock?: IMarketStockInfo;
+    size?: 'sm' | 'lg' | 'dot';
+  }) => {
     if (!stock) {
       return null;
     }
