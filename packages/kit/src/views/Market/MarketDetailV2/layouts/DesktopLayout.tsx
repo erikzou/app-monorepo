@@ -39,6 +39,7 @@ import { MarketChartFullscreenHeader } from '../components/MarketTradingView/Mar
 import { PerpetualTradingBanner } from '../components/PerpetualTradingBanner/PerpetualTradingBanner';
 import { StockDisclaimerBanner } from '../components/StockDisclaimerBanner/StockDisclaimerBanner';
 import { StockEntityTabs } from '../components/StockEntityTabs/StockEntityTabs';
+import { StockTradePanel } from '../components/StockTradePanel/StockTradePanel';
 import { StockTrustPanel } from '../components/StockTrustPanel/StockTrustPanel';
 import { SwapPanel } from '../components/SwapPanel/SwapPanel';
 import { TokenActivityOverview } from '../components/TokenActivityOverview/TokenActivityOverview';
@@ -524,10 +525,14 @@ export function DesktopLayout({
             w={isStockPage ? STOCK_LAYOUT.rightColumnWidth : 340}
             pb={platformEnv.isWeb ? '$12' : undefined}
           >
-            <PerpetualTradingBanner pl="$3" pr="$5" />
-            <Stack pl="$3" pr="$5" pt="$4" pb="$3">
-              <SwapPanel swapToken={swapToken} />
-            </Stack>
+            {isStockPage ? null : <PerpetualTradingBanner pl="$3" pr="$5" />}
+            {isStockPage ? (
+              <StockTradePanel />
+            ) : (
+              <Stack pl="$3" pr="$5" pt="$4" pb="$3">
+                <SwapPanel swapToken={swapToken} />
+              </Stack>
+            )}
 
             <Divider my="$1" />
 
