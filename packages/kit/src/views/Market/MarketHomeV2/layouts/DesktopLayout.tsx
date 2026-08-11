@@ -25,6 +25,10 @@ import {
   isMarketStockCategoryById,
   shouldHideSpotExtendedStats,
 } from '../utils';
+import {
+  MARKET_HOME_CONTENT_MAX_WIDTH,
+  MARKET_HOME_TABLE_PADDING,
+} from '../utils/marketHomeLayout';
 
 import { DesktopStickyHeaderContext } from './DesktopStickyHeaderContext';
 import { useMarketTabsLogic, useSyncedMarketTab } from './hooks';
@@ -143,19 +147,6 @@ export function DesktopLayout({
       );
     }
   }, [selectedStockCategoryId, stockCategories]);
-  // Drives the "24/7 tokens keep trading" half of the closed-state chip copy.
-  // Reported by the list because only it knows which issuers are on screen.
-  const [hasAlwaysOnStockVariants, setHasAlwaysOnStockVariants] =
-    useState(false);
-  const handleStockAlwaysOnVariantsChange = useCallback(
-    (hasAlwaysOn: boolean) => {
-      setHasAlwaysOnStockVariants((prev) =>
-        prev === hasAlwaysOn ? prev : hasAlwaysOn,
-      );
-    },
-    [],
-  );
-
   const handleStockDataChange = useCallback(
     (categoryId: string, isStockData: boolean) => {
       setStockDataCategoryMap((prev) => {
@@ -227,7 +218,16 @@ export function DesktopLayout({
       // Override TabBar's own sticky with position: relative so
       // the outer wrapper controls stickiness for both.
       return (
-        <YStack bg="$bgApp" position={'sticky' as any} top={0} zIndex={10}>
+        <YStack
+          bg="$bgApp"
+          position={'sticky' as any}
+          top={0}
+          zIndex={10}
+          width="100%"
+          maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
+          alignSelf="center"
+          mx="auto"
+        >
           <XStack alignItems="center">
             <XStack flex={1}>
               <Tabs.TabBar
@@ -296,14 +296,10 @@ export function DesktopLayout({
         categories={stockCategories}
         selectedCategoryId={selectedStockCategoryId}
         onSelectCategory={setSelectedStockCategoryId}
-        leading={
-          <MarketStockMarketStatusChip
-            hasAlwaysOnVariants={hasAlwaysOnStockVariants}
-          />
-        }
+        leading={<MarketStockMarketStatusChip />}
       />
     );
-  }, [hasAlwaysOnStockVariants, selectedStockCategoryId, stockCategories]);
+  }, [selectedStockCategoryId, stockCategories]);
 
   const stickyHeaderCtx = useMemo(
     () => ({ portalTarget, activeTabName }),
@@ -317,7 +313,14 @@ export function DesktopLayout({
 
   const tabElements = [
     <Tabs.Tab key={watchlistTabName} name={watchlistTabName}>
-      <YStack px="$4" flex={1}>
+      <YStack
+        px={MARKET_HOME_TABLE_PADDING}
+        flex={1}
+        width="100%"
+        maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
+        alignSelf="center"
+        mx="auto"
+      >
         {hasActivated(watchlistTabName) ? (
           <Suspense fallback={null}>
             <LazyMarketWatchlistTokenList
@@ -332,11 +335,22 @@ export function DesktopLayout({
     </Tabs.Tab>,
     ...spotTabItems.map((item) => (
       <Tabs.Tab key={item.categoryId} name={item.tabName}>
-        <YStack px="$4" flex={1}>
+        <YStack
+          px={MARKET_HOME_TABLE_PADDING}
+          flex={1}
+          width="100%"
+          maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
+          alignSelf="center"
+          mx="auto"
+        >
           {hasActivated(item.tabName) ? (
             <MarketNormalTokenList
               networkId={selectedNetworkId}
               selectedCategory={item.categoryId}
+              isStockList={isMarketStockCategoryById(
+                filterBarProps.categories,
+                item.categoryId,
+              )}
               stockCategory={
                 isMarketStockCategoryById(
                   filterBarProps.categories,
@@ -361,7 +375,6 @@ export function DesktopLayout({
                 item.categoryId,
               )}
               onStockDataChange={handleStockDataChange}
-              onStockAlwaysOnVariantsChange={handleStockAlwaysOnVariantsChange}
               enableWebSocket={activeTabName === item.tabName}
             />
           ) : null}
@@ -371,7 +384,14 @@ export function DesktopLayout({
     ...(showPerpsTab
       ? [
           <Tabs.Tab key={perpsTabName} name={perpsTabName}>
-            <YStack px="$4" flex={1}>
+            <YStack
+              px={MARKET_HOME_TABLE_PADDING}
+              flex={1}
+              width="100%"
+              maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
+              alignSelf="center"
+              mx="auto"
+            >
               {hasActivated(perpsTabName) ? (
                 <Suspense fallback={null}>
                   <LazyMarketPerpsTokenList

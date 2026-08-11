@@ -44,6 +44,11 @@ import { ESortWay } from '@onekeyhq/shared/src/logger/scopes/dex/types';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { DesktopStickyHeaderContext } from '../../layouts/DesktopStickyHeaderContext';
+import {
+  MARKET_HOME_TABLE_HEADER_HEIGHT,
+  MARKET_HOME_TABLE_PADDING,
+  MARKET_HOME_TABLE_ROW_HEIGHT,
+} from '../../utils/marketHomeLayout';
 import { StickyHeaderPortal } from '../StickyHeaderPortal';
 
 import {
@@ -225,6 +230,12 @@ export type IMarketTokenListResult = {
 
 type IMarketTokenListBaseProps = {
   networkId?: string;
+  /**
+   * The Stocks tab. Declared by the caller rather than sniffed from the
+   * payload: a single row without stock metadata (or a payload that arrives a
+   * beat late) must not drop the tab back to the crypto column set.
+   */
+  isStockList?: boolean;
   onItemPress?: (item: IMarketToken) => void;
   toolbar?: ReactNode;
   result: IMarketTokenListResult;
@@ -285,6 +296,7 @@ function MarketTokenListBase({
   enableWebSocket,
   rowBg,
   testID,
+  isStockList,
 }: IMarketTokenListBaseProps) {
   useMarketRenderCommitProbe('MarketTokenListBase', {
     tabName,
@@ -449,10 +461,11 @@ function MarketTokenListBase({
   }, [rawData, showStockSubtitle]);
   const useStockMetadataColumns = useMemo(
     () =>
-      (showStockSubtitle === 'auto' ||
+      isStockList ||
+      ((showStockSubtitle === 'auto' ||
         (isWatchlistMode && showStockSubtitle !== false)) &&
-      shouldUseStockMetadataColumnsForTokens(rawData),
-    [isWatchlistMode, rawData, showStockSubtitle],
+        shouldUseStockMetadataColumnsForTokens(rawData)),
+    [isStockList, isWatchlistMode, rawData, showStockSubtitle],
   );
   // Web tab integration gives the inner FlatList the full tab height so the
   // outer Tabs.Container can own vertical scroll. During cold start, keep only
@@ -756,20 +769,29 @@ function MarketTokenListBase({
   const stickyPortalTarget = stickyHeaderCtx?.portalTarget ?? null;
   const useDesktopPortal = webTabIntegrated && !!stickyPortalTarget && !md;
 
+  const tableHeaderRowProps = useMemo<IXStackProps | undefined>(
+    () =>
+      isStockList
+        ? { minHeight: MARKET_HOME_TABLE_HEADER_HEIGHT, alignItems: 'center' }
+        : undefined,
+    [isStockList],
+  );
+
   const portalContent = useMemo(() => {
     if (!useDesktopPortal || !isTabFocused || !stickyPortalTarget) return null;
     return (
       <StickyHeaderPortal target={stickyPortalTarget}>
-        <YStack bg="$bgApp" px="$4">
-          {toolbar ? (
-            <Stack width="100%" mb="$3">
-              {toolbar}
-            </Stack>
-          ) : null}
-          <Table.HeaderRow
-            columns={marketTokenColumns}
-            onHeaderRow={stableHandleHeaderRow}
-          />
+        <YStack bg="$bgApp">
+          {/* The toolbar carries its own padding (Figma 25507:18231) so it
+              lines up with the tab row above rather than with the table. */}
+          {toolbar ? <Stack width="100%">{toolbar}</Stack> : null}
+          <Stack px={MARKET_HOME_TABLE_PADDING}>
+            <Table.HeaderRow
+              columns={marketTokenColumns}
+              onHeaderRow={stableHandleHeaderRow}
+              headerRowProps={tableHeaderRowProps}
+            />
+          </Stack>
         </YStack>
       </StickyHeaderPortal>
     );
@@ -780,6 +802,7 @@ function MarketTokenListBase({
     toolbar,
     marketTokenColumns,
     stableHandleHeaderRow,
+    tableHeaderRowProps,
   ]);
 
   let integratedContentPaddingBottom = tabBarHeight;
@@ -812,16 +835,20 @@ function MarketTokenListBase({
   );
   const tableRowProps = useMemo<IXStackProps | undefined>(() => {
     const hasWebRowStyle = platformEnv.isWeb && webTabIntegrated;
-    if (!rowBg && !hasWebRowStyle) {
+    if (!rowBg && !hasWebRowStyle && !isStockList) {
       return undefined;
     }
     return {
+      // Figma 25473:87731: 72 tall rows on the stock table.
+      ...(isStockList
+        ? { minHeight: MARKET_HOME_TABLE_ROW_HEIGHT }
+        : undefined),
       ...(rowBg ? { bg: rowBg } : undefined),
       ...(hasWebRowStyle
         ? { style: MARKET_HOME_WEB_ROW_CONTENT_VISIBILITY_STYLE }
         : undefined),
     };
-  }, [rowBg, webTabIntegrated]);
+  }, [isStockList, rowBg, webTabIntegrated]);
 
   return (
     <Stack ref={listRootRef as any} flex={1} width="100%" testID={testID}>
@@ -877,9 +904,12 @@ function MarketTokenListBase({
               onHeaderRow={stableHandleHeaderRow}
               TableEmptyComponent={TableEmptyComponent}
               TableFooterComponent={TableFooterComponent}
-              estimatedItemSize={60}
+              estimatedItemSize={
+                isStockList ? MARKET_HOME_TABLE_ROW_HEIGHT : 60
+              }
               onRow={stableOnRow}
               rowProps={tableRowProps}
+              headerRowProps={tableHeaderRowProps}
             />
           )}
           {/* Render end indicator outside the Table for draggable lists

@@ -33,7 +33,22 @@ export function deriveStockTicker(
   if (!raw) {
     return '';
   }
-  const suffix = ISSUER_TOKEN_SUFFIX[(source ?? '').toLowerCase()];
+  const issuer = (source ?? '').trim().toLowerCase();
+  const knownSuffix = ISSUER_TOKEN_SUFFIX[issuer];
+  // The list payload does not always carry `stock.source`. Everything reaching
+  // this function is already known to be a tokenized stock, so with no issuer
+  // at all fall back to the suffixes we do know — a stock token ending in
+  // `on`/`x` is a suffixed ticker, not a ticker that happens to end that way.
+  // A named issuer we have no convention for is still left alone.
+  const suffix =
+    knownSuffix ??
+    (issuer
+      ? undefined
+      : Object.values(ISSUER_TOKEN_SUFFIX).find(
+          (candidate) =>
+            raw.length > candidate.length + 1 &&
+            raw.slice(-candidate.length) === candidate,
+        ));
   if (!suffix) {
     return raw;
   }
@@ -70,14 +85,26 @@ export function collapseStockEntityRows(items: IMarketToken[]): IMarketToken[] {
     const slot = slotByTicker.get(ticker);
     if (slot === undefined) {
       slotByTicker.set(ticker, result.length);
-      result.push({ ...item, stockTicker: ticker, stockVariantCount: 1 });
+      result.push({
+        ...item,
+        stockTicker: ticker,
+        stockVariantCount: 1,
+        stockVariantLogos: item.networkLogoUri ? [item.networkLogoUri] : [],
+      });
       return;
     }
 
     const existing = result[slot];
+    // The collapsed row keeps every chain it stands for, so hovering it can
+    // show what the single row actually covers.
+    const logos = existing.stockVariantLogos ?? [];
     result[slot] = {
       ...existing,
       stockVariantCount: (existing.stockVariantCount ?? 1) + 1,
+      stockVariantLogos:
+        item.networkLogoUri && !logos.includes(item.networkLogoUri)
+          ? [...logos, item.networkLogoUri]
+          : logos,
     };
   });
 

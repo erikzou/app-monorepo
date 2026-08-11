@@ -1,8 +1,9 @@
 import type { FC } from 'react';
-import { memo, useMemo } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 
 import {
   Icon,
+  Image,
   NATIVE_HIT_SLOP,
   NumberSizeableText,
   SizableText,
@@ -110,6 +111,44 @@ interface ITokenIdentityItemProps {
    * tokenization belongs on the detail page, not here.
    */
   hideVariantChrome?: boolean;
+  /**
+   * How many tokenizations this row stands for. A collapsed stock row hides
+   * them behind the company, so hovering swaps the company name for the count
+   * and the chains they live on (Figma 25463:83146).
+   */
+  stockVariantCount?: number;
+  stockVariantLogos?: string[];
+}
+
+/**
+ * The chains a collapsed row stands for, overlapped 4px the way the design
+ * stacks them (Figma 25507:18329). Caps at three; the count next to it already
+ * carries the total.
+ */
+const STOCK_VARIANT_LOGO_LIMIT = 3;
+
+function StockVariantLogos({ logos }: { logos?: string[] }) {
+  const visible = (logos ?? []).slice(0, STOCK_VARIANT_LOGO_LIMIT);
+  if (visible.length === 0) {
+    return null;
+  }
+  return (
+    <XStack alignItems="center">
+      {visible.map((logo, index) => (
+        <Stack
+          key={logo}
+          w={12}
+          h={12}
+          ml={index === 0 ? 0 : -4}
+          borderRadius="$full"
+          overflow="hidden"
+          bg="$bgStrong"
+        >
+          <Image w={12} h={12} source={{ uri: logo }} />
+        </Stack>
+      ))}
+    </XStack>
+  );
 }
 
 const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
@@ -131,7 +170,12 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   showStockSubtitle = true,
   hideAddress = false,
   hideVariantChrome = false,
+  stockVariantCount,
+  stockVariantLogos,
 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const handleHoverIn = useCallback(() => setIsHovered(true), []);
+  const handleHoverOut = useCallback(() => setIsHovered(false), []);
   const { gtMd } = useMedia();
   const { copyText } = useClipboard();
   // Use hook to get network logo with async fallback
@@ -210,8 +254,23 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
       symbolText
     );
 
+  // Collapsed stock entity row (Figma 25473:87735): a company, not one
+  // tokenization — bigger avatar, wider gap, and a second line that trades the
+  // company name for what the row is hiding while the pointer is on it.
+  const isStockEntityRow = hideVariantChrome;
+  const showVariantSummary =
+    isStockEntityRow && isHovered && (stockVariantCount ?? 0) > 0;
+
   return (
-    <XStack alignItems="center" gap="$3" userSelect="none">
+    <XStack
+      alignItems="center"
+      gap={isStockEntityRow ? '$3.5' : '$3'}
+      flex={isStockEntityRow ? 1 : undefined}
+      minWidth={isStockEntityRow ? 0 : undefined}
+      userSelect="none"
+      onHoverIn={isStockEntityRow ? handleHoverIn : undefined}
+      onHoverOut={isStockEntityRow ? handleHoverOut : undefined}
+    >
       <Token
         tokenImageUri={getTokenImageUri()}
         tokenImageUris={tokenLogoURIs}
@@ -219,10 +278,10 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
           hideVariantChrome ? undefined : effectiveNetworkLogoUri
         }
         fallbackIcon="CryptoCoinOutline"
-        size="md"
+        size={isStockEntityRow ? 'lg' : 'md'}
       />
 
-      <Stack flex={1} minWidth={0}>
+      <Stack flex={1} minWidth={0} gap={isStockEntityRow ? '$1' : undefined}>
         <XStack alignItems="center" gap="$1">
           {symbolElement}
           {maxLeverage ? <LeverageBadge leverage={maxLeverage} /> : null}
@@ -238,7 +297,17 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
             />
           )}
         </XStack>
-        {shouldShowSecondRow ? (
+        {showVariantSummary ? (
+          <XStack alignItems="center" gap="$1.5" minWidth={0}>
+            <SizableText size="$bodySmMedium" color="$textSubdued">
+              {`${stockVariantCount ?? 0} ${
+                (stockVariantCount ?? 0) > 1 ? 'tokens' : 'token'
+              }`}
+            </SizableText>
+            <StockVariantLogos logos={stockVariantLogos} />
+          </XStack>
+        ) : null}
+        {shouldShowSecondRow && !showVariantSummary ? (
           <XStack alignItems="center" gap="$1.5" minWidth={0}>
             {localizedName ? (
               // Cap the localized name so long names truncate with an

@@ -233,6 +233,31 @@ const STOCK_MARKET_STATUS_CHIPS: Record<
 };
 
 /**
+ * Ringed status dot plus label (Figma 25503:18072). Split out of
+ * `StockIsOpenBadge` so page-level surfaces that have a market status but no
+ * single stock — the Stocks list toolbar — read exactly like the detail page.
+ */
+const StockMarketStatusDot = memo(
+  ({ variant }: { variant: EUSMarketStatusVariant }) => {
+    const intl = useIntl();
+    const chip = STOCK_MARKET_STATUS_CHIPS[variant];
+    return (
+      <XStack gap="$1.5" alignItems="center" flexShrink={0}>
+        <Stack p="$1">
+          <Stack bg={chip.bg} p="$1" borderRadius="$full">
+            <Stack w={6} h={6} borderRadius="$full" bg={chip.color} />
+          </Stack>
+        </Stack>
+        <SizableText size="$bodyMd" color={chip.color}>
+          {intl.formatMessage({ id: chip.titleId })}
+        </SizableText>
+      </XStack>
+    );
+  },
+);
+StockMarketStatusDot.displayName = 'StockMarketStatusDot';
+
+/**
  * Market status chip for tokenized stocks (see OK-58043). Only Ondo tokens
  * follow the US-session model, so only they get a chip (sessions, closed,
  * halted, "Closed · Tradable" for 7×24 instruments); other issuers (e.g.
@@ -282,18 +307,7 @@ const StockIsOpenBadge = memo(
 
     let badge: ReactNode = null;
     if (size === 'dot') {
-      badge = (
-        <XStack gap="$1.5" alignItems="center">
-          <Stack p="$1">
-            <Stack bg={chip.bg} p="$1" borderRadius="$full">
-              <Stack w={6} h={6} borderRadius="$full" bg={chip.color} />
-            </Stack>
-          </Stack>
-          <SizableText size="$bodyMd" color={chip.color}>
-            {intl.formatMessage({ id: chip.titleId })}
-          </SizableText>
-        </XStack>
-      );
+      badge = <StockMarketStatusDot variant={variant} />;
     } else {
       badge =
         size === 'lg' ? (
@@ -414,6 +428,7 @@ export {
   LeverageBadge,
   StockIsOpenBadge,
   StockMarketStatusBadge,
+  StockMarketStatusDot,
   StockSourceLogo,
   SubtitleBadge,
   SubtitleText,

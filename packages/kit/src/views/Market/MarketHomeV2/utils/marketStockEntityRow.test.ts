@@ -56,6 +56,12 @@ describe('deriveStockTicker', () => {
   it('leaves unknown issuers alone', () => {
     expect(deriveStockTicker('AAPLon', 'okx_rwa')).toBe('AAPLon');
   });
+
+  it('falls back to the known suffixes when the payload carries no issuer', () => {
+    expect(deriveStockTicker('AAPLon', undefined)).toBe('AAPL');
+    expect(deriveStockTicker('TSLAx', '')).toBe('TSLA');
+    expect(deriveStockTicker('IBIT', undefined)).toBe('IBIT');
+  });
 });
 
 describe('collapseStockEntityRows', () => {

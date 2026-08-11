@@ -29,6 +29,7 @@ export interface IMarketToken {
   // this row stands for, and how many tokenized variants collapsed into it.
   stockTicker?: string;
   stockVariantCount?: number;
+  stockVariantLogos?: string[];
   // Perps watchlist: coin name (e.g. "BTC"). When set, this is a perps token.
   perpsCoin?: string;
   // Perps: max leverage (e.g. 40)

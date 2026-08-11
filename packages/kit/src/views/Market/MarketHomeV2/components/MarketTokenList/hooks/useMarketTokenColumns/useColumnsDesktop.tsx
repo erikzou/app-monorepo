@@ -29,11 +29,11 @@ import {
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import { getTokenPriceChangeStyle } from '@onekeyhq/shared/src/utils/tokenUtils';
 
+import { StockPriceRangeCell } from '../../components/StockPriceRangeCell';
 import { TokenIdentityItem } from '../../components/TokenIdentityItem';
 import { Txns } from '../../components/Txns';
 import {
   getStockMarketCapValue,
-  getStockPeRatioValue,
   getStockVolume24hValue,
   getTokenAgeInfo,
 } from '../../utils/tokenListHelpers';
@@ -182,7 +182,7 @@ export const useColumnsDesktop = (
           </SizableText>
         ) as any,
         dataIndex: 'star',
-        columnWidth: 50,
+        columnWidth: useStockMetadataColumns ? 38 : 50,
         render: (_: unknown, record: IMarketToken, index?: number) => {
           if (!shouldRenderRichCell(index)) {
             return (
@@ -218,6 +218,8 @@ export const useColumnsDesktop = (
         dataIndex: 'name',
         columnWidth: (() => {
           if (isWatchlistMode) return watchlistNameWidth;
+          // Figma 25473:87732: 240 for the whole fixed block, star included.
+          if (useStockMetadataColumns) return 202;
           if (hasStock && showStockSubtitle) return 240;
           return 200;
         })(),
@@ -279,6 +281,8 @@ export const useColumnsDesktop = (
               communityRecognized={record.communityRecognized}
               stock={record.stock}
               showStockSubtitle={showStockSubtitle}
+              stockVariantCount={record.stockVariantCount}
+              stockVariantLogos={record.stockVariantLogos}
             />
           );
         },
@@ -392,7 +396,7 @@ export const useColumnsDesktop = (
                 })
               : intl.formatMessage({ id: ETranslations.global_liquidity }),
             dataIndex: 'liquidity',
-            columnProps: { flex: 1.2 },
+            columnProps: { flex: useStockMetadataColumns ? 1 : 1.2 },
             render: (text: number, record: IMarketToken, index?: number) => {
               const value = useStockMetadataColumns
                 ? (getStockVolume24hValue(record) ?? EMPTY_MARKET_VALUE)
@@ -414,35 +418,50 @@ export const useColumnsDesktop = (
             },
             renderSkeleton: () => <Skeleton width={100} height={16} />,
           },
-      {
-        title: useStockMetadataColumns
-          ? intl.formatMessage({ id: ETranslations.dexmarket_stock_pe_ttm })
-          : intl.formatMessage({ id: ETranslations.dexmarket_turnover }),
-        dataIndex: 'turnover',
-        columnProps: { flex: 1.1 },
-        render: (text: number, record: IMarketToken, index?: number) => {
-          const value = useStockMetadataColumns
-            ? (getStockPeRatioValue(record) ?? EMPTY_MARKET_VALUE)
-            : getDefaultMarketValue(text);
-
-          if (!shouldRenderRichCell(index)) {
-            return renderLightweightText(value);
+      useStockMetadataColumns
+        ? {
+            // Figma 25473:87754. Demo series until the intraday endpoint
+            // lands — see StockPriceRangeCell.
+            title: '24h price range',
+            dataIndex: 'priceRange',
+            columnProps: { flex: 1 },
+            render: (_: unknown, record: IMarketToken, index?: number) =>
+              shouldRenderRichCell(index) ? (
+                <StockPriceRangeCell
+                  symbol={record.stockTicker || record.symbol}
+                  change24h={record.change24h}
+                />
+              ) : (
+                <Stack width={100} height={40} />
+              ),
+            renderSkeleton: () => <Skeleton width={100} height={40} />,
           }
+        : undefined,
+      useStockMetadataColumns
+        ? undefined
+        : {
+            title: intl.formatMessage({ id: ETranslations.dexmarket_turnover }),
+            dataIndex: 'turnover',
+            columnProps: { flex: 1.1 },
+            render: (text: number, _record: IMarketToken, index?: number) => {
+              const value = getDefaultMarketValue(text);
 
-          return (
-            <NumberSizeableText
-              size="$bodyMd"
-              formatter={useStockMetadataColumns ? 'value' : 'marketCap'}
-              formatterOptions={
-                useStockMetadataColumns ? undefined : { currency: '$' }
+              if (!shouldRenderRichCell(index)) {
+                return renderLightweightText(value);
               }
-            >
-              {value}
-            </NumberSizeableText>
-          );
-        },
-        renderSkeleton: () => <Skeleton width={100} height={16} />,
-      },
+
+              return (
+                <NumberSizeableText
+                  size="$bodyMd"
+                  formatter="marketCap"
+                  formatterOptions={{ currency: '$' }}
+                >
+                  {value}
+                </NumberSizeableText>
+              );
+            },
+            renderSkeleton: () => <Skeleton width={100} height={16} />,
+          },
       isWatchlistMode
         ? undefined
         : {

@@ -24,6 +24,12 @@ type IMarketNormalTokenListProps = {
   networkId?: string;
   selectedCategory?: string;
   stockCategory?: string;
+  /**
+   * The Stocks tab. Told by the caller rather than derived from the payload:
+   * the "All" category sends no category param, and a single row without stock
+   * metadata must not drop the tab back to the crypto presentation.
+   */
+  isStockList?: boolean;
   timeRange?: IMarketTimeRangeValue;
   sortBy?: string;
   sortType?: 'asc' | 'desc';
@@ -62,6 +68,7 @@ function MarketNormalTokenList({
   rowBg,
   onStockDataChange,
   onStockAlwaysOnVariantsChange,
+  isStockList,
 }: IMarketNormalTokenListProps) {
   useMarketRenderCommitProbe('MarketNormalTokenList', {
     networkId,
@@ -89,14 +96,14 @@ function MarketNormalTokenList({
   // what gets rendered is collapsed, so scroll and websocket updates are
   // untouched.
   const result = useMemo(() => {
-    if (!isStockData) {
+    if (!isStockData && !isStockList) {
       return normalResult;
     }
     return {
       ...normalResult,
       data: collapseStockEntityRows(normalResult.data),
     };
-  }, [isStockData, normalResult]);
+  }, [isStockData, isStockList, normalResult]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -137,6 +144,7 @@ function MarketNormalTokenList({
       networkId={networkId}
       onItemPress={onItemPress}
       toolbar={toolbar}
+      isStockList={isStockList}
       result={result}
       isWatchlistMode={false}
       showEndReachedIndicator

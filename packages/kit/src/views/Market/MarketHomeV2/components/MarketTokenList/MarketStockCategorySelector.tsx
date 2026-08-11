@@ -56,23 +56,22 @@ function MarketStockCategorySelectorImpl({
 
   if (!md && !platformEnv.isNative) {
     return (
+      // Figma 25507:18231: no container chrome — the status label, a rule and
+      // the category chips sit straight on the page, 16 above and 20 below.
       <XStack
         position="relative"
-        p="$1"
-        gap="$1"
-        mt="$3"
-        mb="$2"
+        px="$5"
+        pt="$4"
+        pb="$5"
+        gap="$2.5"
         maxWidth="100%"
         overflow="hidden"
-        borderWidth={1}
-        borderColor="$neutral4"
-        borderRadius="$3"
         alignItems="center"
       >
         {leading ? (
           <>
             {leading}
-            <Divider vertical h={16} mx="$1" />
+            <Divider vertical h={16} />
           </>
         ) : null}
         <XStack flex={1} position="relative">

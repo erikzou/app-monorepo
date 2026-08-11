@@ -8,6 +8,8 @@ import {
   useMedia,
 } from '@onekeyhq/components';
 
+import { MARKET_HOME_CONTENT_MAX_WIDTH } from '../../utils/marketHomeLayout';
+
 import { MarketBannerItem } from './MarketBannerItem';
 import { MarketBannerItemSkeleton } from './MarketBannerItemSkeleton';
 import { useMarketBannerList } from './useMarketBannerList';
@@ -34,7 +36,18 @@ function BannerContainerMobile({ children }: { children: ReactNode }) {
 
 function BannerContainerDesktop({ children }: { children: ReactNode }) {
   return (
-    <XStack pt="$4" pb="$2" px="$5" gap="$3" overflow="scroll">
+    // Figma 25473:87712: 32 above the cards, 20 below, inside the page's own
+    // 1140 frame.
+    <XStack
+      width="100%"
+      maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
+      alignSelf="center"
+      pt="$8"
+      pb="$5"
+      px="$5"
+      gap="$3"
+      overflow="scroll"
+    >
       {children}
     </XStack>
   );
