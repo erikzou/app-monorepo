@@ -36,21 +36,24 @@ export function StockStatGrid({ items }: { items: IStockStatItem[] }) {
   const rows = chunk(items, COLUMNS);
 
   return (
-    <YStack gap="$5">
+    // Row rhythm and type scale follow Figma 25334:9345: 24px between rows,
+    // 6px between a label and its value, 14px label over an 18px value.
+    <YStack gap="$6">
       {rows.map((row, rowIndex) => (
         // eslint-disable-next-line react/no-array-index-key
-        <XStack key={rowIndex} gap="$4">
+        <XStack key={rowIndex}>
           {row.map((item) => (
             <YStack
               key={item.key}
-              gap="$1"
+              gap="$1.5"
+              pr="$2.5"
               flexGrow={1}
               flexShrink={1}
               flexBasis={0}
               minWidth={0}
             >
               <XStack alignItems="center" gap="$1">
-                <SizableText size="$bodySm" color="$textSubdued">
+                <SizableText size="$bodyMd" color="$textSubdued">
                   {item.label}
                 </SizableText>
                 {item.tooltip ? (
@@ -62,7 +65,7 @@ export function StockStatGrid({ items }: { items: IStockStatItem[] }) {
                   />
                 ) : null}
               </XStack>
-              <SizableText size="$bodyLgMedium" color="$text">
+              <SizableText size="$headingLg" color="$text">
                 {item.value}
               </SizableText>
             </YStack>

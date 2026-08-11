@@ -32,8 +32,8 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
 
   return (
     <Tabs.ScrollView>
-      <YStack px="$5" py="$5" gap="$8">
-        <YStack gap="$5">
+      <YStack px="$5" py="$6" gap="$8">
+        <YStack gap="$6">
           <StockStatGrid items={keyData} />
 
           {showMoreStats ? <StockStatGrid items={financials} /> : null}
@@ -44,7 +44,7 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
             <Button
               testID={MarketTestIDs.stockStatsToggle}
               size="small"
-              variant="secondary"
+              variant="tertiary"
               iconAfter={
                 showMoreStats
                   ? 'ChevronTopSmallOutline'
@@ -52,7 +52,7 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
               }
               onPress={handleToggleStats}
             >
-              {showMoreStats ? 'Less' : 'More'}
+              {showMoreStats ? 'Show less' : 'Show more'}
             </Button>
           </Stack>
 
@@ -65,7 +65,7 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
             Copy is a placeholder pending PM sign-off, and still needs an i18n
             key (generated locale files are off-limits here).
           */}
-          <SizableText size="$bodyXs" color="$textSubdued">
+          <SizableText size="$bodySm" color="$textDisabled">
             以上交易數據涵蓋盤前／盤中／盤後時段;休市或停牌時顯示最近一個交易日數據。
           </SizableText>
         </YStack>
