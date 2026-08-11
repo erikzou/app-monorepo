@@ -33,6 +33,21 @@ const DEMO_BALANCE = '10000.01';
 const DEMO_PROVIDER_LABEL = 'Best';
 const SIDE_SWITCH_WIDTH = 176;
 
+// Stocks are quoted in dollars, so the panel opens on a stablecoin rather
+// than whatever the chain's speed-config happens to list first (usually the
+// native token).
+const PREFERRED_PAY_SYMBOLS = ['USDC', 'USDT'];
+
+function pickDefaultPayToken(tokens: IToken[]) {
+  const bySymbol = (symbol: string) =>
+    tokens.find((token) => token.symbol?.toUpperCase() === symbol);
+  const preferred = PREFERRED_PAY_SYMBOLS.map(bySymbol).find(Boolean);
+  const anyStable = tokens.find((token) =>
+    token.symbol?.toUpperCase().includes('USD'),
+  );
+  return preferred ?? anyStable ?? tokens[0];
+}
+
 const AMOUNT_INPUT_CONTAINER_PROPS = {
   borderWidth: 0,
   bg: '$transparent',
@@ -180,7 +195,7 @@ export function StockTradePanel() {
   const [selectedPayToken, setSelectedPayToken] = useState<IToken | undefined>(
     undefined,
   );
-  const payToken = selectedPayToken ?? payTokens[0];
+  const payToken = selectedPayToken ?? pickDefaultPayToken(payTokens);
 
   const isTokenPriceSource = priceSource === 'token';
   const handleTogglePriceSource = useCallback(() => {
