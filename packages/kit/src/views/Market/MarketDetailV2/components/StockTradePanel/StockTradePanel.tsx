@@ -9,6 +9,7 @@ import {
   IconButton,
   Image,
   Input,
+  NumberSizeableText,
   SizableText,
   Stack,
   XStack,
@@ -244,13 +245,28 @@ export function StockTradePanel() {
       </XStack>
 
       <YStack px="$5" gap="$4">
-        <XStack pl="$1" py="$2" gap="$2" alignItems="center">
-          <Stack flex={1} minWidth={0}>
-            <StockVariantSelector
-              instruments={instruments}
-              selectedInstrument={selectedInstrument}
-            />
-          </Stack>
+        <XStack pl="$1" py="$2" gap="$2.5" alignItems="center">
+          <StockVariantSelector
+            instruments={instruments}
+            selectedInstrument={selectedInstrument}
+          />
+          {/* Price sits outside the trigger so the row reads as one line. */}
+          <XStack flex={1} minWidth={0} justifyContent="flex-end">
+            {tokenPrice ? (
+              <NumberSizeableText
+                size="$bodyLgMedium"
+                color="$text"
+                formatter="price"
+                formatterOptions={{ currency: '$' }}
+              >
+                {tokenPrice}
+              </NumberSizeableText>
+            ) : (
+              <SizableText size="$bodyLgMedium" color="$text">
+                --
+              </SizableText>
+            )}
+          </XStack>
           {/* Same toggle as the chart header's Share / Token Price switch. */}
           <Stack
             testID="market-stock-price-source-chart"

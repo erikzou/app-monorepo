@@ -281,60 +281,42 @@ export function StockVariantSelector({
   // degrades to a plain label rather than an empty dropdown.
   const isSelectable = instruments.length > 1;
 
+  // Trigger of the trade panel's token row (Figma 25497:17271): a borderless
+  // pill with the token, its symbol and the issuer mark. The price and the
+  // chart button live outside it, so the row reads as one line.
   const content = (
-    <XStack gap="$2.5" alignItems="center" flex={1}>
+    <XStack gap="$2.5" alignItems="center">
       <Token
-        size="md"
+        size="sm"
         tokenImageUri={active.logoUrl}
         networkImageUri={activeNetworkLogoUri}
         fallbackIcon="CryptoCoinOutline"
       />
-      <YStack flex={1} minWidth={0}>
-        <XStack gap="$1.5" alignItems="center">
-          <SizableText size="$bodyMdMedium" color="$text" numberOfLines={1}>
-            {active.tokenSymbol}
-          </SizableText>
-          {/* Issuer mark reads as a property of the token name, so it trails
-              the symbol rather than sitting in the subtitle. */}
-          <StockSourceLogo stock={tokenDetail?.stock} />
-        </XStack>
-        {/* Issuer is already shown as a logo above, so the trigger subtitle
-            carries only the chain and stops truncating. */}
-        <XStack gap="$1.5" alignItems="center">
-          <SizableText size="$bodySm" color="$textSubdued" numberOfLines={1}>
-            {active.chainName}
-          </SizableText>
-          {isActiveTradable ? null : (
-            <SizableText size="$bodySm" color="$textCaution">
-              Closed
-            </SizableText>
-          )}
-        </XStack>
-      </YStack>
-      {active.price ? (
-        <NumberSizeableText
-          size="$bodyMdMedium"
+      <XStack gap="$1" alignItems="center" minWidth={0}>
+        <SizableText
+          size="$headingMd"
           color="$text"
-          formatter="price"
-          formatterOptions={{ currency: '$' }}
+          numberOfLines={1}
+          flexShrink={1}
         >
-          {active.price}
-        </NumberSizeableText>
-      ) : null}
+          {active.tokenSymbol}
+        </SizableText>
+        <StockSourceLogo stock={tokenDetail?.stock} size={16} />
+      </XStack>
       {isSelectable ? (
-        <Icon name="ChevronDownSmallOutline" size="$5" color="$iconSubdued" />
+        <Icon name="ChevronDownSmallOutline" size="$4.5" color="$iconSubdued" />
       ) : null}
     </XStack>
   );
 
   const frameProps = {
-    px: '$3',
-    py: '$2',
-    borderRadius: '$3',
+    px: '$2',
+    py: '$1',
+    mx: '$-2',
+    borderRadius: '$full',
     borderCurve: 'continuous',
-    borderWidth: 1,
-    borderColor: '$borderSubdued',
     alignItems: 'center',
+    alignSelf: 'flex-start',
   } as const;
 
   const closedNotice = isActiveTradable ? null : (

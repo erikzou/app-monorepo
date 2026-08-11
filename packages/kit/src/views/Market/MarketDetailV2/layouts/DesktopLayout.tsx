@@ -390,6 +390,7 @@ export function DesktopLayout({
           }
           alignSelf="center"
           px="$5"
+          pt="$5"
         >
           <TokenDetailHeader
             showFavoriteButton={showFavoriteButton}
@@ -466,7 +467,6 @@ export function DesktopLayout({
                 ? MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom
                 : undefined
             }
-            px={isStockPage && !isChartFullscreen ? '$5' : undefined}
             overflow="hidden"
             bg="$bgApp"
             zIndex={isChartFullscreen ? chartFullscreenZIndex : undefined}
@@ -515,10 +515,10 @@ export function DesktopLayout({
                 */}
                 <Stack
                   position="absolute"
-                  left={0}
-                  right={0}
-                  top={0}
-                  bottom={0}
+                  left={STOCK_LAYOUT.contentPadding}
+                  right={STOCK_LAYOUT.contentPadding}
+                  top={MARKET_CHART_TOOLBAR_HEIGHT}
+                  bottom={MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom}
                   opacity={showLiteChart ? 0 : 1}
                   pointerEvents={showLiteChart ? 'none' : 'auto'}
                 >
@@ -532,8 +532,12 @@ export function DesktopLayout({
 
           <Stack
             minHeight={MARKET_DETAIL_LAYOUT.infoTabsHeight}
-            borderTopWidth="$px"
-            borderTopColor="$borderSubdued"
+            {...(isStockPage
+              ? undefined
+              : {
+                  borderTopWidth: '$px',
+                  borderTopColor: '$borderSubdued',
+                })}
           >
             {isStockPage && stockEntity ? (
               <StockEntityTabs

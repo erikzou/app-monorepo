@@ -84,7 +84,9 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
  * ratios live in the Overview "More" expander meanwhile. On-chain tabs
  * (transactions, liquidity, holders list) are deliberately absent.
  */
-const TAB_BAR_CONTAINER_STYLE = { px: '$5' } as const;
+// The tab row lines up with the section content; its own container already
+// carries the gutter, so only the space above the row is set here.
+const TAB_BAR_CONTAINER_STYLE = {} as const;
 
 export function StockEntityTabs({
   entity,
