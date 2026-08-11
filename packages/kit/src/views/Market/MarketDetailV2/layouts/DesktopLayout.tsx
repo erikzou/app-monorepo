@@ -74,6 +74,14 @@ const MARKET_CHART_FULLSCREEN_STYLE = {
 } as const;
 const IFRAME_WHEEL_EVENT_TYPE = 'wheelEvent' as const;
 
+// Content frame of the stock detail design (Figma 25271:8054).
+const STOCK_LAYOUT = {
+  contentMaxWidth: 1140,
+  contentPadding: 20,
+  rightColumnWidth: 344,
+  columnGap: 24,
+} as const;
+
 type IDesktopInformationTabsProps = ComponentProps<
   typeof DesktopInformationTabs
 >;
@@ -365,12 +373,33 @@ export function DesktopLayout({
           layer, so it stays visible for the whole stock page. */}
       {isStockPage && !isChartFullscreen ? <StockDisclaimerBanner /> : null}
 
-      <XStack>
+      {/* Stock pages follow the design's centered 1140 content frame
+          (Figma 25271:8054: 772 + 24 + 344). The 20px side padding keeps the
+          content off the window edge below that width, so the inner box is
+          still exactly 1140 on a 1440 viewport. Crypto pages stay full-width. */}
+      <XStack
+        {...(isStockPage
+          ? {
+              width: '100%',
+              maxWidth:
+                STOCK_LAYOUT.contentMaxWidth + STOCK_LAYOUT.contentPadding * 2,
+              alignSelf: 'center',
+              px: '$5',
+              gap: STOCK_LAYOUT.columnGap,
+              alignItems: 'flex-start',
+            }
+          : undefined)}
+      >
         {/* Left column */}
         <YStack
           flex={1}
-          borderRightWidth="$px"
-          borderRightColor="$borderSubdued"
+          minWidth={0}
+          {...(isStockPage
+            ? undefined
+            : {
+                borderRightWidth: '$px',
+                borderRightColor: '$borderSubdued',
+              })}
         >
           <TokenDetailHeader
             showFavoriteButton={showFavoriteButton}
@@ -484,8 +513,11 @@ export function DesktopLayout({
         </YStack>
 
         {/* Right column */}
-        <Stack w={340}>
-          <Stack w={340} pb={platformEnv.isWeb ? '$12' : undefined}>
+        <Stack w={isStockPage ? STOCK_LAYOUT.rightColumnWidth : 340}>
+          <Stack
+            w={isStockPage ? STOCK_LAYOUT.rightColumnWidth : 340}
+            pb={platformEnv.isWeb ? '$12' : undefined}
+          >
             <PerpetualTradingBanner pl="$3" pr="$5" />
             <Stack pl="$3" pr="$5" pt="$4" pb="$3">
               <SwapPanel swapToken={swapToken} />
