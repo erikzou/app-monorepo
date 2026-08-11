@@ -84,7 +84,8 @@ export function TokenDetailHeaderLeft({
 
   const { website, twitter } = extraData || {};
 
-  // Company name and market status share the line under the ticker.
+  // Company name sits under the ticker. Market status is not repeated here:
+  // the chart header carries it as a status dot right below (Figma 25503:18072).
   const entitySubtitle = useMemo(
     () =>
       stockEntityIdentity ? (
@@ -92,10 +93,9 @@ export function TokenDetailHeaderLeft({
           <SizableText size="$bodyMd" color="$textSubdued" numberOfLines={1}>
             {stockEntityIdentity.name}
           </SizableText>
-          <StockMarketStatusBadge stock={stock} />
         </XStack>
       ) : undefined,
-    [stock, stockEntityIdentity],
+    [stockEntityIdentity],
   );
 
   const marketStar =
