@@ -3,16 +3,15 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   GradientMask,
-  IconButton,
   ScrollView,
-  Stack,
   XStack,
   useMedia,
 } from '@onekeyhq/components';
+import { EWatchlistFrom } from '@onekeyhq/shared/src/logger/scopes/dex';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import networkUtils from '@onekeyhq/shared/src/utils/networkUtils';
 
-import { MarketTestIDs } from '../../../testIDs';
+import { MarketStarV2 } from '../../../components/MarketStarV2';
 import { useMarketDetailHeaderDisplayData } from '../../hooks/useMarketDetailDisplayData';
 
 import { ShareButton } from './ShareButton';
@@ -98,14 +97,14 @@ export function TokenDetailHeader({
       position="relative"
       width={lg ? '90%' : '100%'}
       px="$5"
-      py="$4"
+      py={isStockLayout ? '$3' : '$4'}
       // The entity trigger is two lines tall, so the fixed single-line height
       // would clip its name + status row.
       h={stockEntityIdentity ? undefined : 54}
-      minHeight={54}
+      minHeight={isStockLayout ? 72 : 54}
       jc="flex-start"
       ai="center"
-      gap="$6"
+      gap={isStockLayout ? '$5' : '$6'}
       {...containerProps}
     >
       <TokenDetailHeaderLeft
@@ -131,10 +130,20 @@ export function TokenDetailHeader({
         />
       ) : null}
 
-      {/* Stock headers keep only share plus a placeholder overflow button;
-          everything token-specific moved into the trust block. */}
+      {/* Star and share sit together on the right (Figma 25277:10360). */}
       {isStockLayout && !platformEnv.isNative && !md ? (
-        <>
+        <XStack gap="$4" alignItems="center">
+          {showFavoriteButton && networkId ? (
+            <MarketStarV2
+              chainId={networkId}
+              contractAddress={tokenDetail?.address ?? ''}
+              size="small"
+              customIconSize="$5"
+              from={EWatchlistFrom.Detail}
+              tokenSymbol={tokenDetail?.symbol ?? ''}
+              isNative={isNative}
+            />
+          ) : null}
           {networkId ? (
             <ShareButton
               networkId={networkId}
@@ -144,32 +153,7 @@ export function TokenDetailHeader({
               size="$5"
             />
           ) : null}
-          <IconButton
-            testID={MarketTestIDs.detailMoreButton}
-            size="small"
-            variant="tertiary"
-            icon="DotHorOutline"
-            iconSize="$5"
-            title="More"
-          />
-        </>
-      ) : null}
-
-      {/* Share button pushed to the right on desktop */}
-      {!stockEntityIdentity &&
-      !platformEnv.isNative &&
-      !md &&
-      networkId &&
-      isNative ? (
-        <>
-          <Stack flex={1} />
-          <ShareButton
-            networkId={networkId}
-            address={tokenDetail?.address ?? ''}
-            isNative={isNative}
-            useIconButton
-          />
-        </>
+        </XStack>
       ) : null}
     </XStack>
   );

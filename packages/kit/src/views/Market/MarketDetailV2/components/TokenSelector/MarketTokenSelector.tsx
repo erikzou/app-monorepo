@@ -341,10 +341,10 @@ function BaseMarketTokenSelector({
   const triggerTitle = useMemo(() => {
     if (subtitleSlot) {
       return (
-        <YStack minWidth={0} flexShrink={1} gap="$0.5">
-          <XStack alignItems="center" gap="$1">
+        <YStack minWidth={0} flexShrink={1}>
+          <XStack alignItems="center" gap="$1.5">
             <SizableText
-              size="$headingLg"
+              size="$headingXl"
               color="$text"
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -435,18 +435,21 @@ function BaseMarketTokenSelector({
         renderTrigger={
           // eslint-disable-next-line props-checker/validator -- Popover injects the trigger press handler.
           <XStack
-            gap="$2"
             alignItems="center"
             cursor="pointer"
             bg="$bgApp"
+            // Stock entity trigger uses the design's 14px rhythm and a hover
+            // target that bleeds past the content (Figma 25501:17981).
+            gap={subtitleSlot ? 14 : '$2'}
             px="$2"
-            py="$1.5"
+            py={subtitleSlot ? '$1' : '$1.5'}
+            mx={subtitleSlot ? '$-2' : undefined}
             borderRadius="$full"
             hoverStyle={{ bg: '$bgHover' }}
             pressStyle={{ bg: '$bgActive' }}
           >
             <Token
-              size={subtitleSlot ? 'lg' : 'md'}
+              size={subtitleSlot ? 'xl' : 'md'}
               tokenImageUri={logoUrl}
               tokenImageUris={stableLogoUrls}
               networkImageUri={

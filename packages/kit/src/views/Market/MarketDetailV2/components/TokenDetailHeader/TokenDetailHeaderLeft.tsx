@@ -133,7 +133,9 @@ export function TokenDetailHeaderLeft({
           />
         ) : (
           <>
-            {marketStar}
+            {/* Stock pages move the star into the right-hand cluster next to
+                share (Figma 25277:10360). */}
+            {stockEntityIdentity ? null : marketStar}
             <MarketTokenSelector
               titleOverride={stockEntityIdentity?.ticker}
               hideNetworkBadge={Boolean(stockEntityIdentity)}
