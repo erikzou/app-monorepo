@@ -150,7 +150,7 @@ export function TokenDetailHeader({
               address={tokenDetail?.address ?? ''}
               isNative={isNative}
               useIconButton
-              size="$5"
+              size="small"
             />
           ) : null}
         </XStack>

@@ -483,11 +483,10 @@ export function DesktopLayout({
             ) : null}
             {isStockPage ? (
               <>
-                {showChartModeSwitch ? (
+                {showLiteChart ? (
                   <MarketLiteChartControls
                     range={liteChartRange}
                     onRangeChange={setLiteChartRange}
-                    showRanges={showLiteChart}
                   />
                 ) : null}
                 {showLiteChart ? (
@@ -501,29 +500,18 @@ export function DesktopLayout({
                   </>
                 ) : null}
                 {/*
-                  DEMO ONLY. Unmounting the Pro chart made every Lite/Pro
-                  toggle a cold start: new iframe document, charting library,
-                  bridge handshake and a full history backfill. Keeping it
-                  mounted and hidden makes switching instant.
-
-                  It is hidden with opacity rather than `display: none` so the
-                  iframe keeps its box: a 0x0 resize would make TradingView
-                  re-lay-out every time it came back. The cost is that the Pro
-                  chart also boots while the page sits in Lite. Owning that
-                  lifecycle properly (mount on first Pro use, then keep alive)
-                  is the frontend team's call.
+                  The Pro chart is mounted only while it is on screen. Keeping
+                  it alive behind the Lite chart avoided a cold start, but the
+                  hidden iframe never re-laid-out after the box changed and
+                  came back blank. Correctness wins here; owning the lifecycle
+                  properly (mount once, keep alive, resize on show) is the
+                  frontend team's call.
                 */}
-                <Stack
-                  position="absolute"
-                  left={STOCK_LAYOUT.contentPadding}
-                  right={STOCK_LAYOUT.contentPadding}
-                  top={MARKET_CHART_TOOLBAR_HEIGHT}
-                  bottom={MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom}
-                  opacity={showLiteChart ? 0 : 1}
-                  pointerEvents={showLiteChart ? 'none' : 'auto'}
-                >
-                  {marketTradingView}
-                </Stack>
+                {showLiteChart ? null : (
+                  <Stack flex={1} px={STOCK_LAYOUT.contentPadding}>
+                    {marketTradingView}
+                  </Stack>
+                )}
               </>
             ) : (
               marketTradingView

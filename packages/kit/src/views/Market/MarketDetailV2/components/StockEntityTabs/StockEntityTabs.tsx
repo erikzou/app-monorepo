@@ -32,7 +32,10 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
 
   return (
     <Tabs.ScrollView>
-      <YStack px="$5" py="$6" gap="$10">
+      {/* Figma 25206:18271: the section list starts 36px under the tab row
+          (12 between the row and the list, 24 of section padding) and the
+          sections are 48 apart. */}
+      <YStack px="$5" pt={36} pb="$6" gap="$12">
         <YStack gap="$6">
           <StockStatGrid items={keyData} />
 
@@ -138,7 +141,7 @@ export function StockEntityTabs({
       </Tabs.Tab>,
       <Tabs.Tab key="portfolio" name={positionTabName}>
         <Tabs.ScrollView>
-          <YStack px="$5" py="$5">
+          <YStack px="$5" pt={36} pb="$6">
             <StockPositionTable
               portfolioData={portfolioData}
               accountAddress={accountAddress}

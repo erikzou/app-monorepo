@@ -12,11 +12,32 @@ import type { IMarketAccountPortfolioItem } from '@onekeyhq/shared/types/marketV
 import { formatPriceChangeDisplay } from '../../utils/statValue';
 
 const COLUMNS = [
-  { key: 'token', label: 'Token', align: 'flex-start' as const },
-  { key: 'balance', label: 'Balance', align: 'flex-end' as const },
-  { key: 'unrealized', label: 'Unrealized PnL', align: 'flex-end' as const },
-  { key: 'total', label: 'Total PnL', align: 'flex-end' as const },
+  { key: 'token', label: 'Token', align: 'flex-start' as const, grow: 1.4 },
+  { key: 'balance', label: 'Balance', align: 'flex-end' as const, grow: 1 },
+  {
+    key: 'unrealized',
+    label: 'Unrealized PnL',
+    align: 'flex-end' as const,
+    grow: 1,
+  },
+  { key: 'total', label: 'Total PnL', align: 'flex-end' as const, grow: 1 },
 ];
+
+/**
+ * Header and body cells have to land on the same grid, so every column sizes
+ * from its share of the row (flexBasis 0) instead of from its own content —
+ * otherwise "Unrealized PnL" alone widens its column and the labels drift off
+ * the numbers below them.
+ */
+function cellProps(column: (typeof COLUMNS)[number]) {
+  return {
+    flexGrow: column.grow,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
+    alignItems: column.align,
+  } as const;
+}
 
 function formatUsd(value: string | undefined) {
   if (!value) {
@@ -77,7 +98,7 @@ function PositionRow({
 }) {
   return (
     <XStack py="$3" alignItems="center" gap="$3">
-      <XStack flex={1} minWidth={0} alignItems="center" gap="$2.5">
+      <XStack {...cellProps(COLUMNS[0])} gap="$2.5">
         <Token
           size="md"
           tokenImageUri={tokenLogoUrl}
@@ -88,7 +109,7 @@ function PositionRow({
         </SizableText>
       </XStack>
 
-      <YStack flex={1} minWidth={0} alignItems="flex-end">
+      <YStack {...cellProps(COLUMNS[1])}>
         <SizableText size="$bodyMdMedium" color="$text">
           {formatUsd(item.totalPrice)}
         </SizableText>
@@ -97,14 +118,14 @@ function PositionRow({
         </SizableText>
       </YStack>
 
-      <Stack flex={1} minWidth={0} alignItems="flex-end">
+      <Stack {...cellProps(COLUMNS[2])}>
         <PnlCell
           usd={item.pnl?.unrealizedPnlUsd}
           percent={item.pnl?.unrealizedPnlPercent}
         />
       </Stack>
 
-      <Stack flex={1} minWidth={0} alignItems="flex-end">
+      <Stack {...cellProps(COLUMNS[3])}>
         <PnlCell
           usd={item.pnl?.totalPnlUsd}
           percent={item.pnl?.totalPnlPercent}
@@ -152,12 +173,7 @@ export function StockPositionTable({
         borderBottomColor="$borderSubdued"
       >
         {COLUMNS.map((column) => (
-          <Stack
-            key={column.key}
-            flex={1}
-            minWidth={0}
-            alignItems={column.align}
-          >
+          <Stack key={column.key} {...cellProps(column)}>
             <SizableText size="$bodySm" color="$textSubdued">
               {column.label}
             </SizableText>

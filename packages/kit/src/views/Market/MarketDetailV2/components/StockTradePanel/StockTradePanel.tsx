@@ -239,7 +239,7 @@ export function StockTradePanel() {
             testID="market-stock-trade-settings"
             icon="SliderHorOutline"
             variant="tertiary"
-            size="medium"
+            size="small"
           />
         </XStack>
       </XStack>
@@ -267,28 +267,15 @@ export function StockTradePanel() {
               </SizableText>
             )}
           </XStack>
-          {/* Same toggle as the chart header's Share / Token Price switch. */}
-          <Stack
+          {/* Same toggle as the chart header's Share / Token Price switch, and
+              the same icon button size as the header actions. */}
+          <IconButton
             testID="market-stock-price-source-chart"
-            w="$8"
-            h="$8"
-            borderRadius="$2"
-            borderCurve="continuous"
-            alignItems="center"
-            justifyContent="center"
-            cursor="pointer"
-            userSelect="none"
-            bg={isTokenPriceSource ? '$bgStrong' : '$transparent'}
-            hoverStyle={{ bg: isTokenPriceSource ? '$bgStrong' : '$bgHover' }}
-            pressStyle={{ bg: '$bgActive' }}
+            icon="TradingViewCandlesOutline"
+            variant={isTokenPriceSource ? 'secondary' : 'tertiary'}
+            size="small"
             onPress={handleTogglePriceSource}
-          >
-            <Icon
-              name="TradingViewCandlesOutline"
-              size="$5"
-              color={isTokenPriceSource ? '$icon' : '$iconSubdued'}
-            />
-          </Stack>
+          />
         </XStack>
 
         <AmountCard
