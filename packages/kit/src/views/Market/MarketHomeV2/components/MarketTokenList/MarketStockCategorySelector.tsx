@@ -2,7 +2,6 @@ import { memo } from 'react';
 import type { ReactNode } from 'react';
 
 import {
-  Divider,
   GradientMask,
   ScrollView,
   XStack,
@@ -68,12 +67,7 @@ function MarketStockCategorySelectorImpl({
         overflow="hidden"
         alignItems="center"
       >
-        {leading ? (
-          <>
-            {leading}
-            <Divider vertical h={16} />
-          </>
-        ) : null}
+        {leading}
         <XStack flex={1} position="relative">
           <ScrollView
             ref={scrollViewRef}

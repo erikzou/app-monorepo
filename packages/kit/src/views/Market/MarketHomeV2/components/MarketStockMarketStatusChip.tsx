@@ -1,5 +1,6 @@
 import { memo } from 'react';
 
+import { Divider, XStack } from '@onekeyhq/components';
 import { useUSMarketStatus } from '@onekeyhq/kit/src/hooks/useUSMarketStatus';
 import { StockMarketStatusDot } from '@onekeyhq/kit/src/views/Market/components/PerpsBadges';
 import { resolveUSMarketStatusVariant } from '@onekeyhq/shared/src/utils/tradingHoursUtils';
@@ -31,7 +32,14 @@ function MarketStockMarketStatusChipImpl() {
     return null;
   }
 
-  return <StockMarketStatusDot variant={variant} />;
+  // The rule belongs to the chip, not to the bar: an unavailable status makes
+  // the whole thing disappear, and a lone divider would be left behind.
+  return (
+    <XStack alignItems="center" gap="$2.5" flexShrink={0}>
+      <StockMarketStatusDot variant={variant} />
+      <Divider vertical h={16} />
+    </XStack>
+  );
 }
 
 export const MarketStockMarketStatusChip = memo(

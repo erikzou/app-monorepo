@@ -125,12 +125,12 @@ interface ITokenIdentityItemProps {
 }
 
 /**
- * The tokens a collapsed row stands for, 14px and overlapped 4px the way the
- * design stacks them (Figma 25507:18329). Caps at three; the count next to it
- * already carries the total.
+ * The tokens a collapsed row stands for, overlapped 4px the way the design
+ * stacks them (Figma 25507:18329). Caps at three; the count next to it already
+ * carries the total.
  */
 const STOCK_VARIANT_LOGO_LIMIT = 3;
-const STOCK_VARIANT_LOGO_SIZE = 14;
+const STOCK_VARIANT_LOGO_SIZE = 16;
 
 function StockVariantLogos({ logos }: { logos?: string[] }) {
   const visible = (logos ?? []).slice(0, STOCK_VARIANT_LOGO_LIMIT);

@@ -220,11 +220,14 @@ export const useColumnsDesktop = (
         dataIndex: 'name',
         columnWidth: (() => {
           if (isWatchlistMode) return watchlistNameWidth;
-          // Figma 25473:87732: 240 for the whole fixed block, star included.
-          if (useStockMetadataColumns) return 202;
+          // Stocks: no fixed width — the company column takes the slack the
+          // short numeric columns leave over, so long fund names fit instead
+          // of truncating.
+          if (useStockMetadataColumns) return undefined;
           if (hasStock && showStockSubtitle) return 240;
           return 200;
         })(),
+        columnProps: useStockMetadataColumns ? { flex: 2 } : undefined,
         render: (_: unknown, record: IMarketToken, index?: number) => {
           const renderRichCell = shouldRenderRichCell(index);
           if (!renderRichCell) {
@@ -427,6 +430,7 @@ export const useColumnsDesktop = (
             // lands — see StockPriceRangeCell.
             title: '24h price range',
             dataIndex: 'priceRange',
+            align: 'right' as const,
             columnProps: { flex: 1 },
             render: (_: unknown, record: IMarketToken, index?: number) =>
               shouldRenderRichCell(index) ? (
