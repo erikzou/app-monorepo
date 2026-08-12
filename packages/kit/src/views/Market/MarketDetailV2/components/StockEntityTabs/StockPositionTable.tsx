@@ -24,15 +24,16 @@ const COLUMNS = [
   { key: 'total', label: 'Total PnL', align: 'flex-end' as const, grow: 1 },
 ];
 
-// Token (md) plus the row's gap: indents the "Token" label so it sits over the
-// symbol rather than over the avatar.
-const TOKEN_LABEL_INDENT = 42;
-
 /**
  * Header and body cells have to land on the same grid, so every column sizes
  * from its share of the row (flexBasis 0) instead of from its own content —
  * otherwise "Unrealized PnL" alone widens its column and the labels drift off
  * the numbers below them.
+ *
+ * Alignment is left to the call site: `align` is the horizontal intent, which
+ * is `alignItems` on a column cell but `justifyContent` on the row's token
+ * cell — spreading it blindly there top-pinned the symbol instead of centering
+ * it against the avatar.
  */
 function cellProps(column: (typeof COLUMNS)[number]) {
   return {
@@ -40,7 +41,6 @@ function cellProps(column: (typeof COLUMNS)[number]) {
     flexShrink: 1,
     flexBasis: 0,
     minWidth: 0,
-    alignItems: column.align,
   } as const;
 }
 
@@ -103,7 +103,7 @@ function PositionRow({
 }) {
   return (
     <XStack py="$3" alignItems="center" gap="$3">
-      <XStack {...cellProps(COLUMNS[0])} gap="$2.5">
+      <XStack {...cellProps(COLUMNS[0])} alignItems="center" gap="$2.5">
         <Token
           size="md"
           tokenImageUri={tokenLogoUrl}
@@ -114,7 +114,7 @@ function PositionRow({
         </SizableText>
       </XStack>
 
-      <YStack {...cellProps(COLUMNS[1])}>
+      <YStack {...cellProps(COLUMNS[1])} alignItems={COLUMNS[1].align}>
         <SizableText size="$bodyMdMedium" color="$text">
           {formatUsd(item.totalPrice)}
         </SizableText>
@@ -131,14 +131,14 @@ function PositionRow({
         </NumberSizeableText>
       </YStack>
 
-      <Stack {...cellProps(COLUMNS[2])}>
+      <Stack {...cellProps(COLUMNS[2])} alignItems={COLUMNS[2].align}>
         <PnlCell
           usd={item.pnl?.unrealizedPnlUsd}
           percent={item.pnl?.unrealizedPnlPercent}
         />
       </Stack>
 
-      <Stack {...cellProps(COLUMNS[3])}>
+      <Stack {...cellProps(COLUMNS[3])} alignItems={COLUMNS[3].align}>
         <PnlCell
           usd={item.pnl?.totalPnlUsd}
           percent={item.pnl?.totalPnlPercent}
@@ -189,7 +189,7 @@ export function StockPositionTable({
           <Stack
             key={column.key}
             {...cellProps(column)}
-            pl={column.key === 'token' ? TOKEN_LABEL_INDENT : undefined}
+            alignItems={column.align}
           >
             <SizableText size="$bodySm" color="$textSubdued">
               {column.label}
