@@ -78,11 +78,13 @@ const MARKET_CHART_FULLSCREEN_STYLE = {
 } as const;
 const IFRAME_WHEEL_EVENT_TYPE = 'wheelEvent' as const;
 
-// Content frame of the stock detail design (Figma 25271:8054).
+// Content frame of the stock detail design (Figma 25271:8054). The frame is
+// fixed, so the left column takes whatever the trade panel leaves:
+// 1140 - 24 - 384 = 732.
 const STOCK_LAYOUT = {
   contentMaxWidth: 1140,
   contentPadding: 20,
-  rightColumnWidth: 344,
+  rightColumnWidth: 384,
   columnGap: 24,
 } as const;
 

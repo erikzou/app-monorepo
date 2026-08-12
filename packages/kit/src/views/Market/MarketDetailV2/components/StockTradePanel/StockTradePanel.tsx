@@ -441,21 +441,15 @@ export function StockTradePanel() {
     }
     return hasPrice ? `$${amountBN.multipliedBy(priceBN).toFixed(2)}` : '$0.00';
   })();
-  const rate = (() => {
-    if (!hasPrice) {
-      return undefined;
-    }
-    return isSell ? priceBN : new BigNumber(1).dividedBy(priceBN);
-  })();
-  const rateLabel = (() => {
-    if (!rate) {
-      return '--';
-    }
-    const quoteSymbol = payToken?.symbol ?? '--';
-    return isSell
-      ? `1 ${tokenSymbol} = ${rate.toFixed(2)} ${quoteSymbol}`
-      : `1 ${quoteSymbol} = ${rate.toFixed(6)} ${tokenSymbol}`;
-  })();
+  // The quote is always read in the stock's direction — what one share costs
+  // in the quote token — on both sides. Basing it on the pay token would flip the
+  // line between Buy and Sell and hand the user two different scales for the
+  // same trade. The price bar above is the market price; this line is the
+  // route's execution price, so the two are meant to be compared.
+  const rate = hasPrice ? priceBN : undefined;
+  const rateLabel = rate
+    ? `1 ${tokenSymbol} = ${rate.toFixed(2)} ${payToken?.symbol ?? '--'}`
+    : '--';
 
   return (
     <YStack bg="$bgApp" gap="$4">
