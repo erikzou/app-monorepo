@@ -233,9 +233,13 @@ const STOCK_MARKET_STATUS_CHIPS: Record<
 };
 
 /**
- * Ringed status dot plus label (Figma 25503:18072). Split out of
- * `StockIsOpenBadge` so page-level surfaces that have a market status but no
- * single stock — the Stocks list toolbar — read exactly like the detail page.
+ * Session icon plus label. Split out of `StockIsOpenBadge` so page-level
+ * surfaces that have a market status but no single stock — the Stocks list
+ * toolbar — read exactly like the detail page.
+ *
+ * The icon is the same per-session one the trading-hours panel uses (sunrise /
+ * sun / sundown / moon / clock / pause), so the session is legible without
+ * reading the label.
  */
 const StockMarketStatusDot = memo(
   ({ variant }: { variant: EUSMarketStatusVariant }) => {
@@ -243,11 +247,7 @@ const StockMarketStatusDot = memo(
     const chip = STOCK_MARKET_STATUS_CHIPS[variant];
     return (
       <XStack gap="$1.5" alignItems="center" flexShrink={0}>
-        <Stack p="$1">
-          <Stack bg={chip.bg} p="$1" borderRadius="$full">
-            <Stack w={6} h={6} borderRadius="$full" bg={chip.color} />
-          </Stack>
-        </Stack>
+        <Icon name={chip.icon} size="$4" color={chip.color} />
         <SizableText size="$bodyMd" color={chip.color}>
           {intl.formatMessage({ id: chip.titleId })}
         </SizableText>

@@ -1,5 +1,5 @@
 import type { FC } from 'react';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useMemo } from 'react';
 
 import {
   Icon,
@@ -27,6 +27,8 @@ import { ECopyFrom } from '@onekeyhq/shared/src/logger/scopes/dex';
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
 import accountUtils from '@onekeyhq/shared/src/utils/accountUtils';
 import type { IMarketStockInfo } from '@onekeyhq/shared/types/marketV2';
+
+import { useIsMarketRowHovered } from '../MarketRowHoverContext';
 
 import type { GestureResponderEvent } from 'react-native';
 
@@ -118,6 +120,8 @@ interface ITokenIdentityItemProps {
    */
   stockVariantCount?: number;
   stockVariantLogos?: string[];
+  /** Row key, so the cell can react to a hover anywhere on its row. */
+  rowId?: string;
 }
 
 /**
@@ -172,10 +176,9 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   hideVariantChrome = false,
   stockVariantCount,
   stockVariantLogos,
+  rowId,
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const handleHoverIn = useCallback(() => setIsHovered(true), []);
-  const handleHoverOut = useCallback(() => setIsHovered(false), []);
+  const isRowHovered = useIsMarketRowHovered(rowId);
   const { gtMd } = useMedia();
   const { copyText } = useClipboard();
   // Use hook to get network logo with async fallback
@@ -258,8 +261,10 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   // tokenization — bigger avatar, wider gap, and a second line that trades the
   // company name for what the row is hiding while the pointer is on it.
   const isStockEntityRow = hideVariantChrome;
+  // Hovering anywhere on the row — not just this cell — trades the company
+  // name for what the row collapses.
   const showVariantSummary =
-    isStockEntityRow && isHovered && (stockVariantCount ?? 0) > 0;
+    isStockEntityRow && isRowHovered && (stockVariantCount ?? 0) > 0;
 
   return (
     <XStack
@@ -268,8 +273,6 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
       flex={isStockEntityRow ? 1 : undefined}
       minWidth={isStockEntityRow ? 0 : undefined}
       userSelect="none"
-      onHoverIn={isStockEntityRow ? handleHoverIn : undefined}
-      onHoverOut={isStockEntityRow ? handleHoverOut : undefined}
     >
       <Token
         tokenImageUri={getTokenImageUri()}

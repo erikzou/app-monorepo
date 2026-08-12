@@ -51,6 +51,7 @@ import {
 } from '../../utils/marketHomeLayout';
 import { StickyHeaderPortal } from '../StickyHeaderPortal';
 
+import { MarketRowHoverContext } from './components/MarketRowHoverContext';
 import {
   applyMarketTokenListLiveOverrides,
   useMarketHomeTokenListWebSocket,
@@ -637,6 +638,16 @@ function MarketTokenListBase({
     ? subscriptionRange.end
     : 0;
 
+  // Whole-row hover for the stock list. Kept out of `rowProps` (shared by every
+  // row) and out of Tamagui's group (dropped by the memoised table row).
+  const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
+  const handleRowHoverIn = useCallback((id: string) => {
+    setHoveredRowId(id);
+  }, []);
+  const handleRowHoverOut = useCallback((id: string) => {
+    setHoveredRowId((prev) => (prev === id ? null : prev));
+  }, []);
+
   const stableOnRow = useCallback(
     (item: IMarketToken, index: number) => {
       return {
@@ -662,20 +673,30 @@ function MarketTokenListBase({
           ? (position?: { x: number; y: number }) =>
               onItemContextMenuRef.current!(item, index, position)
           : undefined,
-        rowProps:
-          showWebSocketDebugRows &&
+        rowProps: {
+          ...(showWebSocketDebugRows &&
           !item.perpsCoin &&
           !!item.networkId &&
           !!item.address &&
           index >= debugSubscriptionRangeStart &&
           index < debugSubscriptionRangeEnd
             ? { bg: MARKET_HOME_WS_DEBUG_SUBSCRIPTION_ROW_BG }
-            : undefined,
+            : undefined),
+          ...(isStockList
+            ? {
+                onHoverIn: () => handleRowHoverIn(item.id),
+                onHoverOut: () => handleRowHoverOut(item.id),
+              }
+            : undefined),
+        },
       };
     },
     [
       debugSubscriptionRangeEnd,
       debugSubscriptionRangeStart,
+      handleRowHoverIn,
+      handleRowHoverOut,
+      isStockList,
       navigateToPerps,
       showWebSocketDebugRows,
       toMarketDetailPage,
@@ -851,97 +872,99 @@ function MarketTokenListBase({
   }, [isStockList, rowBg, webTabIntegrated]);
 
   return (
-    <Stack ref={listRootRef as any} flex={1} width="100%" testID={testID}>
-      {portalContent}
-      {/* render custom toolbar if provided (only when not in desktop portal mode) */}
-      {!useDesktopPortal ? toolbar : null}
+    <MarketRowHoverContext.Provider value={hoveredRowId}>
+      <Stack ref={listRootRef as any} flex={1} width="100%" testID={testID}>
+        {portalContent}
+        {/* render custom toolbar if provided (only when not in desktop portal mode) */}
+        {!useDesktopPortal ? toolbar : null}
 
-      {/* Table container with horizontal scroll support */}
-      <Stack
-        flex={1}
-        className="normal-scrollbar"
-        style={{
-          paddingTop: 4,
-          overflowX: 'auto',
-          // Explicitly set overflowY to prevent browsers from implicitly
-          // changing it to 'auto' (CSS spec: setting one overflow axis to
-          // non-visible forces the other to auto). Without this, drag
-          // auto-scroll would bind to this horizontal wrapper instead of
-          // the real vertical scroll container (Tabs.Container).
-          overflowY: 'hidden',
-          ...(md ? { marginLeft: 8, marginRight: 8 } : {}),
-        }}
-      >
+        {/* Table container with horizontal scroll support */}
         <Stack
           flex={1}
-          minHeight={platformEnv.isNative ? undefined : 400}
-          onTouchMove={
-            platformEnv.isNative && onScrollBegin ? onScrollBegin : undefined
-          }
+          className="normal-scrollbar"
+          style={{
+            paddingTop: 4,
+            overflowX: 'auto',
+            // Explicitly set overflowY to prevent browsers from implicitly
+            // changing it to 'auto' (CSS spec: setting one overflow axis to
+            // non-visible forces the other to auto). Without this, drag
+            // auto-scroll would bind to this horizontal wrapper instead of
+            // the real vertical scroll container (Tabs.Container).
+            overflowY: 'hidden',
+            ...(md ? { marginLeft: 8, marginRight: 8 } : {}),
+          }}
         >
-          {showSkeleton ? (
-            <Table.Skeleton
-              columns={marketTokenColumns}
-              count={skeletonRowCount}
-              rowProps={{
-                minHeight: '$14',
-              }}
-            />
-          ) : (
-            <Table<IMarketToken>
-              contentContainerStyle={tableContentContainerStyle}
-              stickyHeader
-              showHeader={showTableHeader ? !useDesktopPortal : false}
-              scrollEnabled={!webTabIntegrated}
-              draggable={draggable}
-              tabIntegrated={tabIntegrated}
-              onDragEnd={onDragEnd}
-              columns={marketTokenColumns}
-              onEndReached={webTabIntegrated ? undefined : handleEndReached}
-              dataSource={data}
-              keyExtractor={(item) => item.id}
-              extraData={networkId}
-              onHeaderRow={stableHandleHeaderRow}
-              TableEmptyComponent={TableEmptyComponent}
-              TableFooterComponent={TableFooterComponent}
-              estimatedItemSize={
-                isStockList ? MARKET_HOME_TABLE_ROW_HEIGHT : 60
-              }
-              onRow={stableOnRow}
-              rowProps={tableRowProps}
-              headerRowProps={tableHeaderRowProps}
-            />
-          )}
-          {/* Render end indicator outside the Table for draggable lists
+          <Stack
+            flex={1}
+            minHeight={platformEnv.isNative ? undefined : 400}
+            onTouchMove={
+              platformEnv.isNative && onScrollBegin ? onScrollBegin : undefined
+            }
+          >
+            {showSkeleton ? (
+              <Table.Skeleton
+                columns={marketTokenColumns}
+                count={skeletonRowCount}
+                rowProps={{
+                  minHeight: '$14',
+                }}
+              />
+            ) : (
+              <Table<IMarketToken>
+                contentContainerStyle={tableContentContainerStyle}
+                stickyHeader
+                showHeader={showTableHeader ? !useDesktopPortal : false}
+                scrollEnabled={!webTabIntegrated}
+                draggable={draggable}
+                tabIntegrated={tabIntegrated}
+                onDragEnd={onDragEnd}
+                columns={marketTokenColumns}
+                onEndReached={webTabIntegrated ? undefined : handleEndReached}
+                dataSource={data}
+                keyExtractor={(item) => item.id}
+                extraData={networkId}
+                onHeaderRow={stableHandleHeaderRow}
+                TableEmptyComponent={TableEmptyComponent}
+                TableFooterComponent={TableFooterComponent}
+                estimatedItemSize={
+                  isStockList ? MARKET_HOME_TABLE_ROW_HEIGHT : 60
+                }
+                onRow={stableOnRow}
+                rowProps={tableRowProps}
+                headerRowProps={tableHeaderRowProps}
+              />
+            )}
+            {/* Render end indicator outside the Table for draggable lists
               so it doesn't participate in absolute positioning during drag. */}
-          {draggable &&
-          !webTabIntegrated &&
-          showEndReachedIndicator &&
-          !isProvisionalFirstPageResult &&
-          !canLoadMore &&
-          data.length > 0 ? (
-            <ListEndIndicator />
-          ) : null}
+            {draggable &&
+            !webTabIntegrated &&
+            showEndReachedIndicator &&
+            !isProvisionalFirstPageResult &&
+            !canLoadMore &&
+            data.length > 0 ? (
+              <ListEndIndicator />
+            ) : null}
+          </Stack>
         </Stack>
+        {showWebSocketDebugOverlay ? (
+          <Stack
+            style={webSocketDebugOverlayStyle}
+            zIndex={9999}
+            pointerEvents="none"
+            bg="rgba(255, 72, 72, 0.88)"
+            px="$3"
+            py="$2"
+            borderRadius="$2"
+            borderWidth={1}
+            borderColor="rgba(255, 255, 255, 0.32)"
+          >
+            <SizableText size="$bodySmMedium" color="$textOnColor">
+              {`当前订阅: ${webSocketSubscriptionCount}`}
+            </SizableText>
+          </Stack>
+        ) : null}
       </Stack>
-      {showWebSocketDebugOverlay ? (
-        <Stack
-          style={webSocketDebugOverlayStyle}
-          zIndex={9999}
-          pointerEvents="none"
-          bg="rgba(255, 72, 72, 0.88)"
-          px="$3"
-          py="$2"
-          borderRadius="$2"
-          borderWidth={1}
-          borderColor="rgba(255, 255, 255, 0.32)"
-        >
-          <SizableText size="$bodySmMedium" color="$textOnColor">
-            {`当前订阅: ${webSocketSubscriptionCount}`}
-          </SizableText>
-        </Stack>
-      ) : null}
-    </Stack>
+    </MarketRowHoverContext.Provider>
   );
 }
 

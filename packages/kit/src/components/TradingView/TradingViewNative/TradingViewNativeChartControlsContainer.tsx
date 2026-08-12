@@ -24,6 +24,7 @@ interface ITradingViewNativeChartControlsContainerProps {
   isFullscreen?: boolean;
   fullscreenHeader?: ReactNode;
   rightGroupTrailingControl?: ReactNode;
+  desktopPaddingHorizontal?: number | string;
   onIntervalChange: ITradingViewChartControlsProps['onIntervalChange'];
   onCalendarPanelOpen?: ITradingViewChartControlsProps['onCalendarPanelOpen'];
   onCalendarPanelSubmit?: ITradingViewChartControlsProps['onCalendarPanelSubmit'];
@@ -39,6 +40,7 @@ export const TradingViewNativeChartControlsContainer = memo(
     isFullscreen = false,
     fullscreenHeader,
     rightGroupTrailingControl,
+    desktopPaddingHorizontal,
     onIntervalChange,
     onCalendarPanelOpen,
     onCalendarPanelSubmit,
@@ -109,6 +111,7 @@ export const TradingViewNativeChartControlsContainer = memo(
         isFullscreen={isFullscreen}
         fullscreenHeader={fullscreenHeader}
         rightGroupTrailingControl={rightGroupTrailingControl}
+        desktopPaddingHorizontal={desktopPaddingHorizontal}
         onIntervalChange={onIntervalChange}
         onIndicatorPress={noop}
         onShowIndicatorsDialog={noop}

@@ -285,6 +285,7 @@ export const useColumnsDesktop = (
               showStockSubtitle={showStockSubtitle}
               stockVariantCount={record.stockVariantCount}
               stockVariantLogos={record.stockVariantLogos}
+              rowId={record.id}
             />
           );
         },

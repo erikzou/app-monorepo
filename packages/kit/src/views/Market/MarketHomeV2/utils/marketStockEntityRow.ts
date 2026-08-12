@@ -73,8 +73,11 @@ export function collapseStockEntityRows(items: IMarketToken[]): IMarketToken[] {
   const slotByTicker = new Map<string, number>();
 
   items.forEach((item) => {
+    // `underlyingAssetTicker` is the authoritative ticker when the payload
+    // carries it; the symbol suffix is only a fallback.
     const ticker = item.stock
-      ? deriveStockTicker(item.symbol, item.stock.source)
+      ? item.stock.underlyingAssetTicker?.trim() ||
+        deriveStockTicker(item.symbol, item.stock.source)
       : '';
 
     if (!ticker) {
@@ -89,21 +92,21 @@ export function collapseStockEntityRows(items: IMarketToken[]): IMarketToken[] {
         ...item,
         stockTicker: ticker,
         stockVariantCount: 1,
-        stockVariantLogos: item.networkLogoUri ? [item.networkLogoUri] : [],
+        stockVariantLogos: item.tokenImageUri ? [item.tokenImageUri] : [],
       });
       return;
     }
 
     const existing = result[slot];
-    // The collapsed row keeps every chain it stands for, so hovering it can
+    // The collapsed row keeps every token it stands for, so hovering it can
     // show what the single row actually covers.
     const logos = existing.stockVariantLogos ?? [];
     result[slot] = {
       ...existing,
       stockVariantCount: (existing.stockVariantCount ?? 1) + 1,
       stockVariantLogos:
-        item.networkLogoUri && !logos.includes(item.networkLogoUri)
-          ? [...logos, item.networkLogoUri]
+        item.tokenImageUri && !logos.includes(item.tokenImageUri)
+          ? [...logos, item.tokenImageUri]
           : logos,
     };
   });

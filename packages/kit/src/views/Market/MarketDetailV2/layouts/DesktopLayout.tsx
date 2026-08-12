@@ -333,6 +333,7 @@ export function DesktopLayout({
           nativeChartRightGroupTrailingControl={
             showChartModeSwitch ? <MarketChartModeSwitch /> : undefined
           }
+          nativeChartControlsPaddingHorizontal={isStockPage ? 0 : undefined}
           isNativeChartFullscreen={isChartFullscreen}
           nativeChartFullscreenHeader={<MarketChartFullscreenHeader />}
           onNativeChartFullscreenChange={chartFullscreenChangeHandler}
