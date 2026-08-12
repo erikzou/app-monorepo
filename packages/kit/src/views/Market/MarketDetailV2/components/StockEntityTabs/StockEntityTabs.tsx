@@ -55,6 +55,7 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
               }
               onPress={handleToggleStats}
             >
+              {/* TODO(i18n): needs a translation key. */}
               {showMoreStats ? 'Show less' : 'Show more'}
             </Button>
           </Stack>
@@ -65,8 +66,9 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
             search pages by up to an hour. This line states how fresh the
             numbers are and which sessions they cover, so it stays visible at
             all times — a tooltip would hide exactly the caveat that matters.
-            Copy is a placeholder pending PM sign-off, and still needs an i18n
-            key (generated locale files are off-limits here).
+            TODO(i18n): copy is a placeholder pending PM sign-off and still
+            needs a translation key (generated locale files are off-limits
+            here).
           */}
           <SizableText size="$bodySm" color="$textDisabled">
             以上交易數據涵蓋盤前／盤中／盤後時段;休市或停牌時顯示最近一個交易日數據。
@@ -87,10 +89,6 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
  * ratios live in the Overview "More" expander meanwhile. On-chain tabs
  * (transactions, liquidity, holders list) are deliberately absent.
  */
-// The tab row lines up with the section content; its own container already
-// carries the gutter, so only the space above the row is set here.
-const TAB_BAR_CONTAINER_STYLE = {} as const;
-
 export function StockEntityTabs({
   entity,
   portfolioData,
@@ -121,12 +119,7 @@ export function StockEntityTabs({
   // padding, and no rule under the row — only the active item is underlined.
   const renderTabBar = useCallback(
     (props: any) => (
-      <Tabs.TabBar
-        {...props}
-        divider={false}
-        textSize="$bodyLgMedium"
-        containerStyle={TAB_BAR_CONTAINER_STYLE}
-      />
+      <Tabs.TabBar {...props} divider={false} textSize="$bodyLgMedium" />
     ),
     [],
   );

@@ -91,6 +91,9 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
      * The day's high/low have no source yet (spike G3) and render `--`. That
      * is deliberate: a visible gap in the most prominent row is the point.
      */
+    // TODO(i18n): the English labels below (Today's High/Low, Open, Prev.
+    // Close, Amplitude, Avg. Vol, EPS, Shares Outstanding, Dividend TTM, EV,
+    // EV/EBITDA, FCF) still need translation keys.
     const keyData: IStockStatItem[] = [
       {
         key: 'dayHigh',

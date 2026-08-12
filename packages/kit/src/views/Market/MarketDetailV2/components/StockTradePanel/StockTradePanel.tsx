@@ -229,6 +229,17 @@ function QuoteTokenChip({
  * Trade > Stocks panel: side switch and settings on top, the variant selector
  * with its price and chart toggle, the amount card, the estimated output and
  * the review action over the rate line.
+ *
+ * UI-only for now. What a quote-flow integration still has to replace:
+ * - `DEMO_BALANCE`: both the balance line and Max. Buying should read the pay
+ *   token's balance, selling the held share amount.
+ * - Output and rate are computed straight off the instrument price, with no
+ *   provider quote, fees, slippage or price impact.
+ * - `DEMO_PROVIDER_LABEL` and the provider row (badge, logo, chevron) are
+ *   static, and the row opens nothing.
+ * - The Review button and the settings icon have no handler.
+ * Everything else — instrument list, prices, the token list behind the pay
+ * selector, the share/token price toggle — is live data.
  */
 export function StockTradePanel() {
   const { tokenDetail } = useTokenDetail();
@@ -385,6 +396,7 @@ export function StockTradePanel() {
         <XStack h={48} px="$0.5" gap="$2" alignItems="center">
           <XStack gap="$1" alignItems="center">
             <Icon name="HandCoinsOutline" size="$4.5" color="$iconSubdued" />
+            {/* TODO(i18n): needs translation keys. */}
             <SizableText size="$bodyMd" color="$text">
               {isSell ? 'Sell for' : 'Est received'}
             </SizableText>
@@ -419,6 +431,7 @@ export function StockTradePanel() {
           variant="primary"
           disabled={!hasAmount}
         >
+          {/* TODO(i18n): needs translation keys. */}
           {hasAmount ? 'Review' : 'Enter amount'}
         </Button>
 

@@ -77,6 +77,8 @@ export function StockAbout({ entity }: { entity: IMarketStockEntity }) {
               variant="tertiary"
               onPress={handleToggle}
             >
+              {/* TODO(i18n): needs a translation key — generated locale files
+                  are off-limits in this PR. */}
               {isExpanded ? 'View Less' : 'View More'}
             </Button>
           </YStack>

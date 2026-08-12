@@ -430,6 +430,7 @@ export const useColumnsDesktop = (
         ? {
             // Figma 25473:87754. Demo series until the intraday endpoint
             // lands — see StockPriceRangeCell.
+            // TODO(i18n): needs a translation key.
             title: '24h price range',
             dataIndex: 'priceRange',
             align: 'right' as const,
