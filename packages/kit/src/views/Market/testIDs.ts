@@ -32,6 +32,7 @@ export const MarketTestIDs = {
   // Stock entity page
   stockStatsToggle: 'market-stock-stats-toggle',
   stockAboutToggle: 'market-stock-about-toggle',
+  stockEventsToggle: 'market-stock-events-toggle',
   stockAuditButton: 'market-stock-audit-button',
   stockTokenLink: (key: string) => `market-stock-token-link-${key}`,
   stockCopyContractButton: 'market-stock-copy-contract-button',

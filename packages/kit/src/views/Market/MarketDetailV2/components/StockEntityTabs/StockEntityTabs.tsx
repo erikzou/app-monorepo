@@ -15,67 +15,74 @@ import { useTokenDetail } from '../../hooks/useTokenDetail';
 import { useNetworkAccountAddress } from '../InformationTabs/hooks/useNetworkAccountAddress';
 
 import { StockAbout } from './StockAbout';
+import { StockAnalystRatings } from './StockAnalystRatings';
 import { StockEvents } from './StockEvents';
+import { StockNews } from './StockNews';
 import { StockPositionTable } from './StockPositionTable';
+import { StockSection } from './StockSection';
 import { StockStatGrid } from './StockStatGrid';
 import { useStockEntityStats } from './useStockEntityStats';
 
+// Figma 25314:8898: three rows of three before the expander.
+const COLLAPSED_STAT_COUNT = 9;
+
 function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
-  const { keyData, financials } = useStockEntityStats(entity);
-  // The remaining ratios sit behind a toggle: there is not enough financial
-  // data yet to justify a tab of their own.
-  const [showMoreStats, setShowMoreStats] = useState(false);
+  const { keyData } = useStockEntityStats(entity);
+  // Figma 25314:8898 / 25334:9342: nine cells collapsed, all eighteen plus the
+  // freshness note expanded.
+  const [showAllStats, setShowAllStats] = useState(false);
   const handleToggleStats = useCallback(
-    () => setShowMoreStats((prev) => !prev),
+    () => setShowAllStats((prev) => !prev),
     [],
   );
+  const visibleStats = showAllStats
+    ? keyData
+    : keyData.slice(0, COLLAPSED_STAT_COUNT);
 
   return (
     <Tabs.ScrollView>
-      {/* Figma 25206:18271: the section list starts 36px under the tab row
-          (12 between the row and the list, 24 of section padding) and the
-          sections are 48 apart. */}
-      <YStack px="$5" pt={36} pb="$6" gap="$12">
-        <YStack gap="$6">
-          <StockStatGrid items={keyData} />
+      {/* Figma 25206:18271: the section list starts 8px under the tab row and
+          every section carries its own 32px of vertical padding. */}
+      <YStack px="$5" pt="$2">
+        <StockSection>
+          <YStack gap="$6">
+            <StockStatGrid items={visibleStats} />
 
-          {showMoreStats ? <StockStatGrid items={financials} /> : null}
+            {/* The freshness note only belongs to the full set: our stock
+                figures are hourly snapshots (quotes at :05, fundamentals at
+                :35), so they can trail the realtime price by up to an hour.
+                TODO(i18n): copy is a placeholder pending PM sign-off. */}
+            {showAllStats ? (
+              <SizableText size="$bodySm" color="$textDisabled">
+                以上交易數據涵蓋盤前／盤中／盤後時段;休市或停牌時顯示最近一個交易日數據。
+              </SizableText>
+            ) : null}
 
-          {/* Wrapped so the button hugs its label instead of stretching, while
-              the grids above still span the full column. */}
-          <Stack alignSelf="flex-start">
-            <Button
-              testID={MarketTestIDs.stockStatsToggle}
-              size="small"
-              variant="tertiary"
-              iconAfter={
-                showMoreStats
-                  ? 'ChevronTopSmallOutline'
-                  : 'ChevronDownSmallOutline'
-              }
-              onPress={handleToggleStats}
-            >
-              {/* TODO(i18n): needs a translation key. */}
-              {showMoreStats ? 'Show less' : 'Show more'}
-            </Button>
-          </Stack>
-
-          {/*
-            Our stock figures are hourly snapshots (quotes at :05, fundamentals
-            at :35), so they can trail the realtime price on the trend and
-            search pages by up to an hour. This line states how fresh the
-            numbers are and which sessions they cover, so it stays visible at
-            all times — a tooltip would hide exactly the caveat that matters.
-            TODO(i18n): copy is a placeholder pending PM sign-off and still
-            needs a translation key (generated locale files are off-limits
-            here).
-          */}
-          <SizableText size="$bodySm" color="$textDisabled">
-            以上交易數據涵蓋盤前／盤中／盤後時段;休市或停牌時顯示最近一個交易日數據。
-          </SizableText>
-        </YStack>
+            {/* Wrapped so the button hugs its label instead of stretching. */}
+            <Stack alignSelf="flex-start">
+              <Button
+                testID={MarketTestIDs.stockStatsToggle}
+                size="small"
+                variant="tertiary"
+                iconAfter={
+                  showAllStats
+                    ? 'ChevronTopSmallOutline'
+                    : 'ChevronDownSmallOutline'
+                }
+                onPress={handleToggleStats}
+              >
+                {/* TODO(i18n): needs a translation key. */}
+                {showAllStats ? 'Show less' : 'Show more'}
+              </Button>
+            </Stack>
+          </YStack>
+        </StockSection>
 
         <StockEvents />
+
+        <StockAnalystRatings />
+
+        <StockNews />
 
         <StockAbout entity={entity} />
       </YStack>

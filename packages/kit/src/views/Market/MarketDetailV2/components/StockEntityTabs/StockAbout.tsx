@@ -1,89 +1,116 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import {
-  Badge,
-  Button,
-  SizableText,
-  XStack,
-  YStack,
-} from '@onekeyhq/components';
+import { SizableText, Stack, XStack, YStack } from '@onekeyhq/components';
 import type { IMarketStockEntity } from '@onekeyhq/shared/types/marketV2';
 
-import { useMarketBasicConfig } from '../../../hooks/useMarketBasicConfig';
 import { MarketTestIDs } from '../../../testIDs';
 
-const COLLAPSED_LINES = 4;
+import { StockSection } from './StockSection';
+
+const COLLAPSED_LINES = 2;
+
+interface ICompanyFact {
+  key: string;
+  label: string;
+  value: string;
+}
 
 /**
- * Company profile from the stock index: name, categories and the FMP
+ * MOCK DATA — none of these four have a source in the stock index yet
+ * (`IMarketStockEntity` carries ticker, name, logo, category and the
+ * introduction only). The design's own values are used so the row can be
+ * reviewed (Figma 25583:18046); they do not vary by ticker, which is exactly
+ * why they must not ship. Replace with the company profile fields.
+ */
+const MOCK_COMPANY_FACTS: ICompanyFact[] = [
+  { key: 'ceo', label: 'CEO', value: 'Timothy Donald Cook' },
+  { key: 'employees', label: 'Employees', value: '166,000' },
+  { key: 'exchange', label: 'Exchange', value: 'NASDAQ' },
+  { key: 'founded', label: 'Founded', value: '1976' },
+];
+
+/**
+ * Company profile from the stock index: title, the headline facts and the FMP
  * introduction text (English only upstream, so it is not localized here).
  */
 export function StockAbout({ entity }: { entity: IMarketStockEntity }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const handleToggle = useCallback(() => setIsExpanded((prev) => !prev), []);
 
-  // Chips show the localized names from the categories endpoint (same source
-  // as the Stocks tab filter bar), never the raw taxonomy key.
-  const { stockCategories } = useMarketBasicConfig();
-  const categoryNames = useMemo(() => {
-    const nameByKey = new Map(
-      stockCategories.map((item) => [item.category, item.name]),
-    );
-    return (entity.category ?? [])
-      .map((key) => nameByKey.get(key))
-      .filter((name): name is string => Boolean(name));
-  }, [entity.category, stockCategories]);
   const introduction = entity.introduction?.trim();
+  // TODO(i18n): needs a translation key.
+  const aboutToggle = (
+    <SizableText
+      testID={MarketTestIDs.stockAboutToggle}
+      size="$bodyMdMedium"
+      color="$text"
+      textDecorationLine="underline"
+      cursor="pointer"
+      onPress={handleToggle}
+    >
+      {isExpanded ? 'Show Less' : 'Show More'}
+    </SizableText>
+  );
+  const title = entity.ticker ? `About ${entity.ticker}` : 'About';
 
-  if (!entity.name && categoryNames.length === 0 && !introduction) {
+  if (!entity.name && !introduction) {
     return null;
   }
 
   return (
-    // Figma 25319:8651: 24 under the section title, 16 between the label row
-    // and the copy, 12 between the company name and its tags.
-    <YStack gap="$6">
-      <SizableText size="$headingLg" color="$text">
-        About
-      </SizableText>
-
-      <YStack gap="$4">
-        {/* Company name and its categories share one line. */}
-        <XStack flexWrap="wrap" alignItems="center" gap="$3">
-          {entity.name ? (
-            <SizableText size="$bodyLgMedium" color="$text">
-              {entity.name}
+    <StockSection title={title} gap="$6">
+      {/* Figma 25583:18046: four evenly split facts above the description. */}
+      <XStack>
+        {MOCK_COMPANY_FACTS.map((fact) => (
+          <YStack
+            key={fact.key}
+            flexGrow={1}
+            flexShrink={1}
+            flexBasis={0}
+            minWidth={0}
+            pr="$2.5"
+            gap="$1.5"
+          >
+            <SizableText size="$bodySm" color="$textSubdued">
+              {fact.label}
             </SizableText>
-          ) : null}
-          {categoryNames.map((name) => (
-            <Badge key={name} badgeType="default" badgeSize="sm">
-              {name}
-            </Badge>
-          ))}
-        </XStack>
-
-        {introduction ? (
-          <YStack gap="$2" alignItems="flex-start">
-            <SizableText
-              size="$bodyMd"
-              color="$textSubdued"
-              numberOfLines={isExpanded ? undefined : COLLAPSED_LINES}
-            >
-              {introduction}
+            <SizableText size="$bodyMdMedium" color="$text" numberOfLines={1}>
+              {fact.value}
             </SizableText>
-            <Button
-              testID={MarketTestIDs.stockAboutToggle}
-              size="small"
-              variant="tertiary"
-              onPress={handleToggle}
-            >
-              {/* TODO(i18n): needs a translation key — generated locale files
-                  are off-limits in this PR. */}
-              {isExpanded ? 'View Less' : 'View More'}
-            </Button>
           </YStack>
-        ) : null}
-      </YStack>
-    </YStack>
+        ))}
+      </XStack>
+
+      {introduction ? (
+        // The toggle sits on the last line of the clamped paragraph (Figma
+        // 25319:8688). While collapsed it has to be positioned over the text
+        // rather than appended to it — an inline node inside a clamped
+        // paragraph is clipped away with the overflow.
+        <Stack position="relative">
+          <SizableText
+            size="$bodyMd"
+            color="$textSubdued"
+            numberOfLines={isExpanded ? undefined : COLLAPSED_LINES}
+          >
+            {introduction}
+            {isExpanded ? (
+              <SizableText size="$bodyMd">{'  '}</SizableText>
+            ) : null}
+            {isExpanded ? aboutToggle : null}
+          </SizableText>
+          {isExpanded ? null : (
+            <XStack
+              position="absolute"
+              right={0}
+              bottom={0}
+              bg="$bgApp"
+              pl="$2"
+            >
+              {aboutToggle}
+            </XStack>
+          )}
+        </Stack>
+      ) : null}
+    </StockSection>
   );
 }

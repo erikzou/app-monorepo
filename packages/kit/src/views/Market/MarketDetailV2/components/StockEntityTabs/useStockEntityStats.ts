@@ -33,30 +33,6 @@ function deriveEps(underlyingPrice?: string, peRatio?: string) {
   return priceBN.dividedBy(peBN).toFixed();
 }
 
-/**
- * Intraday swing, (high − low) ÷ previous close. Derived rather than fetched:
- * once the day's OHLC arrives this needs no extra field.
- */
-function deriveAmplitude(
-  dayHigh?: string,
-  dayLow?: string,
-  previousClose?: string,
-) {
-  if (!dayHigh || !dayLow || !previousClose) {
-    return undefined;
-  }
-  const highBN = new BigNumber(dayHigh);
-  const lowBN = new BigNumber(dayLow);
-  const closeBN = new BigNumber(previousClose);
-  if (!highBN.isFinite() || !lowBN.isFinite() || !closeBN.isFinite()) {
-    return undefined;
-  }
-  if (closeBN.lte(0)) {
-    return undefined;
-  }
-  return highBN.minus(lowBN).dividedBy(closeBN).times(100).toFixed();
-}
-
 export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
   const intl = useIntl();
 
@@ -72,11 +48,6 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
       new BigNumber(peRatio).gt(0),
     );
     const eps = deriveEps(entity?.underlyingPrice, peRatio);
-    const amplitude = deriveAmplitude(
-      analysis?.dayHigh,
-      analysis?.dayLow,
-      analysis?.previousClose,
-    );
 
     /**
      * Key Data: a 3x2 block — the day's range and volume over size and the
@@ -91,10 +62,20 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
      * The day's high/low have no source yet (spike G3) and render `--`. That
      * is deliberate: a visible gap in the most prominent row is the point.
      */
-    // TODO(i18n): the English labels below (Today's High/Low, Open, Prev.
-    // Close, Amplitude, Avg. Vol, EPS, Shares Outstanding, Dividend TTM, EV,
-    // EV/EBITDA, FCF) still need translation keys.
+    // TODO(i18n): the English labels below (Open, Today's High/Low, Prev.
+    // Close, Volume (Shares), Avg. Vol, EPS, Shares Outstanding) still need
+    // translation keys.
+    //
+    // Figma 25334:9342 — 18 cells in a 3x6 grid, ordered by what a trader
+    // reads first: the day, then size and turnover, then the 52-week band and
+    // valuation, then the balance sheet. The first 9 stay visible; the rest
+    // (and the freshness note) live behind "Show more".
     const keyData: IStockStatItem[] = [
+      {
+        key: 'dayOpen',
+        label: 'Open',
+        value: formatCurrencyStatValue(analysis?.dayOpen),
+      },
       {
         key: 'dayHigh',
         label: "Today's High",
@@ -118,6 +99,14 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         value: formatCurrencyStatValue(stock?.marketCap),
       },
       {
+        // Already in percentage points — see `formatPercentPointValue`.
+        key: 'turnoverRate',
+        label: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_turnover_rate,
+        }),
+        value: formatPercentPointValue(analysis?.turnoverRate),
+      },
+      {
         key: 'weekHigh52',
         label: intl.formatMessage({
           id: ETranslations.dexmarket_stock_52_week_high,
@@ -131,23 +120,6 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         }),
         value: formatCurrencyStatValue(analysis?.weekLow52),
       },
-    ];
-
-    /**
-     * The "More" expander, 14 cells. The cap is 20 cells for the whole of
-     * Overview — 6 core plus 14 here, matching what Binance shows in one
-     * screen. The two valuation ratios lead: they are the first thing someone
-     * expands this for.
-     *
-     * Ordered day → volume → valuation → capital. Turnover rate leads the
-     * volume group so that share volume and average volume land side by side
-     * in the 4-column grid: the pair only reads as a ratio ("today ran at 1.8x
-     * normal") when both are visible at once.
-     *
-     * Cells without a source render `--` rather than disappearing, so the gap
-     * stays visible and reviewable.
-     */
-    const financials: IStockStatItem[] = [
       {
         key: 'peRatio',
         label: intl.formatMessage({ id: ETranslations.dexmarket_stock_pe_ttm }),
@@ -157,37 +129,9 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         }),
       },
       {
-        key: 'dividendYield',
-        label: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_dividend_yield,
-        }),
-        value: formatPercentValue(activity?.dividendYield),
-        tooltip: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_dividend_yield_desc,
-        }),
-      },
-      {
-        key: 'dayOpen',
-        label: 'Open',
-        value: formatCurrencyStatValue(analysis?.dayOpen),
-      },
-      {
         key: 'previousClose',
         label: 'Prev. Close',
         value: formatCurrencyStatValue(analysis?.previousClose),
-      },
-      {
-        key: 'amplitude',
-        label: 'Amplitude',
-        value: formatPercentPointValue(amplitude),
-      },
-      {
-        // Already in percentage points — see `formatPercentPointValue`.
-        key: 'turnoverRate',
-        label: intl.formatMessage({
-          id: ETranslations.dexmarket_stock_turnover_rate,
-        }),
-        value: formatPercentPointValue(analysis?.turnoverRate),
       },
       {
         key: 'volumeShares',
@@ -228,16 +172,21 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
         value: formatMarketCapValue(stock?.sharesOutstanding),
       },
       {
-        key: 'dividendPerShare',
-        label: 'Dividend TTM',
-        value: formatCurrencyStatValue(stock?.dividendPerShare),
-      },
-      {
         key: 'debtToEquity',
         label: intl.formatMessage({ id: ETranslations.dexmarket_stock_de }),
         value: formatRatioValue(activity?.debtToEquity),
         tooltip: intl.formatMessage({
           id: ETranslations.dexmarket_stock_de_desc,
+        }),
+      },
+      {
+        key: 'dividendYield',
+        label: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_dividend_yield,
+        }),
+        value: formatPercentValue(activity?.dividendYield),
+        tooltip: intl.formatMessage({
+          id: ETranslations.dexmarket_stock_dividend_yield_desc,
         }),
       },
     ];
@@ -295,6 +244,6 @@ export function useStockEntityStats(entity: IMarketStockEntity | undefined) {
       },
     ];
 
-    return { keyData, financials, financialStatementStats };
+    return { keyData, financialStatementStats };
   }, [entity, intl]);
 }

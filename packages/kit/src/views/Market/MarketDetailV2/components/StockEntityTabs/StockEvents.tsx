@@ -1,4 +1,17 @@
-import { Icon, SizableText, Stack, XStack, YStack } from '@onekeyhq/components';
+import { useCallback, useState } from 'react';
+
+import {
+  Button,
+  Icon,
+  SizableText,
+  Stack,
+  XStack,
+  YStack,
+} from '@onekeyhq/components';
+
+import { MarketTestIDs } from '../../../testIDs';
+
+import { StockSection } from './StockSection';
 
 interface IStockEvent {
   key: string;
@@ -29,18 +42,42 @@ const MOCK_EVENTS: IStockEvent[] = [
     title: 'Q4 Earnings Call',
     detail: 'Estimated EPS: $2.41',
   },
+  {
+    key: 'shareholders',
+    day: '26',
+    month: 'Feb',
+    title: 'Annual Shareholders Meeting',
+    detail: 'Proxy voting closes 2027-02-24',
+  },
+  {
+    key: 'split',
+    day: '14',
+    month: 'May',
+    title: 'Stock Split Record Date',
+    detail: 'Ratio to be confirmed',
+  },
 ];
 
+// Figma 25317:8530: two rows, the rest behind the expander.
+const COLLAPSED_EVENT_COUNT = 2;
+
 export function StockEvents() {
+  const [showAllEvents, setShowAllEvents] = useState(false);
+  const handleToggleEvents = useCallback(
+    () => setShowAllEvents((prev) => !prev),
+    [],
+  );
+  const visibleEvents = showAllEvents
+    ? MOCK_EVENTS
+    : MOCK_EVENTS.slice(0, COLLAPSED_EVENT_COUNT);
+  const canExpand = MOCK_EVENTS.length > COLLAPSED_EVENT_COUNT;
+
   return (
-    <YStack gap="$4">
-      <SizableText size="$headingLg" color="$text">
-        Events
-      </SizableText>
+    <StockSection title="Events">
       {/* Figma 25319:8582: 56px calendar tile, 16 between it and the copy,
           48-tall rows 8 apart, and a trailing chevron. */}
       <YStack gap="$2">
-        {MOCK_EVENTS.map((event) => (
+        {visibleEvents.map((event) => (
           <XStack
             key={event.key}
             py="$2"
@@ -81,6 +118,25 @@ export function StockEvents() {
           </XStack>
         ))}
       </YStack>
-    </YStack>
+
+      {canExpand ? (
+        <Stack alignSelf="flex-start">
+          <Button
+            testID={MarketTestIDs.stockEventsToggle}
+            size="small"
+            variant="tertiary"
+            iconAfter={
+              showAllEvents
+                ? 'ChevronTopSmallOutline'
+                : 'ChevronDownSmallOutline'
+            }
+            onPress={handleToggleEvents}
+          >
+            {/* TODO(i18n): needs a translation key. */}
+            {showAllEvents ? 'Show less' : 'Show more'}
+          </Button>
+        </Stack>
+      ) : null}
+    </StockSection>
   );
 }

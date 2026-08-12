@@ -38,7 +38,7 @@ export function StockStatGrid({ items }: { items: IStockStatItem[] }) {
 
   return (
     // Row rhythm and type scale follow Figma 25334:9345: 24px between rows,
-    // 6px between a label and its value, 14px label over an 18px value.
+    // 6px between a label and its value, 14px label over a 20px value.
     <YStack gap="$6">
       {rows.map((row, rowIndex) => (
         // eslint-disable-next-line react/no-array-index-key
@@ -66,7 +66,7 @@ export function StockStatGrid({ items }: { items: IStockStatItem[] }) {
                   />
                 ) : null}
               </XStack>
-              <SizableText size="$headingLg" color="$text">
+              <SizableText size="$headingXl" color="$text">
                 {item.value}
               </SizableText>
             </YStack>
