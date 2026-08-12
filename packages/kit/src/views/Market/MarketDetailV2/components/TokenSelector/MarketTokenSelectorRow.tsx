@@ -44,12 +44,24 @@ interface IMarketTokenSelectorRowProps {
   networkId?: string;
   onPress: (item: IMarketToken) => void;
   showAddress?: boolean;
+  /**
+   * Collapsed stock row: the company, not one tokenization. Same content as
+   * the Stocks list page — underlying ticker and company name, without the
+   * chain badge, the issuer logo or the contract address.
+   */
+  isStockEntity?: boolean;
 }
 
 const PRICE_LARGE_THRESHOLD = 1_000_000;
 
 const MarketTokenSelectorRow = memo(
-  ({ item, networkId, onPress, showAddress }: IMarketTokenSelectorRowProps) => {
+  ({
+    item,
+    networkId,
+    onPress,
+    showAddress,
+    isStockEntity,
+  }: IMarketTokenSelectorRowProps) => {
     const { copyText } = useClipboard();
 
     const prewarmTokenImages = useCallback(() => {
@@ -94,7 +106,9 @@ const MarketTokenSelectorRow = memo(
           trailingLength: 4,
         })
       : '';
-    const showAddressRow = Boolean(showAddress && item.address);
+    const showAddressRow = Boolean(
+      showAddress && item.address && !isStockEntity,
+    );
 
     const starElement = useMemo(
       () => (
@@ -137,7 +151,7 @@ const MarketTokenSelectorRow = memo(
             size="xs"
             tokenImageUri={item.tokenImageUri}
             tokenImageUris={item.tokenImageUris}
-            networkImageUri={item.networkLogoUri}
+            networkImageUri={isStockEntity ? undefined : item.networkLogoUri}
           />
           <YStack flex={1} minWidth={0}>
             <XStack alignItems="center" gap="$1">
@@ -146,10 +160,10 @@ const MarketTokenSelectorRow = memo(
                 numberOfLines={1}
                 flexShrink={1}
               >
-                {item.symbol}
+                {isStockEntity ? item.stockTicker || item.symbol : item.symbol}
               </SizableText>
               {item.communityRecognized ? <CommunityRecognizedBadge /> : null}
-              <StockSourceLogo stock={item.stock} />
+              {isStockEntity ? null : <StockSourceLogo stock={item.stock} />}
             </XStack>
             {localizedName || showAddressRow ? (
               <XStack alignItems="center" gap="$1.5" minWidth={0}>

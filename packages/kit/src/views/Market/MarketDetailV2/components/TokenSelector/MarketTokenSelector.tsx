@@ -149,6 +149,16 @@ function BaseMarketTokenSelectorContent({
   const { searchLoading, searchTokenList } =
     useSwapProTokenSearch(searchValueDebounce);
 
+  // The Stocks tab lists companies, not tokenizations — same collapsed row as
+  // the Stocks list page.
+  const isStockCategory = useMemo(
+    () =>
+      isMarketStockCategory(
+        categories.find((item) => item.id === selectedCategory),
+      ),
+    [categories, selectedCategory],
+  );
+
   const handleCategoryChange = useCallback(
     (categoryId: string) => {
       setStartListSelect(false);
@@ -258,6 +268,7 @@ function BaseMarketTokenSelectorContent({
         <MarketTokenSelectorList
           networkId={allNetworkId}
           selectedCategory={selectedCategory}
+          isStockCategory={isStockCategory}
           timeRange="1h"
           onItemPress={handleSelectToken}
           pollingInterval={TOKEN_SELECTOR_POLLING_INTERVAL}

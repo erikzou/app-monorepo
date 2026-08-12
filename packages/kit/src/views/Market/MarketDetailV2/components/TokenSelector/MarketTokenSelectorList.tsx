@@ -17,6 +17,7 @@ import type { IMarketTokenDetailPreview } from '@onekeyhq/shared/types/marketV2'
 
 import { useMarketTokenList } from '../../../MarketHomeV2/components/MarketTokenList/hooks/useMarketTokenList';
 import { useMarketWatchlistTokenList } from '../../../MarketHomeV2/components/MarketTokenList/hooks/useMarketWatchlistTokenList';
+import { collapseStockEntityRows } from '../../../MarketHomeV2/utils/marketStockEntityRow';
 import { buildMarketSearchTokenDetailPreview } from '../../utils/marketDetailPreview';
 
 import {
@@ -41,6 +42,7 @@ type IMarketTokenSelectorItem = IMarketToken & {
 interface IMarketTokenSelectorListProps {
   networkId: string;
   selectedCategory?: string;
+  isStockCategory?: boolean;
   timeRange?: IMarketTimeRangeValue;
   onItemPress: (item: IMarketTokenSelectorItem) => void;
   pollingInterval?: number;
@@ -57,12 +59,14 @@ function TokenSelectorListView({
   networkId,
   onItemPress,
   emptyMessage,
+  isStockEntity,
 }: {
   data: IMarketTokenSelectorItem[];
   isLoading?: boolean;
   networkId: string;
   onItemPress: (item: IMarketTokenSelectorItem) => void;
   emptyMessage?: string;
+  isStockEntity?: boolean;
 }) {
   if (isLoading && data.length === 0) {
     return (
@@ -90,7 +94,8 @@ function TokenSelectorListView({
           item={item}
           networkId={networkId}
           onPress={onItemPress}
-          showAddress
+          showAddress={!isStockEntity}
+          isStockEntity={isStockEntity}
         />
       )}
       contentContainerStyle={{ paddingBottom: 10 }}
@@ -141,12 +146,14 @@ const CategoryTokenSelectorList = memo(
   ({
     networkId,
     selectedCategory,
+    isStockCategory,
     timeRange,
     onItemPress,
     pollingInterval,
   }: {
     networkId: string;
     selectedCategory?: string;
+    isStockCategory?: boolean;
     timeRange?: IMarketTimeRangeValue;
     onItemPress: (item: IMarketTokenSelectorItem) => void;
     pollingInterval?: number;
@@ -158,12 +165,19 @@ const CategoryTokenSelectorList = memo(
       pollingInterval: pollingInterval ?? TOKEN_SELECTOR_POLLING_INTERVAL,
     });
 
+    // One row per company, exactly like the Stocks list page.
+    const rows = useMemo(
+      () => (isStockCategory ? collapseStockEntityRows(data) : data),
+      [data, isStockCategory],
+    );
+
     return (
       <TokenSelectorListView
-        data={data}
+        data={rows}
         isLoading={isLoading}
         networkId={networkId}
         onItemPress={onItemPress}
+        isStockEntity={isStockCategory}
       />
     );
   },
@@ -218,6 +232,7 @@ function ListContent({
   onItemPress,
   pollingInterval,
   selectedCategory,
+  isStockCategory,
   timeRange,
 }: IMarketTokenSelectorListProps) {
   if (searchQuery) {
@@ -243,6 +258,7 @@ function ListContent({
     <CategoryTokenSelectorList
       networkId={networkId}
       selectedCategory={selectedCategory}
+      isStockCategory={isStockCategory}
       timeRange={timeRange}
       onItemPress={onItemPress}
       pollingInterval={pollingInterval}
@@ -254,6 +270,7 @@ const MarketTokenSelectorList = memo(
   ({
     networkId,
     selectedCategory,
+    isStockCategory,
     timeRange,
     onItemPress,
     pollingInterval,
@@ -330,6 +347,7 @@ const MarketTokenSelectorList = memo(
             onItemPress={onItemPress}
             pollingInterval={pollingInterval}
             selectedCategory={selectedCategory}
+            isStockCategory={isStockCategory}
             timeRange={timeRange}
           />
         </YStack>
