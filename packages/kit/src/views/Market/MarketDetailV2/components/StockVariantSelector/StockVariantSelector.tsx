@@ -30,16 +30,27 @@ import { MarketTestIDs } from '../../../testIDs';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
 import { navigateToMarketTokenDetail } from '../TokenSelector/navigateToMarketTokenDetail';
 
+import { useStockVariantHoldings } from './useStockVariantHoldings';
 import {
   findTradableAlternative,
+  isAlwaysOnIssuer,
   isVariantTradableNow,
 } from './variantTradability';
 
 // No translation key yet — demo copy straight from the design.
 const VARIANT_GROUP_LABEL = 'Tokenized stock';
 
-function isAlwaysOnTradingDays(tradingDays?: string) {
-  return Boolean(tradingDays && /7\s*[x×]\s*24/i.test(tradingDays));
+const ALWAYS_ON_BADGE_FALLBACK_LABEL = '7 × 24';
+
+/**
+ * Label for the 24/7 badge. The schedule itself comes from the issuer (see
+ * `isAlwaysOnIssuer`) because `tradingHours.days` is wrong for at least one
+ * Ondo deployment; the field is only trusted for the wording when it agrees.
+ */
+function alwaysOnBadgeLabel(tradingDays?: string) {
+  return tradingDays && /7\s*[x×]\s*24/i.test(tradingDays)
+    ? tradingDays
+    : ALWAYS_ON_BADGE_FALLBACK_LABEL;
 }
 const VARIANT_PANEL_PROPS = { width: 320 } as const;
 
@@ -102,10 +113,13 @@ function StockVariantRow({
             <StockSourceLogo stock={issuerStock} size={16} />
             {/* Only 24/7 instruments get a badge: trading outside the US
                 session is the exception worth calling out, while 5x24 is the
-                default and would just add noise. */}
-            {tradable && isAlwaysOnTradingDays(instrument.tradingDays) ? (
+                default and would just add noise. Driven by the issuer, like
+                tradability — not by the instrument's `tradingDays` string. */}
+            {tradable && isAlwaysOnIssuer(instrument.issuer) ? (
               <Badge badgeType="success" badgeSize="sm" px="$1.5">
-                <Badge.Text>{instrument.tradingDays}</Badge.Text>
+                <Badge.Text>
+                  {alwaysOnBadgeLabel(instrument.tradingDays)}
+                </Badge.Text>
               </Badge>
             ) : null}
           </XStack>
@@ -152,15 +166,16 @@ function StockVariantRow({
 export function StockVariantSelector({
   instruments,
   selectedInstrument,
-  holdingByInstrumentId,
 }: {
   instruments: IMarketStockInstrument[];
   selectedInstrument?: IMarketStockInstrument;
-  // Holding amount per variant, shown as the row subtitle. Falls back to 0
-  // until the position data is wired in.
-  holdingByInstrumentId?: Record<string, string>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  // Fetched only while the dropdown is open — see the hook's own note.
+  const holdingByInstrumentId = useStockVariantHoldings({
+    instruments,
+    enabled: isOpen,
+  });
   const intl = useIntl();
   const tokenDetailActions = useTokenDetailActions();
   const { tokenDetail } = useTokenDetail();
@@ -238,7 +253,7 @@ export function StockVariantSelector({
         instrument,
         tradable: isVariantTradableNow({ instrument, isUsMarketOpen }),
         networkLogoUri: networkLogoUris?.[instrument.networkId],
-        holding: holdingByInstrumentId?.[instrument.instrumentId] ?? '0',
+        holding: holdingByInstrumentId[instrument.instrumentId] ?? '0',
       })),
     [holdingByInstrumentId, instruments, isUsMarketOpen, networkLogoUris],
   );

@@ -22,16 +22,22 @@ import type { IMarketStockInstrument } from '@onekeyhq/shared/types/marketV2';
 import { useMarketStockEntity } from '../../hooks/useMarketStockEntity';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
 import { StockVariantSelector } from '../StockVariantSelector/StockVariantSelector';
+import { InfoItemLabel } from '../SwapPanel/components/InfoItemLabel';
 import { TokenSelectorPopover } from '../SwapPanel/components/TokenInputSection/TokenSelectorPopover';
 import { TradeTypeSelector } from '../SwapPanel/components/TradeTypeSelector';
 import { useSpeedSwapInit } from '../SwapPanel/hooks/useSpeedSwapInit';
 import { ESwapDirection } from '../SwapPanel/hooks/useTradeType';
+
+import { useShowStockAdvancedSettings } from './StockAdvancedSettingsDialog';
 
 import type { IToken } from '../SwapPanel/types';
 
 // TODO(data): demo figures until the panel is wired to the swap quote flow.
 const DEMO_BALANCE = '10000.01';
 const DEMO_PROVIDER_LABEL = 'Best';
+const DEMO_PROVIDER_NAME = 'liquidMesh';
+const DEMO_SWAP_DURATION = '< 1min';
+const DEMO_SLIPPAGE_LABEL = 'Auto (1%)';
 const SIDE_SWITCH_WIDTH = 176;
 const EMPTY_TOKENS: IToken[] = [];
 
@@ -174,6 +180,121 @@ function AmountCard({
 }
 
 /**
+ * DEMO UI. The Trade page shows these rows from a live quote
+ * (`views/Swap/pages/components/SwapQuoteResult.tsx`); this panel has no quote
+ * yet, so provider, duration and slippage are fixed and only the approve
+ * amount follows the input. Same rows, same order, so the real component can
+ * take over without a layout change.
+ */
+function StockRateDetails({
+  approveAmount,
+  providerLogoUri,
+}: {
+  approveAmount: string;
+  providerLogoUri?: string;
+}) {
+  return (
+    <YStack
+      gap="$3"
+      pt="$3"
+      borderTopWidth="$px"
+      borderTopColor="$borderSubdued"
+    >
+      <XStack alignItems="center" gap="$2">
+        <InfoItemLabel
+          title="Approve amount"
+          questionMarkContent="How much the provider is allowed to spend for this swap."
+        />
+        <XStack
+          flex={1}
+          minWidth={0}
+          gap="$1"
+          justifyContent="flex-end"
+          alignItems="center"
+        >
+          <SizableText size="$bodyMdMedium" color="$text" numberOfLines={1}>
+            {approveAmount}
+          </SizableText>
+          <Icon
+            name="ChevronRightSmallOutline"
+            size="$5"
+            color="$iconSubdued"
+          />
+        </XStack>
+      </XStack>
+
+      <XStack alignItems="center" gap="$2">
+        <InfoItemLabel
+          title="Provider"
+          questionMarkContent="The route this trade would take."
+        />
+        <XStack
+          flex={1}
+          minWidth={0}
+          gap="$1.5"
+          justifyContent="flex-end"
+          alignItems="center"
+        >
+          <Badge badgeType="success" badgeSize="sm">
+            <Badge.Text>{DEMO_PROVIDER_LABEL}</Badge.Text>
+          </Badge>
+          {providerLogoUri ? (
+            <Image
+              width={20}
+              height={20}
+              borderRadius="$1"
+              source={{ uri: providerLogoUri }}
+            />
+          ) : null}
+          <SizableText size="$bodyMdMedium" color="$text">
+            {DEMO_PROVIDER_NAME}
+          </SizableText>
+          <Icon
+            name="ChevronRightSmallOutline"
+            size="$5"
+            color="$iconSubdued"
+          />
+        </XStack>
+      </XStack>
+
+      <XStack alignItems="center" gap="$2">
+        <SizableText size="$bodyMd" color="$text">
+          Est. swap duration
+        </SizableText>
+        <XStack flex={1} minWidth={0} justifyContent="flex-end">
+          <SizableText size="$bodyMdMedium" color="$text">
+            {DEMO_SWAP_DURATION}
+          </SizableText>
+        </XStack>
+      </XStack>
+
+      <XStack alignItems="center" gap="$2">
+        <InfoItemLabel
+          title="Slippage"
+          questionMarkContent="How far the price may move before the trade fails."
+        />
+        <XStack
+          flex={1}
+          minWidth={0}
+          gap="$1"
+          justifyContent="flex-end"
+          alignItems="center"
+        >
+          <SizableText size="$bodyMdMedium" color="$text">
+            {DEMO_SLIPPAGE_LABEL}
+          </SizableText>
+          <Icon
+            name="ChevronRightSmallOutline"
+            size="$5"
+            color="$iconSubdued"
+          />
+        </XStack>
+      </XStack>
+    </YStack>
+  );
+}
+
+/**
  * Quote-token picker for the Sell side. Selling hands over the stock and takes
  * back a stablecoin, so the token that varies sits on the receive line rather
  * than in the amount card.
@@ -247,6 +368,12 @@ export function StockTradePanel() {
   const [{ source: priceSource }, setPriceSource] = useMarketPriceSourceAtom();
   const [side, setSide] = useState<ESwapDirection>(ESwapDirection.BUY);
   const [amount, setAmount] = useState('');
+  const [isRateExpanded, setIsRateExpanded] = useState(false);
+  const handleToggleRateDetails = useCallback(
+    () => setIsRateExpanded((prev) => !prev),
+    [],
+  );
+  const showAdvancedSettings = useShowStockAdvancedSettings();
 
   const instruments = useMemo<IMarketStockInstrument[]>(
     () => entity?.instruments ?? [],
@@ -277,6 +404,9 @@ export function StockTradePanel() {
   const handleSideChange = useCallback((value?: ESwapDirection) => {
     if (value) {
       setSide(value);
+      // The amount means different things on each side (stablecoin vs shares),
+      // so carrying it across the switch would silently change the order.
+      setAmount('');
     }
   }, []);
   const handleMaxPress = useCallback(() => setAmount(DEMO_BALANCE), []);
@@ -286,6 +416,8 @@ export function StockTradePanel() {
   // the direction of the price maths change between the two.
   const isSell = side === ESwapDirection.SELL;
   const stockLogoUri = activeInstrument?.logoUrl ?? tokenDetail?.logoUrl;
+  // What leaves the wallet: the stablecoin when buying, the stock when selling.
+  const spendSymbol = isSell ? tokenSymbol : payToken?.symbol;
   const amountBN = new BigNumber(amount || '');
   const hasAmount = amountBN.isFinite() && amountBN.gt(0);
   const priceBN = new BigNumber(tokenPrice ?? '');
@@ -343,6 +475,7 @@ export function StockTradePanel() {
             icon="SliderHorOutline"
             variant="tertiary"
             size="small"
+            onPress={showAdvancedSettings}
           />
         </XStack>
       </XStack>
@@ -437,36 +570,61 @@ export function StockTradePanel() {
 
         {/* Swap only surfaces the rate once there is an amount to price. */}
         {hasAmount ? (
-          <XStack pt="$5" pl="$0.5" gap="$2" alignItems="center">
-            <XStack gap="$1" alignItems="center" flexShrink={1} minWidth={0}>
-              <Icon
-                name="RotateClockwiseOutline"
-                size="$4.5"
-                color="$iconSubdued"
-              />
-              <SizableText size="$bodyMd" color="$text" numberOfLines={1}>
-                {rateLabel}
-              </SizableText>
-            </XStack>
-            <XStack flex={1} minWidth={0} gap="$1" justifyContent="flex-end">
-              <Badge badgeType="success" badgeSize="sm">
-                <Badge.Text>{DEMO_PROVIDER_LABEL}</Badge.Text>
-              </Badge>
-              {activeInstrument?.logoUrl ? (
-                <Image
-                  width={20}
-                  height={20}
-                  borderRadius="$1"
-                  source={{ uri: activeInstrument.logoUrl }}
+          <YStack pt="$5" gap="$3">
+            <XStack
+              pl="$0.5"
+              gap="$2"
+              alignItems="center"
+              cursor="pointer"
+              userSelect="none"
+              onPress={handleToggleRateDetails}
+              testID="market-stock-trade-rate-toggle"
+            >
+              <XStack gap="$1" alignItems="center" flexShrink={1} minWidth={0}>
+                <Icon
+                  name="RotateClockwiseOutline"
+                  size="$4.5"
+                  color="$iconSubdued"
                 />
-              ) : null}
-              <Icon
-                name="ChevronDownSmallOutline"
-                size="$5"
-                color="$iconSubdued"
-              />
+                <SizableText size="$bodyMd" color="$text" numberOfLines={1}>
+                  {rateLabel}
+                </SizableText>
+              </XStack>
+              <XStack flex={1} minWidth={0} gap="$1" justifyContent="flex-end">
+                {isRateExpanded ? null : (
+                  <>
+                    <Badge badgeType="success" badgeSize="sm">
+                      <Badge.Text>{DEMO_PROVIDER_LABEL}</Badge.Text>
+                    </Badge>
+                    {activeInstrument?.logoUrl ? (
+                      <Image
+                        width={20}
+                        height={20}
+                        borderRadius="$1"
+                        source={{ uri: activeInstrument.logoUrl }}
+                      />
+                    ) : null}
+                  </>
+                )}
+                <Icon
+                  name={
+                    isRateExpanded
+                      ? 'ChevronTopSmallOutline'
+                      : 'ChevronDownSmallOutline'
+                  }
+                  size="$5"
+                  color="$iconSubdued"
+                />
+              </XStack>
             </XStack>
-          </XStack>
+
+            {isRateExpanded ? (
+              <StockRateDetails
+                approveAmount={`${amountBN.toFixed()} ${spendSymbol ?? '--'}`}
+                providerLogoUri={activeInstrument?.logoUrl}
+              />
+            ) : null}
+          </YStack>
         ) : null}
       </YStack>
     </YStack>
