@@ -60,6 +60,8 @@ const MOCK_EVENTS: IStockEvent[] = [
 
 // Figma 25317:8530: two rows, the rest behind the expander.
 const COLLAPSED_EVENT_COUNT = 2;
+// Figma 25319:8583: the row hover background runs 8px past the text.
+const ROW_HOVER_BLEED = 8;
 
 export function StockEvents() {
   const [showAllEvents, setShowAllEvents] = useState(false);
@@ -81,9 +83,15 @@ export function StockEvents() {
           <XStack
             key={event.key}
             py="$2"
+            px={ROW_HOVER_BLEED}
+            mx={-ROW_HOVER_BLEED}
             minHeight={48}
             gap="$4"
             alignItems="center"
+            borderRadius="$3"
+            borderCurve="continuous"
+            // Hover only until the row has somewhere to go — see StockNews.
+            hoverStyle={{ bg: '$bgHover' }}
           >
             <Stack
               width={56}
@@ -114,6 +122,7 @@ export function StockEvents() {
               name="ChevronRightSmallOutline"
               size="$5"
               color="$iconSubdued"
+              flexShrink={0}
             />
           </XStack>
         ))}

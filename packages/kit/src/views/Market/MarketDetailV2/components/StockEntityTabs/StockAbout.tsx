@@ -71,7 +71,7 @@ export function StockAbout({ entity }: { entity: IMarketStockEntity }) {
             pr="$2.5"
             gap="$1.5"
           >
-            <SizableText size="$bodySm" color="$textSubdued">
+            <SizableText size="$bodyMd" color="$textSubdued">
               {fact.label}
             </SizableText>
             <SizableText size="$bodyMdMedium" color="$text" numberOfLines={1}>

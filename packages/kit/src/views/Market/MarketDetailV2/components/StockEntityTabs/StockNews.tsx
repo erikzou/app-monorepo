@@ -44,10 +44,25 @@ const MOCK_NEWS: IStockNewsItem[] = [
 ];
 
 const MAX_NEWS_ITEMS = 3;
+const ROW_HOVER_BLEED = 8;
 
 function NewsRow({ item }: { item: IStockNewsItem }) {
   return (
-    <XStack gap="$4" alignItems="center" minHeight={48} py="$2">
+    // Figma 25579:17747: the row's hover background runs 8px past the text on
+    // both sides, so the negative margin pairs with matching padding.
+    <XStack
+      gap="$4"
+      alignItems="center"
+      minHeight={48}
+      py="$2"
+      px={ROW_HOVER_BLEED}
+      mx={-ROW_HOVER_BLEED}
+      borderRadius="$3"
+      borderCurve="continuous"
+      // Hover only until the row has somewhere to go: the article view is not
+      // built yet, and a pointer cursor on a dead row is worse than none.
+      hoverStyle={{ bg: '$bgHover' }}
+    >
       <YStack flex={1} minWidth={0} gap="$2">
         <XStack gap="$2" alignItems="center">
           <SizableText size="$bodySm" color="$textSubdued">
@@ -65,7 +80,12 @@ function NewsRow({ item }: { item: IStockNewsItem }) {
           {item.summary}
         </SizableText>
       </YStack>
-      <Icon name="ChevronRightSmallOutline" size="$5" color="$iconSubdued" />
+      <Icon
+        name="ChevronRightSmallOutline"
+        size="$5"
+        color="$iconSubdued"
+        flexShrink={0}
+      />
     </XStack>
   );
 }

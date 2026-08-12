@@ -42,8 +42,9 @@ function StockOverviewTab({ entity }: { entity: IMarketStockEntity }) {
   return (
     <Tabs.ScrollView>
       {/* Figma 25206:18271: the section list starts 8px under the tab row and
-          every section carries its own 32px of vertical padding. */}
-      <YStack px="$5" pt="$2">
+          every section carries its own 32px of vertical padding. The extra 32
+          at the end keeps the last section off the bottom of the page. */}
+      <YStack px="$5" pt="$2" pb="$8">
         <StockSection>
           <YStack gap="$6">
             <StockStatGrid items={visibleStats} />
