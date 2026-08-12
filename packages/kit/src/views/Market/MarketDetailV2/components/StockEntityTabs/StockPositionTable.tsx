@@ -24,6 +24,10 @@ const COLUMNS = [
   { key: 'total', label: 'Total PnL', align: 'flex-end' as const, grow: 1 },
 ];
 
+// Token (md) plus the row's gap: indents the "Token" label so it sits over the
+// symbol rather than over the avatar.
+const TOKEN_LABEL_INDENT = 42;
+
 /**
  * Header and body cells have to land on the same grid, so every column sizes
  * from its share of the row (flexBasis 0) instead of from its own content —
@@ -182,7 +186,11 @@ export function StockPositionTable({
         borderBottomColor="$borderSubdued"
       >
         {COLUMNS.map((column) => (
-          <Stack key={column.key} {...cellProps(column)}>
+          <Stack
+            key={column.key}
+            {...cellProps(column)}
+            pl={column.key === 'token' ? TOKEN_LABEL_INDENT : undefined}
+          >
             <SizableText size="$bodySm" color="$textSubdued">
               {column.label}
             </SizableText>

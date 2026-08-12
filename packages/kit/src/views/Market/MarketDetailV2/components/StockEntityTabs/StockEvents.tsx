@@ -1,4 +1,4 @@
-import { SizableText, Stack, XStack, YStack } from '@onekeyhq/components';
+import { Icon, SizableText, Stack, XStack, YStack } from '@onekeyhq/components';
 
 interface IStockEvent {
   key: string;
@@ -37,32 +37,41 @@ export function StockEvents() {
       <SizableText size="$headingLg" color="$text">
         Events
       </SizableText>
-      <YStack gap="$2">
+      {/* Figma 25319:8582: 56px calendar tile, 16 between it and the copy,
+          8 of vertical padding per row, and a trailing chevron. */}
+      <YStack>
         {MOCK_EVENTS.map((event) => (
-          <XStack key={event.key} gap="$3" alignItems="center">
+          <XStack key={event.key} py="$2" gap="$4" alignItems="center">
             <Stack
-              width="$12"
-              py="$1.5"
+              width={56}
+              pt={6}
+              pb="$2"
               alignItems="center"
+              justifyContent="center"
               bg="$bgSubdued"
               borderRadius="$2"
               borderCurve="continuous"
             >
-              <SizableText size="$headingSm" color="$text">
+              <SizableText size="$headingMd" color="$text">
                 {event.day}
               </SizableText>
-              <SizableText size="$bodySm" color="$textSubdued">
+              <SizableText size="$bodyMdMedium" color="$textSubdued">
                 {event.month}
               </SizableText>
             </Stack>
-            <YStack flex={1} minWidth={0} gap="$0.5">
-              <SizableText size="$bodyMdMedium" color="$text">
+            <YStack flex={1} minWidth={0} gap="$1">
+              <SizableText size="$headingMd" color="$text">
                 {event.title}
               </SizableText>
-              <SizableText size="$bodySm" color="$textSubdued">
+              <SizableText size="$bodyMd" color="$textSubdued">
                 {event.detail}
               </SizableText>
             </YStack>
+            <Icon
+              name="ChevronRightSmallOutline"
+              size="$5"
+              color="$iconSubdued"
+            />
           </XStack>
         ))}
       </YStack>
