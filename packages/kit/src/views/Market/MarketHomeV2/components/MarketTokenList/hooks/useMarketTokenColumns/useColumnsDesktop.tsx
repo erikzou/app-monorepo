@@ -49,6 +49,8 @@ const TOKEN_AGE_TRANSLATION_MAP = {
 
 const EMPTY_MARKET_VALUE = '--';
 
+const STOCK_PRICE_RANGE_TRAILING_SPACE = 32;
+
 function getDefaultMarketValue(text: number) {
   return text === 0 ? EMPTY_MARKET_VALUE : text;
 }
@@ -431,7 +433,9 @@ export const useColumnsDesktop = (
             title: '24h price range',
             dataIndex: 'priceRange',
             align: 'right' as const,
-            columnProps: { flex: 1 },
+            // Right-aligned, but not flush: the chart keeps 32 off the row's
+            // trailing edge so it does not read as cut off.
+            columnProps: { flex: 1, pr: STOCK_PRICE_RANGE_TRAILING_SPACE },
             render: (_: unknown, record: IMarketToken, index?: number) =>
               shouldRenderRichCell(index) ? (
                 <StockPriceRangeCell

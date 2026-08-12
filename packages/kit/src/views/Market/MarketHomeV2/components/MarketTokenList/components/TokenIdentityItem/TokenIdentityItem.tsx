@@ -131,8 +131,8 @@ interface ITokenIdentityItemProps {
  */
 const STOCK_VARIANT_LOGO_LIMIT = 3;
 const STOCK_VARIANT_LOGO_SIZE = 16;
-// The swapped line fades in with the row highlight instead of popping.
-const STOCK_VARIANT_SUMMARY_ENTER_STYLE = { opacity: 0 } as const;
+// bodyMd line box: the height of one line of the sliding pair.
+const STOCK_SUMMARY_LINE_HEIGHT = 20;
 
 function StockVariantLogos({ logos }: { logos?: string[] }) {
   const visible = (logos ?? []).slice(0, STOCK_VARIANT_LOGO_LIMIT);
@@ -272,8 +272,8 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   const isStockEntityRow = hideVariantChrome;
   // Hovering anywhere on the row — not just this cell — trades the company
   // name for what the row collapses.
-  const showVariantSummary =
-    isStockEntityRow && isRowHovered && (stockVariantCount ?? 0) > 0;
+  const hasVariantSummary =
+    isStockEntityRow && (stockVariantCount ?? 0) > 0 && Boolean(localizedName);
 
   return (
     <XStack
@@ -309,25 +309,50 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
             />
           )}
         </XStack>
-        {showVariantSummary ? (
-          <XStack
-            alignItems="center"
-            gap="$1.5"
-            minWidth={0}
-            animation="quick"
-            enterStyle={STOCK_VARIANT_SUMMARY_ENTER_STYLE}
-          >
-            {/* Figma 25463:83575: 14/20 regular, not the 12/16 the company
-                name uses. */}
-            <SizableText size="$bodyMd" color="$textSubdued">
-              {`${stockVariantCount ?? 0} ${
-                (stockVariantCount ?? 0) > 1 ? 'tokens' : 'token'
-              }`}
-            </SizableText>
-            <StockVariantLogos logos={stockVariantLogos} />
-          </XStack>
+        {hasVariantSummary ? (
+          // Both lines live in one 20px window and the pair slides up on
+          // hover, so the company name is pushed out by the token summary
+          // instead of being swapped underneath it.
+          <Stack height={STOCK_SUMMARY_LINE_HEIGHT} overflow="hidden">
+            <Stack
+              animation="quick"
+              y={isRowHovered ? -STOCK_SUMMARY_LINE_HEIGHT : 0}
+            >
+              <XStack
+                height={STOCK_SUMMARY_LINE_HEIGHT}
+                alignItems="center"
+                gap="$1.5"
+                minWidth={0}
+              >
+                <SizableText
+                  size="$bodyMd"
+                  color="$textSubdued"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  flexShrink={1}
+                >
+                  {localizedName}
+                </SizableText>
+              </XStack>
+              <XStack
+                height={STOCK_SUMMARY_LINE_HEIGHT}
+                alignItems="center"
+                gap="$1.5"
+                minWidth={0}
+              >
+                {/* Figma 25463:83575: 14/20 regular, not the 12/16 the company
+                    name uses. */}
+                <SizableText size="$bodyMd" color="$textSubdued">
+                  {`${stockVariantCount ?? 0} ${
+                    (stockVariantCount ?? 0) > 1 ? 'tokens' : 'token'
+                  }`}
+                </SizableText>
+                <StockVariantLogos logos={stockVariantLogos} />
+              </XStack>
+            </Stack>
+          </Stack>
         ) : null}
-        {shouldShowSecondRow && !showVariantSummary ? (
+        {shouldShowSecondRow && !hasVariantSummary ? (
           <XStack alignItems="center" gap="$1.5" minWidth={0}>
             {localizedName ? (
               <>

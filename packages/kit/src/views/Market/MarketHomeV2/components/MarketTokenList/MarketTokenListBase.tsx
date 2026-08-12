@@ -104,8 +104,6 @@ const SORT_KEY_TO_ENUM: Record<string, ESortWay> = {
   v24hUSD: ESortWay.Volume,
 };
 
-const MARKET_HOME_ROW_ANIMATE_ONLY = ['backgroundColor'];
-
 const STOCK_METADATA_COLUMN_DATA_INDEXES = new Set([
   'marketCap',
   'liquidity',
@@ -928,15 +926,9 @@ function MarketTokenListBase({
       return undefined;
     }
     return {
-      // Figma 25473:87731: 72 tall rows on the stock table. The highlight
-      // eases in rather than snapping — the row also swaps its subtitle on
-      // hover, and an instant flip reads as a glitch.
+      // Figma 25473:87731: 72 tall rows on the stock table.
       ...(isStockList
-        ? {
-            minHeight: MARKET_HOME_TABLE_ROW_HEIGHT,
-            animation: 'quick',
-            animateOnly: MARKET_HOME_ROW_ANIMATE_ONLY,
-          }
+        ? { minHeight: MARKET_HOME_TABLE_ROW_HEIGHT }
         : undefined),
       ...(rowBg ? { bg: rowBg } : undefined),
       ...(hasWebRowStyle
