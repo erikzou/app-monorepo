@@ -125,11 +125,12 @@ interface ITokenIdentityItemProps {
 }
 
 /**
- * The chains a collapsed row stands for, overlapped 4px the way the design
- * stacks them (Figma 25507:18329). Caps at three; the count next to it already
- * carries the total.
+ * The tokens a collapsed row stands for, 14px and overlapped 4px the way the
+ * design stacks them (Figma 25507:18329). Caps at three; the count next to it
+ * already carries the total.
  */
 const STOCK_VARIANT_LOGO_LIMIT = 3;
+const STOCK_VARIANT_LOGO_SIZE = 14;
 
 function StockVariantLogos({ logos }: { logos?: string[] }) {
   const visible = (logos ?? []).slice(0, STOCK_VARIANT_LOGO_LIMIT);
@@ -141,14 +142,20 @@ function StockVariantLogos({ logos }: { logos?: string[] }) {
       {visible.map((logo, index) => (
         <Stack
           key={logo}
-          w={12}
-          h={12}
+          w={STOCK_VARIANT_LOGO_SIZE}
+          h={STOCK_VARIANT_LOGO_SIZE}
           ml={index === 0 ? 0 : -4}
           borderRadius="$full"
           overflow="hidden"
           bg="$bgStrong"
+          borderWidth="$px"
+          borderColor="$bgApp"
         >
-          <Image w={12} h={12} source={{ uri: logo }} />
+          <Image
+            w={STOCK_VARIANT_LOGO_SIZE}
+            h={STOCK_VARIANT_LOGO_SIZE}
+            source={{ uri: logo }}
+          />
         </Stack>
       ))}
     </XStack>
@@ -284,7 +291,7 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
         size={isStockEntityRow ? 'lg' : 'md'}
       />
 
-      <Stack flex={1} minWidth={0} gap={isStockEntityRow ? '$1' : undefined}>
+      <Stack flex={1} minWidth={0} gap={isStockEntityRow ? '$0.5' : undefined}>
         <XStack alignItems="center" gap="$1">
           {symbolElement}
           {maxLeverage ? <LeverageBadge leverage={maxLeverage} /> : null}
@@ -302,7 +309,9 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
         </XStack>
         {showVariantSummary ? (
           <XStack alignItems="center" gap="$1.5" minWidth={0}>
-            <SizableText size="$bodySmMedium" color="$textSubdued">
+            {/* Figma 25463:83575: 14/20 regular, not the 12/16 the company
+                name uses. */}
+            <SizableText size="$bodyMd" color="$textSubdued">
               {`${stockVariantCount ?? 0} ${
                 (stockVariantCount ?? 0) > 1 ? 'tokens' : 'token'
               }`}
@@ -313,9 +322,26 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
         {shouldShowSecondRow && !showVariantSummary ? (
           <XStack alignItems="center" gap="$1.5" minWidth={0}>
             {localizedName ? (
-              // Cap the localized name so long names truncate with an
-              // ellipsis, e.g. "Circle Int...", keeping the row compact.
-              <SubtitleText subtitle={localizedName} maxWidth={66} />
+              <>
+                {isStockEntityRow ? (
+                  // Figma 25473:87735: the company line matches the hover
+                  // summary at 14/20 regular, so nothing shifts on hover, and
+                  // it truncates against the column instead of a fixed width.
+                  <SizableText
+                    size="$bodyMd"
+                    color="$textSubdued"
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    flexShrink={1}
+                  >
+                    {localizedName}
+                  </SizableText>
+                ) : (
+                  // Cap the localized name so long names truncate with an
+                  // ellipsis, e.g. "Circle Int...", keeping the row compact.
+                  <SubtitleText subtitle={localizedName} maxWidth={66} />
+                )}
+              </>
             ) : null}
             {/* Divider only before the address (desktop); the name and
                volume (mobile) are separated by spacing alone. */}

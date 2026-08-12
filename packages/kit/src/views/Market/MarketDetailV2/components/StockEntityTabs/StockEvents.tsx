@@ -38,10 +38,16 @@ export function StockEvents() {
         Events
       </SizableText>
       {/* Figma 25319:8582: 56px calendar tile, 16 between it and the copy,
-          8 of vertical padding per row, and a trailing chevron. */}
-      <YStack>
+          48-tall rows 8 apart, and a trailing chevron. */}
+      <YStack gap="$2">
         {MOCK_EVENTS.map((event) => (
-          <XStack key={event.key} py="$2" gap="$4" alignItems="center">
+          <XStack
+            key={event.key}
+            py="$2"
+            minHeight={48}
+            gap="$4"
+            alignItems="center"
+          >
             <Stack
               width={56}
               pt={6}
@@ -60,7 +66,7 @@ export function StockEvents() {
               </SizableText>
             </Stack>
             <YStack flex={1} minWidth={0} gap="$1">
-              <SizableText size="$headingMd" color="$text">
+              <SizableText size="$bodyLgMedium" color="$text">
                 {event.title}
               </SizableText>
               <SizableText size="$bodyMd" color="$textSubdued">

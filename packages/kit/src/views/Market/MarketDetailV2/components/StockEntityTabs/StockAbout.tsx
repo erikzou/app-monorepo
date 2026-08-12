@@ -40,44 +40,48 @@ export function StockAbout({ entity }: { entity: IMarketStockEntity }) {
   }
 
   return (
-    <YStack gap="$4">
+    // Figma 25319:8651: 24 under the section title, 16 between the label row
+    // and the copy, 12 between the company name and its tags.
+    <YStack gap="$6">
       <SizableText size="$headingLg" color="$text">
         About
       </SizableText>
 
-      {/* Company name and its categories share one line. */}
-      <XStack flexWrap="wrap" alignItems="center" gap="$2">
-        {entity.name ? (
-          <SizableText size="$bodyMdMedium" color="$text">
-            {entity.name}
-          </SizableText>
-        ) : null}
-        {categoryNames.map((name) => (
-          <Badge key={name} badgeType="default" badgeSize="sm">
-            {name}
-          </Badge>
-        ))}
-      </XStack>
+      <YStack gap="$4">
+        {/* Company name and its categories share one line. */}
+        <XStack flexWrap="wrap" alignItems="center" gap="$3">
+          {entity.name ? (
+            <SizableText size="$bodyLgMedium" color="$text">
+              {entity.name}
+            </SizableText>
+          ) : null}
+          {categoryNames.map((name) => (
+            <Badge key={name} badgeType="default" badgeSize="sm">
+              {name}
+            </Badge>
+          ))}
+        </XStack>
 
-      {introduction ? (
-        <YStack gap="$2" alignItems="flex-start">
-          <SizableText
-            size="$bodyMd"
-            color="$textSubdued"
-            numberOfLines={isExpanded ? undefined : COLLAPSED_LINES}
-          >
-            {introduction}
-          </SizableText>
-          <Button
-            testID={MarketTestIDs.stockAboutToggle}
-            size="small"
-            variant="tertiary"
-            onPress={handleToggle}
-          >
-            {isExpanded ? 'View Less' : 'View More'}
-          </Button>
-        </YStack>
-      ) : null}
+        {introduction ? (
+          <YStack gap="$2" alignItems="flex-start">
+            <SizableText
+              size="$bodyMd"
+              color="$textSubdued"
+              numberOfLines={isExpanded ? undefined : COLLAPSED_LINES}
+            >
+              {introduction}
+            </SizableText>
+            <Button
+              testID={MarketTestIDs.stockAboutToggle}
+              size="small"
+              variant="tertiary"
+              onPress={handleToggle}
+            >
+              {isExpanded ? 'View Less' : 'View More'}
+            </Button>
+          </YStack>
+        ) : null}
+      </YStack>
     </YStack>
   );
 }
