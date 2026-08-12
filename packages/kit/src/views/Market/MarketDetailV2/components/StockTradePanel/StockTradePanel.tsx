@@ -33,6 +33,7 @@ import type { IToken } from '../SwapPanel/types';
 const DEMO_BALANCE = '10000.01';
 const DEMO_PROVIDER_LABEL = 'Best';
 const SIDE_SWITCH_WIDTH = 176;
+const EMPTY_TOKENS: IToken[] = [];
 
 // Stocks are quoted in dollars, so the panel opens on a stablecoin rather
 // than whatever the chain's speed-config happens to list first (usually the
@@ -59,25 +60,31 @@ function AmountCard({
   onAmountChange,
   onMaxPress,
   fiatValue,
-  payToken,
-  payTokens,
-  onPayTokenChange,
+  balanceLabel,
+  tokenSymbol,
+  tokenLogoUri,
+  selectableTokens,
+  onTokenChange,
 }: {
   amount: string;
   onAmountChange: (value: string) => void;
   onMaxPress: () => void;
   fiatValue: string;
-  payToken?: IToken;
-  payTokens: IToken[];
-  onPayTokenChange: (token: IToken) => void;
+  balanceLabel: string;
+  tokenSymbol?: string;
+  tokenLogoUri?: string;
+  // Empty when the side fixes the token: selling means selling this page's
+  // stock, so there is nothing to pick.
+  selectableTokens: IToken[];
+  onTokenChange: (token: IToken) => void;
 }) {
   const [isTokenListOpen, setIsTokenListOpen] = useState(false);
   const handleTokenPress = useCallback(
     (token: IToken) => {
-      onPayTokenChange(token);
+      onTokenChange(token);
       setIsTokenListOpen(false);
     },
-    [onPayTokenChange],
+    [onTokenChange],
   );
   const handleOpenTokenList = useCallback(() => setIsTokenListOpen(true), []);
 
@@ -112,20 +119,22 @@ function AmountCard({
           py="$4"
           gap="$2"
           alignItems="center"
-          cursor={payTokens.length > 1 ? 'pointer' : undefined}
+          cursor={selectableTokens.length > 1 ? 'pointer' : undefined}
           userSelect="none"
-          onPress={payTokens.length > 1 ? handleOpenTokenList : undefined}
+          onPress={
+            selectableTokens.length > 1 ? handleOpenTokenList : undefined
+          }
           testID="market-stock-trade-pay-token"
         >
           <Token
             size="sm"
-            tokenImageUri={payToken?.logoURI}
+            tokenImageUri={tokenLogoUri}
             fallbackIcon="CryptoCoinOutline"
           />
           <SizableText size="$headingXl" color="$text">
-            {payToken?.symbol ?? '--'}
+            {tokenSymbol ?? '--'}
           </SizableText>
-          {payTokens.length > 1 ? (
+          {selectableTokens.length > 1 ? (
             <Icon
               name="ChevronDownSmallOutline"
               size="$5"
@@ -136,7 +145,7 @@ function AmountCard({
         <TokenSelectorPopover
           isOpen={isTokenListOpen}
           onOpenChange={setIsTokenListOpen}
-          tokens={payTokens}
+          tokens={selectableTokens}
           onTokenPress={handleTokenPress}
         />
       </XStack>
@@ -147,7 +156,7 @@ function AmountCard({
         </SizableText>
         <XStack gap="$1" alignItems="center">
           <SizableText size="$bodySm" color="$textSubdued">
-            {DEMO_BALANCE}
+            {balanceLabel}
           </SizableText>
           <SizableText
             size="$bodySmMedium"
@@ -161,6 +170,57 @@ function AmountCard({
         </XStack>
       </XStack>
     </YStack>
+  );
+}
+
+/**
+ * Quote-token picker for the Sell side. Selling hands over the stock and takes
+ * back a stablecoin, so the token that varies sits on the receive line rather
+ * than in the amount card.
+ */
+function QuoteTokenChip({
+  token,
+  tokens,
+  onTokenChange,
+}: {
+  token?: IToken;
+  tokens: IToken[];
+  onTokenChange: (next: IToken) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const handleTokenPress = useCallback(
+    (next: IToken) => {
+      onTokenChange(next);
+      setIsOpen(false);
+    },
+    [onTokenChange],
+  );
+  const canSelect = tokens.length > 1;
+
+  return (
+    <XStack alignItems="center">
+      <XStack
+        gap="$1"
+        alignItems="center"
+        cursor={canSelect ? 'pointer' : undefined}
+        userSelect="none"
+        onPress={canSelect ? () => setIsOpen(true) : undefined}
+        testID="market-stock-trade-quote-token"
+      >
+        <SizableText size="$bodyMdMedium" color="$text">
+          {token?.symbol ?? '--'}
+        </SizableText>
+        {canSelect ? (
+          <Icon name="ChevronDownSmallOutline" size="$4" color="$iconSubdued" />
+        ) : null}
+      </XStack>
+      <TokenSelectorPopover
+        isOpen={isOpen}
+        onOpenChange={setIsOpen}
+        tokens={tokens}
+        onTokenPress={handleTokenPress}
+      />
+    </XStack>
   );
 }
 
@@ -210,17 +270,49 @@ export function StockTradePanel() {
   }, []);
   const handleMaxPress = useCallback(() => setAmount(DEMO_BALANCE), []);
 
+  // Buying spends the stablecoin and receives the stock; selling hands over
+  // the stock and receives the stablecoin. Only the amount card's token and
+  // the direction of the price maths change between the two.
+  const isSell = side === ESwapDirection.SELL;
+  const stockLogoUri = activeInstrument?.logoUrl ?? tokenDetail?.logoUrl;
   const amountBN = new BigNumber(amount || '');
   const hasAmount = amountBN.isFinite() && amountBN.gt(0);
   const priceBN = new BigNumber(tokenPrice ?? '');
-  const receiveAmount =
-    hasAmount && priceBN.isFinite() && priceBN.gt(0)
-      ? amountBN.dividedBy(priceBN)
-      : undefined;
-  const rate =
-    priceBN.isFinite() && priceBN.gt(0)
-      ? new BigNumber(1).dividedBy(priceBN)
-      : undefined;
+  const hasPrice = priceBN.isFinite() && priceBN.gt(0);
+  const receiveAmount = (() => {
+    if (!hasAmount || !hasPrice) {
+      return undefined;
+    }
+    return isSell
+      ? amountBN.multipliedBy(priceBN)
+      : amountBN.dividedBy(priceBN);
+  })();
+  // What the typed amount is worth: a stablecoin amount is already the dollar
+  // figure, a share amount has to be priced.
+  const fiatValue = (() => {
+    if (!hasAmount) {
+      return '$0.00';
+    }
+    if (!isSell) {
+      return `$${amountBN.toFixed(2)}`;
+    }
+    return hasPrice ? `$${amountBN.multipliedBy(priceBN).toFixed(2)}` : '$0.00';
+  })();
+  const rate = (() => {
+    if (!hasPrice) {
+      return undefined;
+    }
+    return isSell ? priceBN : new BigNumber(1).dividedBy(priceBN);
+  })();
+  const rateLabel = (() => {
+    if (!rate) {
+      return '--';
+    }
+    const quoteSymbol = payToken?.symbol ?? '--';
+    return isSell
+      ? `1 ${tokenSymbol} = ${rate.toFixed(2)} ${quoteSymbol}`
+      : `1 ${quoteSymbol} = ${rate.toFixed(6)} ${tokenSymbol}`;
+  })();
 
   return (
     <YStack bg="$bgApp" gap="$4">
@@ -282,27 +374,39 @@ export function StockTradePanel() {
           amount={amount}
           onAmountChange={setAmount}
           onMaxPress={handleMaxPress}
-          fiatValue={hasAmount ? `$${amountBN.toFixed(2)}` : '$0.00'}
-          payToken={payToken}
-          payTokens={payTokens}
-          onPayTokenChange={setSelectedPayToken}
+          fiatValue={fiatValue}
+          balanceLabel={DEMO_BALANCE}
+          tokenSymbol={isSell ? tokenSymbol : payToken?.symbol}
+          tokenLogoUri={isSell ? stockLogoUri : payToken?.logoURI}
+          selectableTokens={isSell ? EMPTY_TOKENS : payTokens}
+          onTokenChange={setSelectedPayToken}
         />
 
         <XStack h={48} px="$0.5" gap="$2" alignItems="center">
           <XStack gap="$1" alignItems="center">
             <Icon name="HandCoinsOutline" size="$4.5" color="$iconSubdued" />
             <SizableText size="$bodyMd" color="$text">
-              Est received
+              {isSell ? 'Sell for' : 'Est received'}
             </SizableText>
           </XStack>
           <YStack flex={1} minWidth={0} alignItems="flex-end">
-            <SizableText size="$bodyMdMedium" color="$text">
-              {receiveAmount
-                ? `${receiveAmount.toFixed(4)} ${tokenSymbol}`
-                : '--'}
-            </SizableText>
+            {isSell ? (
+              <QuoteTokenChip
+                token={payToken}
+                tokens={payTokens}
+                onTokenChange={setSelectedPayToken}
+              />
+            ) : (
+              <SizableText size="$bodyMdMedium" color="$text">
+                {receiveAmount
+                  ? `${receiveAmount.toFixed(4)} ${tokenSymbol}`
+                  : '--'}
+              </SizableText>
+            )}
+            {/* Both sides price the trade in dollars: what the stablecoin is
+                worth when buying, what the shares fetch when selling. */}
             <SizableText size="$bodyMd" color="$textSubdued">
-              {hasAmount ? `$${amountBN.toFixed(2)}` : '--'}
+              {hasAmount ? fiatValue : '--'}
             </SizableText>
           </YStack>
         </XStack>
@@ -328,9 +432,7 @@ export function StockTradePanel() {
                 color="$iconSubdued"
               />
               <SizableText size="$bodyMd" color="$text" numberOfLines={1}>
-                {rate
-                  ? `1 ${payToken?.symbol ?? '--'} = ${rate.toFixed(6)} ${tokenSymbol}`
-                  : '--'}
+                {rateLabel}
               </SizableText>
             </XStack>
             <XStack flex={1} minWidth={0} gap="$1" justifyContent="flex-end">
