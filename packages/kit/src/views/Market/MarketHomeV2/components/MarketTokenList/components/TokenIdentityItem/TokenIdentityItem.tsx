@@ -131,6 +131,8 @@ interface ITokenIdentityItemProps {
  */
 const STOCK_VARIANT_LOGO_LIMIT = 3;
 const STOCK_VARIANT_LOGO_SIZE = 16;
+// The swapped line fades in with the row highlight instead of popping.
+const STOCK_VARIANT_SUMMARY_ENTER_STYLE = { opacity: 0 } as const;
 
 function StockVariantLogos({ logos }: { logos?: string[] }) {
   const visible = (logos ?? []).slice(0, STOCK_VARIANT_LOGO_LIMIT);
@@ -308,7 +310,13 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
           )}
         </XStack>
         {showVariantSummary ? (
-          <XStack alignItems="center" gap="$1.5" minWidth={0}>
+          <XStack
+            alignItems="center"
+            gap="$1.5"
+            minWidth={0}
+            animation="quick"
+            enterStyle={STOCK_VARIANT_SUMMARY_ENTER_STYLE}
+          >
             {/* Figma 25463:83575: 14/20 regular, not the 12/16 the company
                 name uses. */}
             <SizableText size="$bodyMd" color="$textSubdued">

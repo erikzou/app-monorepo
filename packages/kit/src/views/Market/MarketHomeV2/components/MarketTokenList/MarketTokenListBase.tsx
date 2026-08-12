@@ -60,6 +60,8 @@ import { useMarketTokenColumns } from './hooks/useMarketTokenColumns';
 import { useToDetailPage } from './hooks/useToMarketDetailPage';
 import { type IMarketToken } from './MarketTokenData';
 import {
+  getStockMarketCapValue,
+  getStockVolume24hValue,
   shouldShowStockSubtitleForTokens,
   shouldUseStockMetadataColumnsForTokens,
 } from './utils/tokenListHelpers';
@@ -102,11 +104,27 @@ const SORT_KEY_TO_ENUM: Record<string, ESortWay> = {
   v24hUSD: ESortWay.Volume,
 };
 
+const MARKET_HOME_ROW_ANIMATE_ONLY = ['backgroundColor'];
+
 const STOCK_METADATA_COLUMN_DATA_INDEXES = new Set([
   'marketCap',
   'liquidity',
   'turnover',
 ]);
+
+/**
+ * The stock table sorts on what it shows. Market cap and 24h volume come from
+ * the stock index, not from the token's own metrics, so the server's sort
+ * (which orders by token mc/liquidity) would order the rows by numbers that
+ * are not on screen — hence a local sort over the loaded page.
+ */
+const STOCK_SORT_VALUE_GETTERS: Record<string, (item: IMarketToken) => number> =
+  {
+    price: (item) => Number(item.price) || 0,
+    change24h: (item) => Number(item.change24h) || 0,
+    marketCap: (item) => Number(getStockMarketCapValue(item)) || 0,
+    liquidity: (item) => Number(getStockVolume24hValue(item)) || 0,
+  };
 
 type IMarketHomeSubscriptionRange = {
   start: number;
@@ -339,7 +357,31 @@ function MarketTokenListBase({
     canEnableWebSocket &&
     (!platformEnv.isWeb || !webTabIntegrated || enableDeferredWebFeatures),
   );
+  // Stock table sort: local, over what is loaded. Kept separate from the
+  // server sort so the two never fight over the same state.
+  const [stockSort, setStockSort] = useState<{
+    key: string;
+    order: 'asc' | 'desc';
+  } | null>(null);
+  const handleStockSortChange = useCallback(
+    (key: string, order: 'asc' | 'desc' | undefined) => {
+      setStockSort(order ? { key, order } : null);
+    },
+    [],
+  );
+
   const orderedData = useMemo(() => {
+    if (isStockList && stockSort) {
+      const getValue = STOCK_SORT_VALUE_GETTERS[stockSort.key];
+      if (getValue) {
+        return [...rawData].toSorted((a, b) =>
+          stockSort.order === 'asc'
+            ? getValue(a) - getValue(b)
+            : getValue(b) - getValue(a),
+        );
+      }
+    }
+
     if (!clientSort || !currentSortBy || !currentSortType) {
       return rawData;
     }
@@ -354,7 +396,14 @@ function MarketTokenListBase({
       const bVal = (b[field] as number) ?? 0;
       return currentSortType === 'asc' ? aVal - bVal : bVal - aVal;
     });
-  }, [clientSort, currentSortBy, currentSortType, rawData]);
+  }, [
+    clientSort,
+    currentSortBy,
+    currentSortType,
+    isStockList,
+    rawData,
+    stockSort,
+  ]);
   const [subscriptionRange, setSubscriptionRange] =
     useState<IMarketHomeSubscriptionRange>({ start: 0, end: 0 });
   const updateSubscriptionRange = useCallback(() => {
@@ -560,6 +609,22 @@ function MarketTokenListBase({
 
   const handleHeaderRow = useCallback(
     (column: ITableColumn<IMarketToken>) => {
+      if (isStockList) {
+        const key = String(column.dataIndex);
+        if (!STOCK_SORT_VALUE_GETTERS[key]) {
+          return undefined;
+        }
+        return {
+          onSortTypeChange: (order: 'asc' | 'desc' | undefined) => {
+            handleStockSortChange(key, order);
+          },
+          initialSortOrder:
+            stockSort?.key === key
+              ? (stockSort.order as ETableSortType)
+              : undefined,
+        };
+      }
+
       if (!isWatchlistMode && !clientSort) {
         return undefined;
       }
@@ -594,10 +659,13 @@ function MarketTokenListBase({
     },
     [
       handleSortChange,
+      handleStockSortChange,
+      isStockList,
       isWatchlistMode,
       clientSort,
       currentSortBy,
       currentSortType,
+      stockSort,
       useStockMetadataColumns,
     ],
   );
@@ -860,9 +928,15 @@ function MarketTokenListBase({
       return undefined;
     }
     return {
-      // Figma 25473:87731: 72 tall rows on the stock table.
+      // Figma 25473:87731: 72 tall rows on the stock table. The highlight
+      // eases in rather than snapping — the row also swaps its subtitle on
+      // hover, and an instant flip reads as a glitch.
       ...(isStockList
-        ? { minHeight: MARKET_HOME_TABLE_ROW_HEIGHT }
+        ? {
+            minHeight: MARKET_HOME_TABLE_ROW_HEIGHT,
+            animation: 'quick',
+            animateOnly: MARKET_HOME_ROW_ANIMATE_ONLY,
+          }
         : undefined),
       ...(rowBg ? { bg: rowBg } : undefined),
       ...(hasWebRowStyle

@@ -276,7 +276,8 @@ export function DesktopLayout({
     if (platformEnv.isDesktop) {
       return { paddingBottom: 50 };
     }
-    return { paddingBottom: 0 };
+    // The last row used to sit flush against the bottom of the page.
+    return { paddingBottom: 32 };
   }, []);
 
   const getHiddenSpotDesktopColumns = useCallback(
