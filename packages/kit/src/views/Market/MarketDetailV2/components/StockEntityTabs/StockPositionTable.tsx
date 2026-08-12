@@ -8,6 +8,7 @@ import {
   YStack,
 } from '@onekeyhq/components';
 import { Token } from '@onekeyhq/kit/src/components/Token';
+import { useNetworkLogoUri } from '@onekeyhq/kit/src/hooks/useNetworkLogoUri';
 import type { IMarketAccountPortfolioItem } from '@onekeyhq/shared/types/marketV2';
 
 import { formatPriceChangeDisplay } from '../../utils/statValue';
@@ -97,16 +98,21 @@ function PnlCell({
 function PositionRow({
   item,
   tokenLogoUrl,
+  networkLogoUri,
 }: {
   item: IMarketAccountPortfolioItem;
   tokenLogoUrl?: string;
+  networkLogoUri?: string;
 }) {
   return (
     <XStack py="$3" alignItems="center" gap="$3">
       <XStack {...cellProps(COLUMNS[0])} alignItems="center" gap="$2.5">
+        {/* A position is one tokenization on one chain — unlike the list's
+            collapsed company row, the chain badge belongs here. */}
         <Token
           size="md"
           tokenImageUri={tokenLogoUrl}
+          networkImageUri={networkLogoUri}
           fallbackIcon="CryptoCoinOutline"
         />
         <SizableText size="$bodyMdMedium" color="$text" numberOfLines={1}>
@@ -152,13 +158,18 @@ export function StockPositionTable({
   portfolioData,
   accountAddress,
   tokenLogoUrl,
+  networkId,
   isRefreshing,
 }: {
   portfolioData: IMarketAccountPortfolioItem[];
   accountAddress?: string;
   tokenLogoUrl?: string;
+  networkId?: string;
   isRefreshing?: boolean;
 }) {
+  // The portfolio endpoint is per (network, token), so every row on this page
+  // sits on the routed variant's chain.
+  const networkLogoUri = useNetworkLogoUri({ networkId });
   const rows = accountAddress ? portfolioData : [];
 
   if (rows.length === 0 && accountAddress && isRefreshing) {
@@ -203,6 +214,7 @@ export function StockPositionTable({
           key={`${item.accountAddress}-${item.tokenAddress}`}
           item={item}
           tokenLogoUrl={tokenLogoUrl}
+          networkLogoUri={networkLogoUri}
         />
       ))}
     </YStack>

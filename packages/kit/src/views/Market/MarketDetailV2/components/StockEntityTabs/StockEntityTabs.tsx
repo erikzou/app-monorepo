@@ -147,6 +147,7 @@ export function StockEntityTabs({
               portfolioData={portfolioData}
               accountAddress={accountAddress}
               tokenLogoUrl={tokenLogoUrl}
+              networkId={networkId}
               isRefreshing={isRefreshing}
             />
           </YStack>
@@ -158,6 +159,7 @@ export function StockEntityTabs({
       entity,
       intl,
       isRefreshing,
+      networkId,
       portfolioData,
       positionTabName,
       tokenLogoUrl,
