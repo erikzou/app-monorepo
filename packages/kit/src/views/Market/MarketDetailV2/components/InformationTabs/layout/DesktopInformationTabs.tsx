@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useIntl } from 'react-intl';
 
@@ -10,6 +10,7 @@ import {
   XStack,
   YStack,
 } from '@onekeyhq/components';
+import type { ITabContainerRef } from '@onekeyhq/components';
 import { useMarketTransactionsRealtimePauseAtom } from '@onekeyhq/kit/src/states/jotai/contexts/marketV2';
 import { isHoldersTabSupported } from '@onekeyhq/shared/src/consts/marketConsts';
 import { ETranslations } from '@onekeyhq/shared/src/locale';
@@ -28,6 +29,7 @@ import { TransactionsHistory } from '../components/TransactionsHistory';
 import { MAX_BUFFERED_TRANSACTIONS } from '../components/TransactionsHistory/hooks/transactionBufferUtils';
 import { useBottomTabAnalytics } from '../hooks/useBottomTabAnalytics';
 import { useNetworkAccountAddress } from '../hooks/useNetworkAccountAddress';
+import { useMarketDetailTabsController } from '../MarketDetailTabsController';
 
 import { StickyHeader } from './StickyHeader';
 
@@ -147,6 +149,19 @@ export function DesktopInformationTabs({
   const { tokenAddress, networkId, tokenDetail, isNative, isStockToken } =
     useTokenDetail();
   const { accountAddress } = useNetworkAccountAddress(networkId);
+  const { registerTabs } = useMarketDetailTabsController();
+  const tabsRef = useRef<ITabContainerRef>(
+    null,
+  ) as React.RefObject<ITabContainerRef>;
+  const positionTabName = intl.formatMessage({
+    id: ETranslations.dexmarket_details_myposition,
+  });
+  // Hand the container over so the right column's position summary can open
+  // the My position tab.
+  useEffect(() => {
+    registerTabs(tabsRef.current, positionTabName);
+    return () => registerTabs(null, '');
+  }, [positionTabName, registerTabs]);
 
   const holdersTabName = useMemo(() => {
     const baseTitle = intl.formatMessage({
@@ -183,12 +198,7 @@ export function DesktopInformationTabs({
           />
         </Tabs.Tab>
       ),
-      <Tabs.Tab
-        key="portfolio"
-        name={intl.formatMessage({
-          id: ETranslations.dexmarket_details_myposition,
-        })}
-      >
+      <Tabs.Tab key="portfolio" name={positionTabName}>
         <Portfolio
           portfolioData={portfolioData}
           isRefreshing={isRefreshing}
@@ -233,6 +243,7 @@ export function DesktopInformationTabs({
     tokenLogoUrl,
     isBTCNetwork,
     isStockToken,
+    positionTabName,
   ]);
 
   const tabKeys = useMemo(() => tabs.map((tab) => String(tab.key)), [tabs]);
@@ -253,6 +264,7 @@ export function DesktopInformationTabs({
   return (
     <Tabs.Container
       key={tabsKey}
+      ref={tabsRef}
       renderTabBar={renderTabBar}
       onTabChange={handleTabChange}
       disableScroll={!platformEnv.isNative}

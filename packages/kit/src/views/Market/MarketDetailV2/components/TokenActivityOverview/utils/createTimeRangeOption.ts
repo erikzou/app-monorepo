@@ -2,6 +2,7 @@ import { clampPercentage } from '@onekeyhq/shared/src/utils/numberUtils';
 import type { IMarketTokenDetail } from '@onekeyhq/shared/types/marketV2';
 
 export type IPriceChangeKey =
+  | 'priceChange5mPercent'
   | 'priceChange1hPercent'
   | 'priceChange4hPercent'
   | 'priceChange8hPercent'

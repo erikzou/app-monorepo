@@ -30,6 +30,10 @@ const SwapPanelTop = ({
 }: ISwapPanelTopProps) => {
   const intl = useIntl();
   const isStockDesktop = panelVariant === 'stockDesktop';
+  // The crypto design keeps the underlined Market tab but drops the rule under
+  // it — the amount input below already reads as its own block
+  // (Figma 25671:53504).
+  const showDivider = panelVariant !== 'memeDesktop';
 
   const balanceDisplay = (
     <BalanceDisplay
@@ -72,7 +76,7 @@ const SwapPanelTop = ({
         </XStack>
         {balanceDisplay}
       </XStack>
-      <Divider />
+      {showDivider ? <Divider /> : null}
     </YStack>
   );
 };

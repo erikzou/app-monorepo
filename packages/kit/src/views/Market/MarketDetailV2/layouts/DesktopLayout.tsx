@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ComponentProps, RefObject } from 'react';
 
 import {
-  Divider,
   Spinner,
   Stack,
   XStack,
@@ -14,7 +13,10 @@ import {
   useMarketChartModeAtom,
   useMarketPriceSourceAtom,
 } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
-import type { IMarketPriceSource } from '@onekeyhq/kit-bg/src/states/jotai/atoms';
+import type {
+  IMarketChartMode,
+  IMarketPriceSource,
+} from '@onekeyhq/kit-bg/src/states/jotai/atoms';
 import {
   TRADING_VIEW_LOCALHOST_ORIGIN,
   TRADING_VIEW_URL,
@@ -28,6 +30,10 @@ import { MarketTestIDs } from '../../testIDs';
 import { usePortfolioData } from '../components/InformationTabs/components/Portfolio/hooks/usePortfolioData';
 import { useNetworkAccount } from '../components/InformationTabs/hooks/useNetworkAccount';
 import {
+  MarketDetailTabsProvider,
+  useMarketDetailTabsController,
+} from '../components/InformationTabs/MarketDetailTabsController';
+import {
   MARKET_CHART_TOOLBAR_HEIGHT,
   MARKET_LITE_CHART_DEFAULT_RANGE,
   MarketChartModeSwitch,
@@ -35,6 +41,7 @@ import {
   MarketLiteChart,
   MarketLiteChartControls,
 } from '../components/MarketLiteChart';
+import { MarketPositionSummary } from '../components/MarketPositionSummary/MarketPositionSummary';
 import { MarketChartFullscreenHeader } from '../components/MarketTradingView/MarketChartFullscreenHeader';
 import { PerpetualTradingBanner } from '../components/PerpetualTradingBanner/PerpetualTradingBanner';
 import { StockEntityTabs } from '../components/StockEntityTabs/StockEntityTabs';
@@ -42,6 +49,8 @@ import { StockTradePanel } from '../components/StockTradePanel/StockTradePanel';
 import { StockTrustPanel } from '../components/StockTrustPanel/StockTrustPanel';
 import { SwapPanel } from '../components/SwapPanel/SwapPanel';
 import { TokenActivityOverview } from '../components/TokenActivityOverview/TokenActivityOverview';
+import { CryptoDetailHeader } from '../components/TokenDetailHeader/CryptoDetailHeader';
+import { CryptoHeaderStats } from '../components/TokenDetailHeader/CryptoHeaderStats';
 import { TokenDetailHeader } from '../components/TokenDetailHeader/TokenDetailHeader';
 import { TokenSupplementaryInfo } from '../components/TokenSupplementaryInfo/TokenSupplementaryInfo';
 import { useMarketStockEntity } from '../hooks/useMarketStockEntity';
@@ -63,7 +72,9 @@ const MARKET_DETAIL_LAYOUT = {
   // Design's chart block is 506 tall: pt 20 + price header 70 + gap 24 +
   // this chart area + pb 32 (Figma 25227:67414).
   stockChartHeight: 360,
-  stockChartBlockPaddingBottom: 32,
+  // Both assemblies now sit the chart under a price bar, so both carry the
+  // same trailing gap before the tabs.
+  chartBlockPaddingBottom: 32,
   chartFullscreenHeaderFillHeight: 48,
   infoTabsHeight: 480,
 } as const;
@@ -78,10 +89,11 @@ const MARKET_CHART_FULLSCREEN_STYLE = {
 } as const;
 const IFRAME_WHEEL_EVENT_TYPE = 'wheelEvent' as const;
 
-// Content frame of the stock detail design (Figma 25271:8054). The frame is
+// Content frame shared by both detail assemblies — stocks (Figma 25271:8054)
+// and crypto (Figma 25593:18400) are laid out on the same grid. The frame is
 // fixed, so the left column takes whatever the trade panel leaves:
 // 1240 - 24 - 384 = 832.
-const STOCK_LAYOUT = {
+const DETAIL_CONTENT_FRAME = {
   contentMaxWidth: 1240,
   contentPadding: 20,
   rightColumnWidth: 384,
@@ -186,7 +198,17 @@ export interface IDesktopLayoutProps {
   showFavoriteButton?: boolean;
 }
 
-export function DesktopLayout({
+export function DesktopLayout(props: IDesktopLayoutProps) {
+  // The position summary in the right column drives the main column's tabs, so
+  // the handle between them is provided above both.
+  return (
+    <MarketDetailTabsProvider>
+      <DesktopLayoutContent {...props} />
+    </MarketDetailTabsProvider>
+  );
+}
+
+function DesktopLayoutContent({
   isChartFullscreen,
   onChartFullscreenChange,
   networkId: routeNetworkId,
@@ -239,9 +261,12 @@ export function DesktopLayout({
     ],
   );
 
-  // Lite/Pro chart. Only the stock entity page carries it for now; crypto
-  // pages keep the Pro chart until the skeleton is rolled back to them.
-  const [{ mode: chartMode }] = useMarketChartModeAtom();
+  // Lite/Pro chart. The stock assembly remembers the choice in a persisted
+  // atom and opens on Lite; the crypto assembly opens on Pro and keeps the
+  // choice for the visit only (remembering it is out of scope for this demo).
+  const [{ mode: stockChartMode }] = useMarketChartModeAtom();
+  const [cryptoChartMode, setCryptoChartMode] =
+    useState<IMarketChartMode>('pro');
   // Share price is the underlying equity, token price is the tokenized
   // instrument. Only the token series is charted today; the toggle switches the
   // header figures and is mirrored by the trade panel's chart button, which is
@@ -267,7 +292,11 @@ export function DesktopLayout({
   // tokenized variant. There is only one layer: variants are expressed through
   // the trade dropdown and the trust block, never a page of their own.
   const isStockPage = Boolean(stockEntity);
-  const showChartModeSwitch = isStockPage && !isChartFullscreen;
+  // Everything that is not a stock renders the crypto assembly. Majors get
+  // their own configuration later; until that list exists they ride along here.
+  const isCryptoPage = !isStockPage;
+  const showChartModeSwitch = !isChartFullscreen;
+  const chartMode = isStockPage ? stockChartMode : cryptoChartMode;
   const showLiteChart = showChartModeSwitch && chartMode === 'lite';
   const chartHeight = isStockPage
     ? MARKET_DETAIL_LAYOUT.stockChartHeight
@@ -287,6 +316,10 @@ export function DesktopLayout({
   // The stock page swaps its whole toolbar between Lite and Pro. Dropping the
   // expand control there keeps the Lite/Pro switch as the last item in both
   // toolbars, so toggling doesn't shift it sideways.
+  // The stock page swaps its whole toolbar between Lite and Pro. Dropping the
+  // expand control there keeps the Lite/Pro switch as the last item in both
+  // toolbars, so toggling doesn't shift it sideways. The crypto toolbar is the
+  // live one and keeps its expand control (Figma 25593:18426).
   const chartFullscreenChangeHandler = isStockPage
     ? undefined
     : handleChartFullscreenChange;
@@ -324,6 +357,43 @@ export function DesktopLayout({
       tokenDetail?.symbol,
     ],
   );
+  // Both assemblies share the centered frame; only the column widths inside it
+  // differ, and those are fixed by the frame itself.
+  const { registerSection: registerTabsSection } =
+    useMarketDetailTabsController();
+  const contentFrameProps = useMemo(
+    () => ({
+      width: '100%' as const,
+      maxWidth:
+        DETAIL_CONTENT_FRAME.contentMaxWidth +
+        DETAIL_CONTENT_FRAME.contentPadding * 2,
+      alignSelf: 'center' as const,
+      px: '$5' as const,
+    }),
+    [],
+  );
+  // The share/token price source is a stock-only control, so the crypto
+  // assembly always reads the token's own figures.
+  const useUnderlyingPrice = isStockPage && priceSource !== 'token';
+  const stockPriceForSource = useUnderlyingPrice
+    ? stockEntity?.underlyingPrice
+    : undefined;
+  const stockPriceChangeForSource = useUnderlyingPrice
+    ? stockEntity?.underlyingPriceChange24H
+    : undefined;
+
+  const chartModeSwitch = useMemo(
+    () =>
+      isStockPage ? (
+        <MarketChartModeSwitch />
+      ) : (
+        <MarketChartModeSwitch
+          mode={cryptoChartMode}
+          onModeChange={setCryptoChartMode}
+        />
+      ),
+    [cryptoChartMode, isStockPage],
+  );
   const marketTradingView = useMemo(() => {
     if (useTradingViewNative) {
       return networkId ? (
@@ -333,7 +403,7 @@ export function DesktopLayout({
           enableNativeChartSettings
           nativeControlsLayoutMode="desktop"
           nativeChartRightGroupTrailingControl={
-            showChartModeSwitch ? <MarketChartModeSwitch /> : undefined
+            showChartModeSwitch ? chartModeSwitch : undefined
           }
           nativeChartControlsPaddingHorizontal={isStockPage ? 0 : undefined}
           isNativeChartFullscreen={isChartFullscreen}
@@ -360,9 +430,7 @@ export function DesktopLayout({
         nativeIntervalControlMode="popover"
         nativePriceMarketCapControlMode="select"
         nativeControlsLayoutMode="desktop"
-        chartModeControl={
-          showChartModeSwitch ? <MarketChartModeSwitch /> : undefined
-        }
+        chartModeControl={showChartModeSwitch ? chartModeSwitch : undefined}
         chartControlsPaddingHorizontal={isStockPage ? 0 : undefined}
         isNativeChartFullscreen={isChartFullscreen}
         showNativeIndicatorQuickBar={false}
@@ -371,6 +439,7 @@ export function DesktopLayout({
     );
   }, [
     chartFullscreenChangeHandler,
+    chartModeSwitch,
     handleTradingViewTouchScroll,
     isChartFullscreen,
     isStockPage,
@@ -386,79 +455,48 @@ export function DesktopLayout({
       flex={1}
       style={SCROLL_CONTAINER_STYLE}
     >
-      {/* Stock pages follow the design's centered 1240 content frame
-          (Figma 25366:45088), shared with the list page. The 20px side padding
-          keeps the content off the window edge below that width, so the inner
-          box is still exactly 1240 on a 1440 viewport (Figma 25366:45077).
-          Crypto pages stay full-width. */}
-      {isStockPage ? (
-        <YStack
-          width="100%"
-          maxWidth={
-            STOCK_LAYOUT.contentMaxWidth + STOCK_LAYOUT.contentPadding * 2
-          }
-          alignSelf="center"
-          px="$5"
-          pt="$5"
-        >
+      {/* Both assemblies follow the design's centered 1240 content frame
+          (stocks: Figma 25366:45088, crypto: Figma 25593:18400), shared with
+          the list page. The 20px side padding keeps the content off the window
+          edge below that width, so the inner box is still exactly 1240 on a
+          1440 viewport. */}
+      <YStack {...contentFrameProps} pt="$5">
+        {isStockPage ? (
           <TokenDetailHeader
             showFavoriteButton={showFavoriteButton}
             stockEntityIdentity={stockEntityIdentity}
-            isStockLayout={isStockPage}
-            showMediaAndSecurity={!isStockPage}
+            isStockLayout
+            showMediaAndSecurity={false}
           />
-        </YStack>
-      ) : null}
+        ) : (
+          <CryptoDetailHeader showFavoriteButton={showFavoriteButton} />
+        )}
+      </YStack>
 
       <XStack
-        {...(isStockPage
-          ? {
-              width: '100%',
-              maxWidth:
-                STOCK_LAYOUT.contentMaxWidth + STOCK_LAYOUT.contentPadding * 2,
-              alignSelf: 'center',
-              px: '$5',
-              gap: STOCK_LAYOUT.columnGap,
-              alignItems: 'flex-start',
-            }
-          : undefined)}
+        {...contentFrameProps}
+        gap={DETAIL_CONTENT_FRAME.columnGap}
+        alignItems="flex-start"
       >
         {/* Left column */}
-        <YStack
-          flex={1}
-          minWidth={0}
-          {...(isStockPage
-            ? undefined
-            : {
-                borderRightWidth: '$px',
-                borderRightColor: '$borderSubdued',
-              })}
-        >
-          {isStockPage ? null : (
-            <TokenDetailHeader
-              showFavoriteButton={showFavoriteButton}
-              stockEntityIdentity={stockEntityIdentity}
-              isStockLayout={isStockPage}
-              showMediaAndSecurity={!isStockPage}
-            />
-          )}
-
+        <YStack flex={1} minWidth={0}>
           {showChartModeSwitch ? (
             <MarketChartPriceBar
-              price={
-                priceSource === 'token'
-                  ? tokenDetail?.price
-                  : (stockEntity?.underlyingPrice ?? tokenDetail?.price)
-              }
+              price={stockPriceForSource ?? tokenDetail?.price}
               priceChangePercent={
-                priceSource === 'token'
-                  ? tokenDetail?.priceChange24hPercent
-                  : (stockEntity?.underlyingPriceChange24H ??
-                    tokenDetail?.priceChange24hPercent)
+                stockPriceChangeForSource ?? tokenDetail?.priceChange24hPercent
               }
               stock={tokenDetail?.stock}
+              // Stocks pair the percentage with the absolute move and offer the
+              // share/token source toggle; crypto shows the percentage alone
+              // and fills the trailing slot with its header stats
+              // (Figma 25593:18426).
+              showPriceChangeValue={isStockPage}
               priceSource={priceSource}
-              onPriceSourceChange={handlePriceSourceChange}
+              onPriceSourceChange={
+                isStockPage ? handlePriceSourceChange : undefined
+              }
+              trailingSlot={isCryptoPage ? <CryptoHeaderStats /> : undefined}
             />
           ) : null}
 
@@ -466,15 +504,12 @@ export function DesktopLayout({
             h={
               isChartFullscreen
                 ? undefined
-                : chartHeight +
-                  (isStockPage
-                    ? MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom
-                    : 0)
+                : chartHeight + MARKET_DETAIL_LAYOUT.chartBlockPaddingBottom
             }
             pb={
-              isStockPage && !isChartFullscreen
-                ? MARKET_DETAIL_LAYOUT.stockChartBlockPaddingBottom
-                : undefined
+              isChartFullscreen
+                ? undefined
+                : MARKET_DETAIL_LAYOUT.chartBlockPaddingBottom
             }
             overflow="hidden"
             bg="$bgApp"
@@ -490,59 +525,47 @@ export function DesktopLayout({
                 flexShrink={0}
               />
             ) : null}
-            {isStockPage ? (
+            {showLiteChart ? (
               <>
-                {showLiteChart ? (
-                  <MarketLiteChartControls
-                    range={liteChartRange}
-                    onRangeChange={setLiteChartRange}
-                  />
-                ) : null}
-                {showLiteChart ? (
-                  <>
-                    <MarketLiteChart
-                      networkId={networkId}
-                      tokenAddress={tokenAddress}
-                      range={liteChartRange}
-                      height={chartHeight - MARKET_CHART_TOOLBAR_HEIGHT}
-                    />
-                  </>
-                ) : null}
-                {/*
-                  The Pro chart is mounted only while it is on screen. Keeping
-                  it alive behind the Lite chart avoided a cold start, but the
-                  hidden iframe never re-laid-out after the box changed and
-                  came back blank. Correctness wins here; owning the lifecycle
-                  properly (mount once, keep alive, resize on show) is the
-                  frontend team's call.
-                */}
-                {showLiteChart ? null : (
-                  // The gutter lives here rather than inside the toolbar
-                  // (hence the 0 below), so the toolbar row and the chart body
-                  // sit on the same line as the price bar and the tabs.
-                  <Stack
-                    flex={1}
-                    px={STOCK_LAYOUT.contentPadding}
-                    pb="$4"
-                    minWidth={0}
-                  >
-                    {marketTradingView}
-                  </Stack>
-                )}
+                <MarketLiteChartControls
+                  range={liteChartRange}
+                  onRangeChange={setLiteChartRange}
+                  trailingControl={chartModeSwitch}
+                />
+                <MarketLiteChart
+                  networkId={networkId}
+                  tokenAddress={tokenAddress}
+                  range={liteChartRange}
+                  height={chartHeight - MARKET_CHART_TOOLBAR_HEIGHT}
+                />
               </>
             ) : (
-              marketTradingView
+              /*
+                The Pro chart is mounted only while it is on screen. Keeping it
+                alive behind the Lite chart avoided a cold start, but the hidden
+                iframe never re-laid-out after the box changed and came back
+                blank. Correctness wins here; owning the lifecycle properly
+                (mount once, keep alive, resize on show) is the frontend team's
+                call.
+
+                The gutter lives here rather than inside the toolbar (hence the
+                0 passed to the chart), so the toolbar row and the chart body
+                sit on the same line as the price bar and the tabs.
+              */
+              <Stack
+                flex={1}
+                px={DETAIL_CONTENT_FRAME.contentPadding}
+                pb="$4"
+                minWidth={0}
+              >
+                {marketTradingView}
+              </Stack>
             )}
           </Stack>
 
           <Stack
+            ref={registerTabsSection as any}
             minHeight={MARKET_DETAIL_LAYOUT.infoTabsHeight}
-            {...(isStockPage
-              ? undefined
-              : {
-                  borderTopWidth: '$px',
-                  borderTopColor: '$borderSubdued',
-                })}
           >
             {isStockPage && stockEntity ? (
               <StockEntityTabs
@@ -562,22 +585,21 @@ export function DesktopLayout({
           </Stack>
         </YStack>
 
-        {/* Right column */}
-        <Stack w={isStockPage ? STOCK_LAYOUT.rightColumnWidth : 340}>
+        {/* Right column — the same 384 slot on both assemblies, holding a
+            different stack of blocks (Figma 25671:53496). */}
+        <Stack w={DETAIL_CONTENT_FRAME.rightColumnWidth}>
           <Stack
-            w={isStockPage ? STOCK_LAYOUT.rightColumnWidth : 340}
+            w={DETAIL_CONTENT_FRAME.rightColumnWidth}
             pb={platformEnv.isWeb ? '$12' : undefined}
           >
-            {isStockPage ? null : <PerpetualTradingBanner pl="$3" pr="$5" />}
+            {isCryptoPage ? <PerpetualTradingBanner px="$5" /> : null}
             {isStockPage ? (
               <StockTradePanel />
             ) : (
-              <Stack pl="$3" pr="$5" pt="$4" pb="$3">
-                <SwapPanel swapToken={swapToken} />
+              <Stack px="$5" pt="$4" pb="$3">
+                <SwapPanel swapToken={swapToken} panelVariant="memeDesktop" />
               </Stack>
             )}
-
-            {isStockPage ? null : <Divider my="$1" />}
 
             {isStockPage && stockEntity ? (
               <StockTrustPanel
@@ -586,11 +608,9 @@ export function DesktopLayout({
               />
             ) : (
               <>
+                <MarketPositionSummary portfolioData={portfolioData} />
                 {isBTCMainnet ? null : (
-                  <>
-                    <TokenActivityOverview pl="$3" pr="$5" />
-                    <Divider />
-                  </>
+                  <TokenActivityOverview px="$5" variant="merged" />
                 )}
                 <TokenSupplementaryInfo />
               </>

@@ -2,7 +2,7 @@ import { Fragment, useCallback, useMemo } from 'react';
 
 import BigNumber from 'bignumber.js';
 
-import { Button, SizableText, Stack, XStack } from '@onekeyhq/components';
+import { Button, Icon, SizableText, Stack, XStack } from '@onekeyhq/components';
 import type { ISwapNativeTokenReserveGas } from '@onekeyhq/shared/types/swap/types';
 
 import { ESwapDirection, type ITradeType } from '../../hooks/useTradeType';
@@ -24,6 +24,8 @@ export interface IQuickAmountSelectorProps {
   selectedTokenIsNative?: boolean;
   swapNativeTokenReserveGas: ISwapNativeTokenReserveGas[];
   panelVariant?: ISwapPanelVariant;
+  // Crypto assembly: opens the custom-amount editor at the end of the grid.
+  onEditAmounts?: () => void;
 }
 
 const sellPercentages = [
@@ -44,6 +46,7 @@ export function QuickAmountSelector({
   selectedTokenNetworkId,
   selectedTokenIsNative,
   panelVariant = 'default',
+  onEditAmounts,
 }: IQuickAmountSelectorProps) {
   const amounts =
     tradeType === ESwapDirection.BUY ? buyAmounts : sellPercentages;
@@ -115,10 +118,11 @@ export function QuickAmountSelector({
   const amountsLength = amountItems.length;
   const isDisabled = tradeType === ESwapDirection.SELL && !balance;
 
-  // Stock detail design (Figma 25314:9168): the grid is attached under the
-  // amount input as one outlined block — transparent cells, hairline
-  // dividers, and only the bottom corners rounded.
-  if (panelVariant === 'stockDesktop') {
+  // Stock (Figma 25314:9168) and crypto (Figma 25671:53545) detail designs:
+  // the grid is attached under the amount input as one outlined block —
+  // transparent cells, hairline dividers, and only the bottom corners rounded.
+  // The crypto grid adds a trailing cell that opens the amount editor.
+  if (panelVariant === 'stockDesktop' || panelVariant === 'memeDesktop') {
     return (
       <XStack
         borderWidth={1}
@@ -153,7 +157,7 @@ export function QuickAmountSelector({
                 {amount.label}
               </SizableText>
             </Stack>
-            {index !== amountsLength - 1 ? (
+            {index !== amountsLength - 1 || onEditAmounts ? (
               <Stack
                 key={`divider-${index}`}
                 w={1}
@@ -163,6 +167,23 @@ export function QuickAmountSelector({
             ) : null}
           </Fragment>
         ))}
+        {onEditAmounts ? (
+          <Stack
+            testID="market-amounts-edit-btn"
+            alignItems="center"
+            justifyContent="center"
+            pt={6}
+            pb={7}
+            px={11}
+            cursor="pointer"
+            userSelect="none"
+            hoverStyle={{ bg: '$bgHover' }}
+            pressStyle={{ bg: '$bgActive' }}
+            onPress={onEditAmounts}
+          >
+            <Icon name="EditOutline" size="$4" color="$iconSubdued" />
+          </Stack>
+        ) : null}
       </XStack>
     );
   }

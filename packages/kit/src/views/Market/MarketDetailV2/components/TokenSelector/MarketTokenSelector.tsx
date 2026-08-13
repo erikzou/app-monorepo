@@ -304,6 +304,7 @@ function BaseMarketTokenSelector({
   titleSuffix,
   subtitleSlot,
   stockSwitcher = false,
+  largeTrigger = false,
 }: {
   showAddress?: boolean;
   // Stock entity pages label the trigger with the ticker (AAPL) rather than
@@ -319,6 +320,10 @@ function BaseMarketTokenSelector({
   subtitleSlot?: ReactNode;
   // On a stock page the trigger switches stocks, not arbitrary tokens.
   stockSwitcher?: boolean;
+  // The crypto detail assembly (Figma 25593:18404) uses the same 48px logo and
+  // 20/28 ticker as the stock entity trigger, but carries no subtitle: its
+  // contract address sits beside the identity rather than under it.
+  largeTrigger?: boolean;
 }) {
   const intl = useIntl();
   const [isOpen, setIsOpen] = useState(false);
@@ -349,8 +354,9 @@ function BaseMarketTokenSelector({
 
   // Three trigger shapes: the stock entity (name over a status subtitle), the
   // token page (symbol over its contract address), and the bare symbol.
+  const useLargeTrigger = Boolean(subtitleSlot) || largeTrigger;
   const triggerTitle = useMemo(() => {
-    if (subtitleSlot) {
+    if (useLargeTrigger) {
       return (
         <YStack minWidth={0} flexShrink={1}>
           <XStack alignItems="center" gap="$1.5">
@@ -429,7 +435,14 @@ function BaseMarketTokenSelector({
         <Icon name="ChevronDownSmallOutline" size="$5" color="$iconSubdued" />
       </>
     );
-  }, [address, showAddress, subtitleSlot, symbol, titleSuffix]);
+  }, [
+    address,
+    showAddress,
+    subtitleSlot,
+    symbol,
+    titleSuffix,
+    useLargeTrigger,
+  ]);
 
   // Keep the popover element stable during token detail polling.
   // `logoUrls` is often returned as a fresh array on each refresh even when
@@ -451,16 +464,16 @@ function BaseMarketTokenSelector({
             bg="$bgApp"
             // Stock entity trigger uses the design's 14px rhythm and a hover
             // target that bleeds past the content (Figma 25501:17981).
-            gap={subtitleSlot ? 14 : '$2'}
+            gap={useLargeTrigger ? 14 : '$2'}
             px="$2"
-            py={subtitleSlot ? '$1' : '$1.5'}
-            mx={subtitleSlot ? '$-2' : undefined}
+            py={useLargeTrigger ? '$1' : '$1.5'}
+            mx={useLargeTrigger ? '$-2' : undefined}
             borderRadius="$full"
             hoverStyle={{ bg: '$bgHover' }}
             pressStyle={{ bg: '$bgActive' }}
           >
             <Token
-              size={subtitleSlot ? 'xl' : 'md'}
+              size={useLargeTrigger ? 'xl' : 'md'}
               tokenImageUri={logoUrl}
               tokenImageUris={stableLogoUrls}
               networkImageUri={
@@ -486,9 +499,9 @@ function BaseMarketTokenSelector({
       isOpen,
       logoUrl,
       stableLogoUrls,
-      subtitleSlot,
       triggerTitle,
       stockSwitcher,
+      useLargeTrigger,
     ],
   );
 

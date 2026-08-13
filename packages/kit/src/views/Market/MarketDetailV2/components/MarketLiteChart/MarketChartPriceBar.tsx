@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 import BigNumber from 'bignumber.js';
 
@@ -60,10 +61,15 @@ function PriceSourceButton({
 }
 
 /**
- * Price block above the chart (Figma 25227:67441). Stays mounted in both Lite
- * and Pro so the price remains visible after switching to the Pro chart, which
- * does not render it. Owns no state: the price source lives with the layout so
- * the trade panel's chart button can drive the same toggle.
+ * Price block above the chart, shared by both detail assemblies (stock:
+ * Figma 25227:67441, crypto: Figma 25593:18426). Stays mounted in both Lite and
+ * Pro so the price remains visible after switching to the Pro chart, which does
+ * not render it. Owns no state: the price source lives with the layout so the
+ * trade panel's chart button can drive the same toggle.
+ *
+ * The two assemblies differ only in configuration: stocks put the absolute move
+ * beside the percentage and offer the share/token price source, crypto shows
+ * the percentage alone and fills the trailing slot with its header stats.
  */
 export function MarketChartPriceBar({
   price,
@@ -71,12 +77,19 @@ export function MarketChartPriceBar({
   stock,
   priceSource = 'share',
   onPriceSourceChange,
+  showPriceChangeValue = true,
+  trailingSlot,
 }: {
   price?: string;
   priceChangePercent?: string;
   stock?: IMarketStockInfo;
   priceSource?: IMarketPriceSource;
   onPriceSourceChange?: (value: IMarketPriceSource) => void;
+  // Stocks pair the percentage with the absolute move; the crypto assembly
+  // shows the percentage alone.
+  showPriceChangeValue?: boolean;
+  // Rendered at the trailing edge of the row, opposite the price.
+  trailingSlot?: ReactNode;
 }) {
   // The API only carries the percentage; derive the absolute move so the header
   // can show "$ and %" side by side as the stock spec requires.
@@ -112,7 +125,7 @@ export function MarketChartPriceBar({
             {price ?? '-'}
           </NumberSizeableText>
           <XStack gap="$1.5" alignItems="center">
-            {priceChangeValue ? (
+            {showPriceChangeValue && priceChangeValue ? (
               <NumberSizeableText
                 size="$bodyLgMedium"
                 color={changeColor}
@@ -123,9 +136,11 @@ export function MarketChartPriceBar({
               </NumberSizeableText>
             ) : null}
             <XStack alignItems="center">
-              <SizableText size="$bodyLgMedium" color={changeColor}>
-                (
-              </SizableText>
+              {showPriceChangeValue ? (
+                <SizableText size="$bodyLgMedium" color={changeColor}>
+                  (
+                </SizableText>
+              ) : null}
               <NumberSizeableText
                 size="$bodyLgMedium"
                 color={changeColor}
@@ -134,14 +149,18 @@ export function MarketChartPriceBar({
               >
                 {priceChangePercent ?? '-'}
               </NumberSizeableText>
-              <SizableText size="$bodyLgMedium" color={changeColor}>
-                )
-              </SizableText>
+              {showPriceChangeValue ? (
+                <SizableText size="$bodyLgMedium" color={changeColor}>
+                  )
+                </SizableText>
+              ) : null}
             </XStack>
           </XStack>
         </XStack>
         <StockMarketStatusBadge stock={stock} size="dot" />
       </YStack>
+
+      {trailingSlot}
 
       {onPriceSourceChange ? (
         <XStack

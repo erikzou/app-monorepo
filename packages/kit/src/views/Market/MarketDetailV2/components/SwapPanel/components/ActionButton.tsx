@@ -55,6 +55,10 @@ export interface IActionButtonProps extends IButtonProps {
   // Hard-disable that wins over the no-amount "enter amount" re-enable below
   // (e.g. stock market closed — trading is impossible regardless of input).
   forceDisabled?: boolean;
+  // Replaces the "Buy 0.1 SOL ($12)" label once an amount is entered. The
+  // crypto assembly labels it "Review" because the press opens the review
+  // dialog rather than submitting (Figma 25671:53586).
+  submitLabel?: string;
 }
 
 export function ActionButton({
@@ -74,6 +78,7 @@ export function ActionButton({
   actionToken,
   onSwapAction,
   forceDisabled,
+  submitLabel,
   ...otherProps
 }: IActionButtonProps) {
   const [hasClickedWithoutAmount, setHasClickedWithoutAmount] = useState(false);
@@ -267,6 +272,9 @@ export function ActionButton({
   if (typeof totalValue === 'number') {
     buttonText += `(${numberFormat(totalValue.toFixed(2), currencyFormatter)})`;
   }
+  if (submitLabel) {
+    buttonText = submitLabel;
+  }
 
   if (isWrapped) {
     buttonText = intl.formatMessage({
@@ -314,8 +322,10 @@ export function ActionButton({
     !createAddressLoading
   ) {
     shouldUseColoredStyle = true;
-    buttonText = `${actionText} ${truncatedTokenDetailSymbol}`.trim();
-    isButtonDisabled = false;
+    buttonText = submitLabel
+      ? intl.formatMessage({ id: ETranslations.swap_page_button_enter_amount })
+      : `${actionText} ${truncatedTokenDetailSymbol}`.trim();
+    isButtonDisabled = !!submitLabel;
   }
 
   if (shouldJumpToSwap) {

@@ -7,11 +7,22 @@ import { ETranslations } from '@onekeyhq/shared/src/locale';
 
 import { useTokenDetail } from '../../hooks/useTokenDetail';
 
+import { MergedActivityDetail } from './components/MergedActivityDetail';
 import { TimeRangeSelector } from './components/TimeRangeSelector';
 import { TransactionRow } from './components/TransactionRow';
 import { VolumeRow } from './components/VolumeRow';
 import { createTimeRangeOption } from './utils/createTimeRangeOption';
 import { formatTokenActivityData } from './utils/formatTokenActivityData';
+
+// Windows of the crypto detail assembly (Figma 25671:53654). It leads with 5m
+// — the fastest window the payload carries — and drops 8h, which sat between
+// two windows nobody switched to it from.
+const MERGED_TIME_RANGE_CONFIGS = [
+  { key: 'priceChange5mPercent', label: '5m', value: '5m' },
+  { key: 'priceChange1hPercent', label: '1h', value: '1h' },
+  { key: 'priceChange4hPercent', label: '4h', value: '4h' },
+  { key: 'priceChange24hPercent', label: '24h', value: '24h' },
+] as const;
 
 const defaultTimeRangeConfigs: Array<{
   labelKey: string;
@@ -39,18 +50,46 @@ export function TokenActivityOverview({
   pl,
   pr,
   px = '$5',
+  variant = 'stacked',
 }: {
   pl?: string;
   pr?: string;
   px?: string;
+  // `merged` is the crypto desktop assembly: 5m/1h/4h/24h windows and a single
+  // bar carrying both the transaction counts and the volumes
+  // (Figma 25671:53653). `stacked` keeps the two-bar form everywhere else.
+  variant?: 'stacked' | 'merged';
 }) {
   const intl = useIntl();
-  const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
+  const isMerged = variant === 'merged';
+  const [selectedTimeRange, setSelectedTimeRange] = useState(
+    isMerged ? '5m' : '1h',
+  );
   const { tokenDetail, isLoading } = useTokenDetail();
   // Only show loading on first load (no tokenDetail yet), not on subsequent refreshes
   const needShowLoading = isLoading && !tokenDetail;
 
   const timeRangeOptions = useMemo(() => {
+    if (isMerged) {
+      const mergedOptions = MERGED_TIME_RANGE_CONFIGS.map((config) =>
+        createTimeRangeOption(
+          tokenDetail,
+          config.key,
+          config.label,
+          config.value,
+        ),
+      ).filter(Boolean);
+      if (mergedOptions.length > 0) {
+        return mergedOptions;
+      }
+      return MERGED_TIME_RANGE_CONFIGS.map((config) => ({
+        label: config.label,
+        value: config.value,
+        percentageChange: '0.00%',
+        isPositive: false,
+      }));
+    }
+
     const availableOptions = [
       createTimeRangeOption(tokenDetail, 'priceChange1hPercent', '1H', '1h'),
       createTimeRangeOption(tokenDetail, 'priceChange4hPercent', '4H', '4h'),
@@ -68,7 +107,7 @@ export function TokenActivityOverview({
       percentageChange: '0.00%',
       isPositive: false,
     }));
-  }, [tokenDetail]);
+  }, [isMerged, tokenDetail]);
 
   useEffect(() => {
     const isCurrentSelectionValid = timeRangeOptions.some(
@@ -94,7 +133,22 @@ export function TokenActivityOverview({
         onChange={(value) => setSelectedTimeRange(value)}
         isLoading={needShowLoading}
       />
-      {tokenDetail ? (
+      {tokenDetail && isMerged ? (
+        <MergedActivityDetail
+          rangeLabel={
+            timeRangeOptions.find(
+              (option) => option.value === selectedTimeRange,
+            )?.label ?? selectedTimeRange
+          }
+          buys={buys}
+          sells={sells}
+          buyVolume={buyVolume}
+          sellVolume={sellVolume}
+          totalVolume={totalVolume}
+          isLoading={needShowLoading}
+        />
+      ) : null}
+      {tokenDetail && !isMerged ? (
         <>
           <TransactionRow
             label={intl.formatMessage({

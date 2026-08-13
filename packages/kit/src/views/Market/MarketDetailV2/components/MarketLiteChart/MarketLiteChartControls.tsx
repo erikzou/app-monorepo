@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import type { ReactNode } from 'react';
 
 import { SegmentControl, Stack, XStack } from '@onekeyhq/components';
 
@@ -21,12 +22,16 @@ export function MarketLiteChartControls({
   range,
   onRangeChange,
   showRanges = true,
+  trailingControl,
 }: {
   range: IMarketLiteChartRange;
   onRangeChange: (range: IMarketLiteChartRange) => void;
   // Pro owns its own interval picker, but the Lite/Pro switch has to stay
   // reachable or the user cannot get back out of Pro.
   showRanges?: boolean;
+  // The Lite/Pro switch. Passed in so an assembly that does not use the
+  // persisted preference can hand over its own state.
+  trailingControl?: ReactNode;
 }) {
   const rangeOptions = useMemo(
     () =>
@@ -69,7 +74,7 @@ export function MarketLiteChartControls({
         </XStack>
 
         <XStack gap="$2" alignItems="center" flexShrink={0}>
-          <MarketChartModeSwitch />
+          {trailingControl ?? <MarketChartModeSwitch />}
         </XStack>
       </XStack>
     </Stack>

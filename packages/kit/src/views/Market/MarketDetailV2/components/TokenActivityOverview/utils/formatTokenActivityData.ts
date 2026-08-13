@@ -68,6 +68,17 @@ export function formatTokenActivityData(
             ? buyVolume + sellVolume
             : undefined);
         break;
+      case '5m':
+        buys = toNumberOrUndefined(tokenDetail.buy5mCount);
+        sells = toNumberOrUndefined(tokenDetail.sell5mCount);
+        buyVolume = toNumberOrUndefined(tokenDetail.vBuy5m);
+        sellVolume = toNumberOrUndefined(tokenDetail.vSell5m);
+        totalVolume =
+          toNumberOrUndefined(tokenDetail.volume5m) ??
+          (buyVolume !== undefined && sellVolume !== undefined
+            ? buyVolume + sellVolume
+            : undefined);
+        break;
       case '1h':
       default:
         buys = toNumberOrUndefined(tokenDetail.buy1hCount);

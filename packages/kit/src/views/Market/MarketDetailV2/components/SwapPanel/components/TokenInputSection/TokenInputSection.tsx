@@ -52,6 +52,8 @@ export interface ITokenInputSectionProps {
   style?: IYStackProps;
   disableNativeToken?: boolean;
   panelVariant?: ISwapPanelVariant;
+  // Crypto assembly: opens the custom-amount editor from the grid's last cell.
+  onEditAmounts?: () => void;
 }
 
 function TokenInputSectionComponent(
@@ -67,10 +69,15 @@ function TokenInputSectionComponent(
     style,
     disableNativeToken,
     panelVariant = 'default',
+    onEditAmounts,
   }: ITokenInputSectionProps,
   ref: Ref<ITokenInputSectionRef>,
 ) {
-  const isStockDesktop = panelVariant === 'stockDesktop';
+  // Both detail assemblies attach the quick-amount grid to the input and use
+  // the design's denser input treatment (stock: Figma 25314:9157, crypto:
+  // Figma 25671:53545).
+  const isStockDesktop =
+    panelVariant === 'stockDesktop' || panelVariant === 'memeDesktop';
   const intl = useIntl();
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [internalValue, setInternalValue] = useState('');
@@ -305,6 +312,7 @@ function TokenInputSectionComponent(
           balance={balance}
           swapNativeTokenReserveGas={swapNativeTokenReserveGas}
           panelVariant={panelVariant}
+          onEditAmounts={onEditAmounts}
         />
       </YStack>
     </YStack>

@@ -15,15 +15,31 @@ const CHART_MODE_OPTIONS: { label: string; value: IMarketChartMode }[] = [
  * Lite/Pro switch. Self-contained so the same element can be dropped into the
  * Pro (TradingView) toolbar slot and into the Lite toolbar without either side
  * owning the state.
+ *
+ * By default it reads and writes the persisted preference. An assembly whose
+ * default differs from that preference (the crypto page opens on Pro) passes
+ * its own value and setter instead.
  */
-export function MarketChartModeSwitch() {
-  const [{ mode }, setChartMode] = useMarketChartModeAtom();
+export function MarketChartModeSwitch({
+  mode: controlledMode,
+  onModeChange,
+}: {
+  mode?: IMarketChartMode;
+  onModeChange?: (mode: IMarketChartMode) => void;
+} = {}) {
+  const [{ mode: persistedMode }, setChartMode] = useMarketChartModeAtom();
+  const mode = controlledMode ?? persistedMode;
 
   const handleChange = useCallback(
     (value: string | number) => {
-      setChartMode({ mode: value as IMarketChartMode });
+      const nextMode = value as IMarketChartMode;
+      if (onModeChange) {
+        onModeChange(nextMode);
+        return;
+      }
+      setChartMode({ mode: nextMode });
     },
-    [setChartMode],
+    [onModeChange, setChartMode],
   );
 
   return (

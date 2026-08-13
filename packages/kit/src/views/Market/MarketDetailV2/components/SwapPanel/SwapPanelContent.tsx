@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import BigNumber from 'bignumber.js';
@@ -18,11 +18,15 @@ import type {
 } from '@onekeyhq/shared/types/swap/types';
 import { ESwapSlippageSegmentKey } from '@onekeyhq/shared/types/swap/types';
 
+import { useTokenDetail } from '../../hooks/useTokenDetail';
+
 import { ActionButton } from './components/ActionButton';
+import { EstReceivedRow } from './components/EstReceivedRow';
 import {
   type IEstimateMarketPresetPriorityFeeFiatValues,
   MarketPresetSelector,
 } from './components/MarketPresetSelector';
+import { useShowQuickAmountsEditor } from './components/QuickAmountsEditorDialog';
 import { RateDisplay } from './components/RateDisplay';
 import SellForSelector from './components/SellForSelector';
 import { SlippageSetting } from './components/SlippageSetting';
@@ -154,12 +158,19 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
   } = useSwapAnalytics();
   const resetSwapAmounts = resetAmounts as () => void;
   const intl = useIntl();
+  // The panel's own token list does not always carry a price; the page's detail
+  // payload always does, so it backs the Est received fiat value.
+  const { tokenDetail: marketTokenDetail } = useTokenDetail();
   if (paymentAmount !== paymentAmountRef.current) {
     paymentAmountRef.current = paymentAmount;
   }
   if (sellAmount !== sellAmountRef.current) {
     sellAmountRef.current = sellAmount;
   }
+  // The crypto assembly replaces the rate line with an Est received row and
+  // labels its action button "Review", because pressing it opens the review
+  // dialog rather than submitting (Figma 25671:53586).
+  const isMemeDesktop = panelVariant === 'memeDesktop';
   const showMarketPresetSelector =
     !isWrapped && !!marketPresetSettings?.enabled;
   const suppressStandaloneSlippage =
@@ -168,6 +179,24 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
   const currentInputAmount = useMemo(() => {
     return tradeType === ESwapDirection.BUY ? paymentAmount : sellAmount;
   }, [tradeType, paymentAmount, sellAmount]);
+
+  // Quick-amount presets come from the payment token's configuration. The
+  // editor overrides them for the visit only — persisting a custom ladder is
+  // out of scope for this demo.
+  const [customBuyAmounts, setCustomBuyAmounts] = useState<
+    number[] | undefined
+  >(undefined);
+  useEffect(() => {
+    setCustomBuyAmounts(undefined);
+  }, [paymentToken?.contractAddress, paymentToken?.networkId]);
+  const showQuickAmountsEditor = useShowQuickAmountsEditor();
+  const handleEditAmounts = useCallback(() => {
+    showQuickAmountsEditor({
+      amounts: customBuyAmounts ?? paymentToken?.speedSwapDefaultAmount ?? [],
+      symbol: paymentToken?.symbol ?? '',
+      onApply: setCustomBuyAmounts,
+    });
+  }, [customBuyAmounts, paymentToken, showQuickAmountsEditor]);
 
   const handleBalanceClick = useCallback(() => {
     if (!balance) {
@@ -306,13 +335,18 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
           tradeType={ESwapDirection.BUY}
           swapNativeTokenReserveGas={swapNativeTokenReserveGas}
           onChange={(amount) => setPaymentAmount(new BigNumber(amount))}
-          selectedToken={paymentToken}
+          selectedToken={
+            customBuyAmounts && paymentToken
+              ? { ...paymentToken, speedSwapDefaultAmount: customBuyAmounts }
+              : paymentToken
+          }
           selectableTokens={defaultTokens}
           onTokenChange={(token) => setPaymentToken(token)}
           balance={balance}
           onAmountEnterTypeChange={setAmountEnterType}
           disableNativeToken={disableNativeToken}
           panelVariant={panelVariant}
+          onEditAmounts={isMemeDesktop ? handleEditAmounts : undefined}
         />
         <TokenInputSection
           ref={tokenSellInputRef}
@@ -328,14 +362,28 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
           panelVariant={panelVariant}
         />
 
-        {/* Rate display */}
-        <RateDisplay
-          rate={priceRate?.rate}
-          fromTokenSymbol={priceRate?.fromTokenSymbol}
-          toTokenSymbol={priceRate?.toTokenSymbol}
-          loading={priceRate?.loading}
-          panelVariant={panelVariant}
-        />
+        {isMemeDesktop ? (
+          <EstReceivedRow
+            amount={currentInputAmount}
+            rate={priceRate?.rate}
+            receiveTokenSymbol={priceRate?.toTokenSymbol}
+            receiveTokenPrice={
+              tradeType === ESwapDirection.BUY
+                ? (currentMarketToken?.price ?? marketTokenDetail?.price)
+                : paymentToken?.price
+            }
+            loading={priceRate?.loading}
+          />
+        ) : (
+          /* Rate display */
+          <RateDisplay
+            rate={priceRate?.rate}
+            fromTokenSymbol={priceRate?.fromTokenSymbol}
+            toTokenSymbol={priceRate?.toTokenSymbol}
+            loading={priceRate?.loading}
+            panelVariant={panelVariant}
+          />
+        )}
 
         {/* Balance display */}
         {tradeType === ESwapDirection.SELL ? (
@@ -383,6 +431,11 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
         networkId={networkId}
         disabled={!!speedCheckError || isLoading || !!isActionDisabled}
         forceDisabled={!!stockMarketClosedAlert}
+        submitLabel={
+          isMemeDesktop
+            ? intl.formatMessage({ id: ETranslations.global_review })
+            : undefined
+        }
         onSwapAction={() =>
           logSwapAction({
             tradeType,
