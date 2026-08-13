@@ -24,7 +24,7 @@ interface ITxnsProps {
   walletInfo?: ITxnsWalletInfo;
   /**
    * Size of the total. The trending table sets its values in medium
-   * (Figma 25375:49664); everywhere else keeps the regular weight.
+   * (Figma 25366:45131); everywhere else keeps the regular weight.
    */
   valueSize?: ISizableTextProps['size'];
   /** Space between the total and the breakdown. */

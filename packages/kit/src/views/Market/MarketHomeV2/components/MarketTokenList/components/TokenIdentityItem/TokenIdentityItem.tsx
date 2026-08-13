@@ -124,7 +124,7 @@ interface ITokenIdentityItemProps {
    * Trending list: how old the token is ("2M"). Setting it switches the row to
    * the trending presentation — 40px avatar like the stock rows, and a second
    * line that trades the age for the contract address while the pointer is on
-   * the row (Figma 25366:45112 / 25375:49618).
+   * the row (Figma 25366:45112).
    */
   tokenAge?: string;
   /** Row key, so the cell can react to a hover anywhere on its row. */

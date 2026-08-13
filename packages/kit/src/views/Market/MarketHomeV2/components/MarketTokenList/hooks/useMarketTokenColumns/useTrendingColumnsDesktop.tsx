@@ -20,7 +20,6 @@ import {
 import { getTokenPriceChangeStyle } from '@onekeyhq/shared/src/utils/tokenUtils';
 
 import { TokenIdentityItem } from '../../components/TokenIdentityItem';
-import { TrendingHoldersCell } from '../../components/TrendingHoldersCell';
 import { Txns } from '../../components/Txns';
 import { getTokenAgeInfo } from '../../utils/tokenListHelpers';
 
@@ -47,13 +46,13 @@ const STAR_COLUMN_WIDTH = 38;
 const NAME_COLUMN_WIDTH = 218;
 const STAR_HEADER_WIDTH = 24;
 
-// Figma 25375:49624: the sort glyph sits 2px after the label and is 14, not the
+// Figma 25366:45123: the sort glyph sits 2px after the label and is 14, not the
 // table's default 16.
 const NUMERIC_COLUMN_PROPS = { flex: 1, px: '$2', gap: '$0.5' } as const;
 const SORT_ICON_SIZE = '$3.5' as const;
 
 /**
- * Two-line numeric cell (Figma 25375:49660): the value on top, a qualifier
+ * Two-line numeric cell (Figma 25366:45129): the value on top, a qualifier
  * under it. Used by MCap/Change; Txns builds the same shape from its own parts.
  */
 function StackedValueCell({
@@ -314,12 +313,16 @@ export const useTrendingColumnsDesktop = (
         dataIndex: 'holders',
         columnProps: NUMERIC_COLUMN_PROPS,
         sortIconSize: SORT_ICON_SIZE,
-        render: (text: number, _record: IMarketToken, index?: number) =>
-          shouldRenderRichCell(index) ? (
-            <TrendingHoldersCell holders={text} />
+        render: (text: number, _record: IMarketToken, index?: number) => {
+          const value = text === 0 ? EMPTY_MARKET_VALUE : text;
+          return shouldRenderRichCell(index) ? (
+            <NumberSizeableText size="$bodyMdMedium" formatter="marketCap">
+              {value}
+            </NumberSizeableText>
           ) : (
-            renderLightweightCell(text === 0 ? EMPTY_MARKET_VALUE : text)
-          ),
+            renderLightweightCell(value)
+          );
+        },
         renderSkeleton: () => <Skeleton width={60} height={20} />,
       },
       {

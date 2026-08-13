@@ -987,7 +987,7 @@ function MarketTokenListBase({
       return undefined;
     }
     return {
-      // Figma 25473:87731 / 25375:49618: 72 tall rows on both redesigned
+      // Figma 25473:87731 / 25366:45112: 72 tall rows on both redesigned
       // tables.
       ...(usesRedesignedTableGeometry
         ? { minHeight: MARKET_HOME_TABLE_ROW_HEIGHT }
