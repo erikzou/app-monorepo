@@ -2,13 +2,17 @@ import { useCallback } from 'react';
 
 import { Icon } from '../../../primitives';
 
+import type { IIconProps } from '../../../primitives';
 import type { ETableSortType } from '../types';
+
+const DEFAULT_SORT_ICON_SIZE: IIconProps['size'] = '$4';
 
 export interface IUseSortIconParams {
   showSortIcon?: boolean;
   order?: 'asc' | 'desc' | undefined;
   cursor?: string;
   disabledSorts?: ETableSortType[];
+  size?: IIconProps['size'];
 }
 
 export function useSortIcon({
@@ -16,6 +20,7 @@ export function useSortIcon({
   order,
   cursor,
   disabledSorts = [],
+  size = DEFAULT_SORT_ICON_SIZE,
 }: IUseSortIconParams) {
   const renderSortIcon = useCallback(() => {
     if (!showSortIcon) {
@@ -43,7 +48,7 @@ export function useSortIcon({
               : 'ChevronTopSmallOutline'
           }
           color={isActive ? '$iconActive' : '$iconSubdued'}
-          size="$4"
+          size={size}
         />
       );
     }
@@ -59,7 +64,7 @@ export function useSortIcon({
               : 'ChevronTopSmallOutline'
           }
           color="$iconSubdued"
-          size="$4"
+          size={size}
         />
       );
     }
@@ -69,10 +74,10 @@ export function useSortIcon({
         cursor={cursor}
         name="ChevronGrabberVerOutline"
         color="$iconSubdued"
-        size="$4"
+        size={size}
       />
     );
-  }, [cursor, order, showSortIcon, disabledSorts]);
+  }, [cursor, order, showSortIcon, disabledSorts, size]);
 
   return { renderSortIcon };
 }

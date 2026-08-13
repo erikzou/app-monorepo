@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import type { ReactNode } from 'react';
 
 import platformEnv from '@onekeyhq/shared/src/platformEnv';
@@ -11,13 +11,20 @@ import {
   collapseStockEntityRows,
   hasAlwaysOnStockVariant,
 } from '../../utils/marketStockEntityRow';
+import {
+  applyMarketTrendingFilter,
+  useMarketTrendingFilter,
+} from '../MarketTrendingToolbar';
 
 import { useMarketTokenList } from './hooks/useMarketTokenList';
 import { type IMarketToken } from './MarketTokenData';
 import { MarketTokenListBase } from './MarketTokenListBase';
 import { shouldUseStockMetadataColumnsForTokens } from './utils/tokenListHelpers';
 
-import type { IMarketTokenListLiveOverride } from './MarketTokenListBase';
+import type {
+  IMarketListLocalSort,
+  IMarketTokenListLiveOverride,
+} from './MarketTokenListBase';
 import type { IMarketTimeRangeValue } from '../../types';
 
 type IMarketNormalTokenListProps = {
@@ -30,6 +37,11 @@ type IMarketNormalTokenListProps = {
    * metadata must not drop the tab back to the crypto presentation.
    */
   isStockList?: boolean;
+  /**
+   * The Trending tab. Its toolbar owns the filter conditions and the sort, so
+   * the list reads both off the shared provider rather than keeping copies.
+   */
+  isTrendingList?: boolean;
   timeRange?: IMarketTimeRangeValue;
   sortBy?: string;
   sortType?: 'asc' | 'desc';
@@ -69,6 +81,7 @@ function MarketNormalTokenList({
   onStockDataChange,
   onStockAlwaysOnVariantsChange,
   isStockList,
+  isTrendingList,
 }: IMarketNormalTokenListProps) {
   useMarketRenderCommitProbe('MarketNormalTokenList', {
     networkId,
@@ -92,10 +105,20 @@ function MarketNormalTokenList({
     [normalResult.data],
   );
 
+  const { conditions, sortState, setSortState } = useMarketTrendingFilter();
+
   // One stock, one row. Paging still happens against the raw token list; only
   // what gets rendered is collapsed, so scroll and websocket updates are
   // untouched.
   const result = useMemo(() => {
+    if (isTrendingList) {
+      // The trending payload arrives as one pool, so filtering it here filters
+      // the whole list — and unlike a server-side filter it does not refetch.
+      return {
+        ...normalResult,
+        data: applyMarketTrendingFilter(normalResult.data, conditions),
+      };
+    }
     if (!isStockData && !isStockList) {
       return normalResult;
     }
@@ -103,7 +126,23 @@ function MarketNormalTokenList({
       ...normalResult,
       data: collapseStockEntityRows(normalResult.data),
     };
-  }, [isStockData, isStockList, normalResult]);
+  }, [conditions, isStockData, isStockList, isTrendingList, normalResult]);
+
+  // The provider stores the sort the way the toolbar shortcuts express it
+  // (sortBy/sortType); the table wants a key/order pair.
+  const localSort = useMemo<IMarketListLocalSort>(
+    () =>
+      sortState.sortBy && sortState.sortType
+        ? { key: sortState.sortBy, order: sortState.sortType }
+        : null,
+    [sortState.sortBy, sortState.sortType],
+  );
+  const handleLocalSortChange = useCallback(
+    (next: IMarketListLocalSort) => {
+      setSortState(next ? { sortBy: next.key, sortType: next.order } : {});
+    },
+    [setSortState],
+  );
 
   useEffect(() => {
     if (selectedCategory) {
@@ -145,6 +184,9 @@ function MarketNormalTokenList({
       onItemPress={onItemPress}
       toolbar={toolbar}
       isStockList={isStockList}
+      isTrendingList={isTrendingList}
+      localSort={isTrendingList ? localSort : undefined}
+      onLocalSortChange={isTrendingList ? handleLocalSortChange : undefined}
       result={result}
       isWatchlistMode={false}
       showEndReachedIndicator

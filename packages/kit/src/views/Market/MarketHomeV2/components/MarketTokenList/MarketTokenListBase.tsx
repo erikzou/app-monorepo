@@ -124,6 +124,30 @@ const STOCK_SORT_VALUE_GETTERS: Record<string, (item: IMarketToken) => number> =
     liquidity: (item) => Number(getStockVolume24hValue(item)) || 0,
   };
 
+/**
+ * The trending table sorts locally for a different reason: the payload arrives
+ * as one pool (the backend ignores page/limit here), so ordering it in the
+ * client orders the whole trending list — and unlike the server sort it does
+ * not refetch, which is what lets a toolbar shortcut and a column header write
+ * the same state.
+ */
+const TRENDING_SORT_VALUE_GETTERS: Record<
+  string,
+  (item: IMarketToken) => number
+> = {
+  marketCap: (item) => Number(item.marketCap) || 0,
+  price: (item) => Number(item.price) || 0,
+  liquidity: (item) => Number(item.liquidity) || 0,
+  transactions: (item) => Number(item.transactions) || 0,
+  holders: (item) => Number(item.holders) || 0,
+  turnover: (item) => Number(item.turnover) || 0,
+};
+
+export type IMarketListLocalSort = {
+  key: string;
+  order: 'asc' | 'desc';
+} | null;
+
 type IMarketHomeSubscriptionRange = {
   start: number;
   end: number;
@@ -253,6 +277,18 @@ type IMarketTokenListBaseProps = {
    * beat late) must not drop the tab back to the crypto column set.
    */
   isStockList?: boolean;
+  /**
+   * The Trending tab: its own column set, 72px rows and whole-row hover, plus a
+   * local sort over the loaded pool.
+   */
+  isTrendingList?: boolean;
+  /**
+   * Controlled local sort. Passed by the Trending tab so the toolbar shortcuts
+   * and the column headers write one state; left out everywhere else, where the
+   * table keeps its own.
+   */
+  localSort?: IMarketListLocalSort;
+  onLocalSortChange?: (sort: IMarketListLocalSort) => void;
   onItemPress?: (item: IMarketToken) => void;
   toolbar?: ReactNode;
   result: IMarketTokenListResult;
@@ -314,6 +350,9 @@ function MarketTokenListBase({
   rowBg,
   testID,
   isStockList,
+  isTrendingList,
+  localSort,
+  onLocalSortChange,
 }: IMarketTokenListBaseProps) {
   useMarketRenderCommitProbe('MarketTokenListBase', {
     tabName,
@@ -355,25 +394,38 @@ function MarketTokenListBase({
     canEnableWebSocket &&
     (!platformEnv.isWeb || !webTabIntegrated || enableDeferredWebFeatures),
   );
-  // Stock table sort: local, over what is loaded. Kept separate from the
-  // server sort so the two never fight over the same state.
-  const [stockSort, setStockSort] = useState<{
-    key: string;
-    order: 'asc' | 'desc';
-  } | null>(null);
-  const handleStockSortChange = useCallback(
+  // Local sort, over what is loaded. Kept separate from the server sort so the
+  // two never fight over the same state; the Trending tab hands ownership of it
+  // to its filter provider so the toolbar can drive it too.
+  const [uncontrolledLocalSort, setUncontrolledLocalSort] =
+    useState<IMarketListLocalSort>(null);
+  const activeLocalSort = onLocalSortChange
+    ? (localSort ?? null)
+    : uncontrolledLocalSort;
+  const localSortValueGetters = useMemo(() => {
+    if (isStockList) {
+      return STOCK_SORT_VALUE_GETTERS;
+    }
+    return isTrendingList ? TRENDING_SORT_VALUE_GETTERS : undefined;
+  }, [isStockList, isTrendingList]);
+  const handleLocalSortChange = useCallback(
     (key: string, order: 'asc' | 'desc' | undefined) => {
-      setStockSort(order ? { key, order } : null);
+      const next = order ? { key, order } : null;
+      if (onLocalSortChange) {
+        onLocalSortChange(next);
+      } else {
+        setUncontrolledLocalSort(next);
+      }
     },
-    [],
+    [onLocalSortChange],
   );
 
   const orderedData = useMemo(() => {
-    if (isStockList && stockSort) {
-      const getValue = STOCK_SORT_VALUE_GETTERS[stockSort.key];
+    if (localSortValueGetters && activeLocalSort) {
+      const getValue = localSortValueGetters[activeLocalSort.key];
       if (getValue) {
         return [...rawData].toSorted((a, b) =>
-          stockSort.order === 'asc'
+          activeLocalSort.order === 'asc'
             ? getValue(a) - getValue(b)
             : getValue(b) - getValue(a),
         );
@@ -395,12 +447,12 @@ function MarketTokenListBase({
       return currentSortType === 'asc' ? aVal - bVal : bVal - aVal;
     });
   }, [
+    activeLocalSort,
     clientSort,
     currentSortBy,
     currentSortType,
-    isStockList,
+    localSortValueGetters,
     rawData,
-    stockSort,
   ]);
   const [subscriptionRange, setSubscriptionRange] =
     useState<IMarketHomeSubscriptionRange>({ start: 0, end: 0 });
@@ -536,6 +588,7 @@ function MarketTokenListBase({
     change24hColumnTitle,
     useStockMetadataColumns,
     deferRichRowAfterIndex,
+    isTrendingList,
   );
 
   const data = useMemo(() => {
@@ -607,18 +660,18 @@ function MarketTokenListBase({
 
   const handleHeaderRow = useCallback(
     (column: ITableColumn<IMarketToken>) => {
-      if (isStockList) {
+      if (localSortValueGetters) {
         const key = String(column.dataIndex);
-        if (!STOCK_SORT_VALUE_GETTERS[key]) {
+        if (!localSortValueGetters[key]) {
           return undefined;
         }
         return {
           onSortTypeChange: (order: 'asc' | 'desc' | undefined) => {
-            handleStockSortChange(key, order);
+            handleLocalSortChange(key, order);
           },
           initialSortOrder:
-            stockSort?.key === key
-              ? (stockSort.order as ETableSortType)
+            activeLocalSort?.key === key
+              ? (activeLocalSort.order as ETableSortType)
               : undefined,
         };
       }
@@ -656,14 +709,14 @@ function MarketTokenListBase({
       return undefined;
     },
     [
+      activeLocalSort,
       handleSortChange,
-      handleStockSortChange,
-      isStockList,
+      handleLocalSortChange,
+      localSortValueGetters,
       isWatchlistMode,
       clientSort,
       currentSortBy,
       currentSortType,
-      stockSort,
       useStockMetadataColumns,
     ],
   );
@@ -704,8 +757,10 @@ function MarketTokenListBase({
     ? subscriptionRange.end
     : 0;
 
-  // Whole-row hover for the stock list. Kept out of `rowProps` (shared by every
-  // row) and out of Tamagui's group (dropped by the memoised table row).
+  // Whole-row hover for the redesigned tables (stocks, trending). Kept out of
+  // `rowProps` (shared by every row) and out of Tamagui's group (dropped by the
+  // memoised table row).
+  const tracksRowHover = Boolean(isStockList || isTrendingList);
   const [hoveredRowId, setHoveredRowId] = useState<string | null>(null);
   const handleRowHoverIn = useCallback((id: string) => {
     setHoveredRowId(id);
@@ -748,7 +803,7 @@ function MarketTokenListBase({
           index < debugSubscriptionRangeEnd
             ? { bg: MARKET_HOME_WS_DEBUG_SUBSCRIPTION_ROW_BG }
             : undefined),
-          ...(isStockList
+          ...(tracksRowHover
             ? {
                 onHoverIn: () => handleRowHoverIn(item.id),
                 onHoverOut: () => handleRowHoverOut(item.id),
@@ -762,10 +817,10 @@ function MarketTokenListBase({
       debugSubscriptionRangeStart,
       handleRowHoverIn,
       handleRowHoverOut,
-      isStockList,
       navigateToPerps,
       showWebSocketDebugRows,
       toMarketDetailPage,
+      tracksRowHover,
     ],
   );
 
@@ -856,12 +911,13 @@ function MarketTokenListBase({
   const stickyPortalTarget = stickyHeaderCtx?.portalTarget ?? null;
   const useDesktopPortal = webTabIntegrated && !!stickyPortalTarget && !md;
 
+  const usesRedesignedTableGeometry = Boolean(isStockList || isTrendingList);
   const tableHeaderRowProps = useMemo<IXStackProps | undefined>(
     () =>
-      isStockList
+      usesRedesignedTableGeometry
         ? { minHeight: MARKET_HOME_TABLE_HEADER_HEIGHT, alignItems: 'center' }
         : undefined,
-    [isStockList],
+    [usesRedesignedTableGeometry],
   );
 
   const portalContent = useMemo(() => {
@@ -874,6 +930,10 @@ function MarketTokenListBase({
           {toolbar ? <Stack width="100%">{toolbar}</Stack> : null}
           <Stack px={MARKET_HOME_TABLE_PADDING}>
             <Table.HeaderRow
+              // A toolbar shortcut can set the sort from outside the table,
+              // but each header column seeds its arrow from local state at
+              // mount — so remount the row when the sort changes elsewhere.
+              key={`${activeLocalSort?.key ?? ''}-${activeLocalSort?.order ?? ''}`}
               columns={marketTokenColumns}
               onHeaderRow={stableHandleHeaderRow}
               headerRowProps={tableHeaderRowProps}
@@ -883,6 +943,7 @@ function MarketTokenListBase({
       </StickyHeaderPortal>
     );
   }, [
+    activeLocalSort,
     useDesktopPortal,
     isTabFocused,
     stickyPortalTarget,
@@ -922,12 +983,13 @@ function MarketTokenListBase({
   );
   const tableRowProps = useMemo<IXStackProps | undefined>(() => {
     const hasWebRowStyle = platformEnv.isWeb && webTabIntegrated;
-    if (!rowBg && !hasWebRowStyle && !isStockList) {
+    if (!rowBg && !hasWebRowStyle && !usesRedesignedTableGeometry) {
       return undefined;
     }
     return {
-      // Figma 25473:87731: 72 tall rows on the stock table.
-      ...(isStockList
+      // Figma 25473:87731 / 25375:49618: 72 tall rows on both redesigned
+      // tables.
+      ...(usesRedesignedTableGeometry
         ? { minHeight: MARKET_HOME_TABLE_ROW_HEIGHT }
         : undefined),
       ...(rowBg ? { bg: rowBg } : undefined),
@@ -935,7 +997,7 @@ function MarketTokenListBase({
         ? { style: MARKET_HOME_WEB_ROW_CONTENT_VISIBILITY_STYLE }
         : undefined),
     };
-  }, [isStockList, rowBg, webTabIntegrated]);
+  }, [rowBg, usesRedesignedTableGeometry, webTabIntegrated]);
 
   return (
     <MarketRowHoverContext.Provider value={hoveredRowId}>
@@ -993,7 +1055,9 @@ function MarketTokenListBase({
                 TableEmptyComponent={TableEmptyComponent}
                 TableFooterComponent={TableFooterComponent}
                 estimatedItemSize={
-                  isStockList ? MARKET_HOME_TABLE_ROW_HEIGHT : 60
+                  usesRedesignedTableGeometry
+                    ? MARKET_HOME_TABLE_ROW_HEIGHT
+                    : 60
                 }
                 onRow={stableOnRow}
                 rowProps={tableRowProps}

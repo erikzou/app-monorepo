@@ -11,6 +11,7 @@ import { type IMarketToken } from '../../MarketTokenData';
 
 import { useColumnsDesktop } from './useColumnsDesktop';
 import { useColumnsMobile } from './useColumnsMobile';
+import { useTrendingColumnsDesktop } from './useTrendingColumnsDesktop';
 
 export const useMarketTokenColumns = (
   networkId?: string,
@@ -24,6 +25,12 @@ export const useMarketTokenColumns = (
   change24hColumnTitle?: string,
   useStockMetadataColumns?: boolean,
   deferRichRowAfterIndex?: number,
+  /**
+   * The Trending tab, which has its own desktop column set (Figma
+   * 25366:45077): name and token age share a cell, as do market cap and
+   * change, and it adds Holders and Risk.
+   */
+  isTrendingList?: boolean,
 ): ITableColumn<IMarketToken>[] => {
   const desktopColumns = useColumnsDesktop(
     networkId,
@@ -42,11 +49,23 @@ export const useMarketTokenColumns = (
     showStockSubtitle,
     useStockMetadataColumns,
   );
+  const trendingColumns = useTrendingColumnsDesktop(
+    networkId,
+    deferRichRowAfterIndex,
+  );
 
   const media = useMedia();
 
-  return useMemo(
-    () => (media.gtMd ? desktopColumns : mobileColumns),
-    [media.gtMd, desktopColumns, mobileColumns],
-  );
+  return useMemo(() => {
+    if (!media.gtMd) {
+      return mobileColumns;
+    }
+    return isTrendingList ? trendingColumns : desktopColumns;
+  }, [
+    desktopColumns,
+    isTrendingList,
+    media.gtMd,
+    mobileColumns,
+    trendingColumns,
+  ]);
 };

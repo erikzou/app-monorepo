@@ -19,7 +19,10 @@ import { MarketBannerList } from '../components/MarketBanner';
 import { MarketStockMarketStatusChip } from '../components/MarketStockMarketStatusChip';
 import { MarketNormalTokenList } from '../components/MarketTokenList/MarketNormalTokenList';
 import { MarketStockCategorySelector } from '../components/MarketTokenList/MarketStockCategorySelector';
-import { TimeRangeDropdown } from '../components/TimeRangeDropdown';
+import {
+  MarketTrendingFilterProvider,
+  MarketTrendingToolbar,
+} from '../components/MarketTrendingToolbar';
 import {
   COMPACT_SPOT_HIDDEN_DESKTOP_COLUMNS,
   isMarketStockCategoryById,
@@ -237,13 +240,12 @@ export function DesktopLayout({
                 containerStyle={{ position: 'relative' as any }}
               />
             </XStack>
-            {/* Right side controls - hidden when the active spot data is stock */}
+            {/* Right side controls — hidden when the active spot data is
+                stock. The time frame used to sit here; it moved into the
+                trending toolbar below (Figma 25366:45095), so only the network
+                selector is left. */}
             {showSpotControls ? (
               <XStack gap="$3" alignItems="center" pr="$5">
-                <TimeRangeDropdown
-                  value={currentFilterBarProps.timeRange}
-                  onChange={currentFilterBarProps.onTimeRangeChange}
-                />
                 <CompactNetworkSelector
                   selectedNetworkId={currentFilterBarProps.selectedNetworkId}
                   onNetworkIdChange={currentFilterBarProps.onNetworkIdChange}
@@ -302,6 +304,16 @@ export function DesktopLayout({
     );
   }, [selectedStockCategoryId, stockCategories]);
 
+  const trendingToolbar = useMemo(
+    () => (
+      <MarketTrendingToolbar
+        timeRange={filterBarProps.timeRange}
+        onTimeRangeChange={filterBarProps.onTimeRangeChange}
+      />
+    ),
+    [filterBarProps.onTimeRangeChange, filterBarProps.timeRange],
+  );
+
   const stickyHeaderCtx = useMemo(
     () => ({ portalTarget, activeTabName }),
     [portalTarget, activeTabName],
@@ -334,54 +346,54 @@ export function DesktopLayout({
         ) : null}
       </YStack>
     </Tabs.Tab>,
-    ...spotTabItems.map((item) => (
-      <Tabs.Tab key={item.categoryId} name={item.tabName}>
-        <YStack
-          px={MARKET_HOME_TABLE_PADDING}
-          flex={1}
-          width="100%"
-          maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
-          alignSelf="center"
-          mx="auto"
-        >
-          {hasActivated(item.tabName) ? (
-            <MarketNormalTokenList
-              networkId={selectedNetworkId}
-              selectedCategory={item.categoryId}
-              isStockList={isMarketStockCategoryById(
-                filterBarProps.categories,
-                item.categoryId,
-              )}
-              stockCategory={
-                isMarketStockCategoryById(
-                  filterBarProps.categories,
+    ...spotTabItems.map((item) => {
+      const isStockCategory = isMarketStockCategoryById(
+        filterBarProps.categories,
+        item.categoryId,
+      );
+      return (
+        <Tabs.Tab key={item.categoryId} name={item.tabName}>
+          <YStack
+            px={MARKET_HOME_TABLE_PADDING}
+            flex={1}
+            width="100%"
+            maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}
+            alignSelf="center"
+            mx="auto"
+          >
+            {hasActivated(item.tabName) ? (
+              <MarketNormalTokenList
+                networkId={selectedNetworkId}
+                selectedCategory={item.categoryId}
+                isStockList={isStockCategory}
+                // Every non-stock spot category renders the redesigned
+                // trending table (Figma 25366:45077).
+                isTrendingList={!isStockCategory}
+                stockCategory={
+                  isStockCategory
+                    ? getMarketStockCategoryRequestParam(
+                        selectedStockCategoryId,
+                      )
+                    : undefined
+                }
+                timeRange={filterBarProps.timeRange}
+                toolbar={
+                  isStockCategory ? stockCategoryToolbar : trendingToolbar
+                }
+                tabIntegrated
+                tabName={item.tabName}
+                listContainerProps={listContainerProps}
+                hiddenDesktopColumns={getHiddenSpotDesktopColumns(
                   item.categoryId,
-                )
-                  ? getMarketStockCategoryRequestParam(selectedStockCategoryId)
-                  : undefined
-              }
-              timeRange={filterBarProps.timeRange}
-              toolbar={
-                isMarketStockCategoryById(
-                  filterBarProps.categories,
-                  item.categoryId,
-                )
-                  ? stockCategoryToolbar
-                  : undefined
-              }
-              tabIntegrated
-              tabName={item.tabName}
-              listContainerProps={listContainerProps}
-              hiddenDesktopColumns={getHiddenSpotDesktopColumns(
-                item.categoryId,
-              )}
-              onStockDataChange={handleStockDataChange}
-              enableWebSocket={activeTabName === item.tabName}
-            />
-          ) : null}
-        </YStack>
-      </Tabs.Tab>
-    )),
+                )}
+                onStockDataChange={handleStockDataChange}
+                enableWebSocket={activeTabName === item.tabName}
+              />
+            ) : null}
+          </YStack>
+        </Tabs.Tab>
+      );
+    }),
     ...(showPerpsTab
       ? [
           <Tabs.Tab key={perpsTabName} name={perpsTabName}>
@@ -410,18 +422,23 @@ export function DesktopLayout({
 
   return (
     <DesktopStickyHeaderContext.Provider value={stickyHeaderCtx}>
-      <YStack flex={1}>
-        <Tabs.Container
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ref={tabsRef as any}
-          renderTabBar={renderTabBar}
-          initialTabName={selectedTabName}
-          onTabChange={onTabChangeHandler}
-          {...containerProps}
-        >
-          {tabElements}
-        </Tabs.Container>
-      </YStack>
+      {/* The trending toolbar and the trending table are siblings (the toolbar
+          is portalled into the sticky header), so the filter state they share
+          lives above both. */}
+      <MarketTrendingFilterProvider>
+        <YStack flex={1}>
+          <Tabs.Container
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ref={tabsRef as any}
+            renderTabBar={renderTabBar}
+            initialTabName={selectedTabName}
+            onTabChange={onTabChangeHandler}
+            {...containerProps}
+          >
+            {tabElements}
+          </Tabs.Container>
+        </YStack>
+      </MarketTrendingFilterProvider>
     </DesktopStickyHeaderContext.Provider>
   );
 }

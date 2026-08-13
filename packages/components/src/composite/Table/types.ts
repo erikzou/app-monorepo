@@ -2,7 +2,11 @@ import type { ReactElement, ReactNode } from 'react';
 
 import type { IListViewProps } from '../../layouts';
 import type { ISortableListViewProps } from '../../layouts/SortableListView';
-import type { ISizableTextProps, IStackProps } from '../../primitives';
+import type {
+  IIconProps,
+  ISizableTextProps,
+  IStackProps,
+} from '../../primitives';
 
 export enum ETableSortType {
   ASC = 'asc',
@@ -18,6 +22,9 @@ export interface ITableColumn<T> {
   titleProps?: ISizableTextProps;
   columnProps?: Omit<IStackProps, 'onPress' | 'onLongPress'>;
   columnWidth?: IStackProps['width'];
+  // Size token for the sort glyph. Defaults to '$4'; tables whose header type
+  // is smaller pass their own.
+  sortIconSize?: IIconProps['size'];
   renderSkeleton?: () => ReactElement;
   render?: (text: any, record: T, index: number) => ReactElement;
   // The specify which way that column is aligned. default value is left

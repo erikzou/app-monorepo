@@ -80,9 +80,9 @@ const IFRAME_WHEEL_EVENT_TYPE = 'wheelEvent' as const;
 
 // Content frame of the stock detail design (Figma 25271:8054). The frame is
 // fixed, so the left column takes whatever the trade panel leaves:
-// 1140 - 24 - 384 = 732.
+// 1240 - 24 - 384 = 832.
 const STOCK_LAYOUT = {
-  contentMaxWidth: 1140,
+  contentMaxWidth: 1240,
   contentPadding: 20,
   rightColumnWidth: 384,
   columnGap: 24,
@@ -386,10 +386,11 @@ export function DesktopLayout({
       flex={1}
       style={SCROLL_CONTAINER_STYLE}
     >
-      {/* Stock pages follow the design's centered 1140 content frame
-          (Figma 25271:8054: 772 + 24 + 344). The 20px side padding keeps the
-          content off the window edge below that width, so the inner box is
-          still exactly 1140 on a 1440 viewport. Crypto pages stay full-width. */}
+      {/* Stock pages follow the design's centered 1240 content frame
+          (Figma 25366:45088), shared with the list page. The 20px side padding
+          keeps the content off the window edge below that width, so the inner
+          box is still exactly 1240 on a 1440 viewport (Figma 25366:45077).
+          Crypto pages stay full-width. */}
       {isStockPage ? (
         <YStack
           width="100%"

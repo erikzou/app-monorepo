@@ -32,6 +32,7 @@ function HeaderColumn<T>({
     align,
     columnProps,
     titleProps,
+    sortIconSize,
   } = column;
   const events = onHeaderRow?.(column, index);
   const enableSortType = !!events?.onSortTypeChange;
@@ -80,6 +81,7 @@ function HeaderColumn<T>({
     order: currentSortOrder,
     cursor,
     disabledSorts: events?.disableSort,
+    size: sortIconSize,
   });
 
   const textAlign = useMemo(() => {
@@ -111,6 +113,7 @@ function HeaderColumn<T>({
     <Column
       align={align}
       showSortIcon={showSortIcon}
+      sortIconSize={sortIconSize}
       key={dataIndex}
       name={dataIndex}
       width={columnWidth}

@@ -120,6 +120,13 @@ interface ITokenIdentityItemProps {
    */
   stockVariantCount?: number;
   stockVariantLogos?: string[];
+  /**
+   * Trending list: how old the token is ("2M"). Setting it switches the row to
+   * the trending presentation — 40px avatar like the stock rows, and a second
+   * line that trades the age for the contract address while the pointer is on
+   * the row (Figma 25366:45112 / 25375:49618).
+   */
+  tokenAge?: string;
   /** Row key, so the cell can react to a hover anywhere on its row. */
   rowId?: string;
 }
@@ -133,6 +140,8 @@ const STOCK_VARIANT_LOGO_LIMIT = 3;
 const STOCK_VARIANT_LOGO_SIZE = 16;
 // bodyMd line box: the height of one line of the sliding pair.
 const STOCK_SUMMARY_LINE_HEIGHT = 20;
+// bodySm line box: the trending row's second line is one size smaller.
+const TRENDING_SUMMARY_LINE_HEIGHT = 16;
 
 function StockVariantLogos({ logos }: { logos?: string[] }) {
   const visible = (logos ?? []).slice(0, STOCK_VARIANT_LOGO_LIMIT);
@@ -185,6 +194,7 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   hideVariantChrome = false,
   stockVariantCount,
   stockVariantLogos,
+  tokenAge,
   rowId,
 }) => {
   const isRowHovered = useIsMarketRowHovered(rowId);
@@ -243,12 +253,15 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
     return tokenLogoURI;
   };
 
+  // A trending row is the width of the whole name column, so the symbol
+  // truncates against the column instead of a fixed cap.
+  const isTrendingRow = tokenAge !== undefined;
   const symbolText = (
     <SizableText
       size="$bodyLgMedium"
       numberOfLines={1}
       ellipsizeMode="tail"
-      maxWidth="$32"
+      maxWidth={isTrendingRow ? undefined : '$32'}
       flexShrink={1}
     >
       {symbol}
@@ -274,13 +287,25 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
   // name for what the row collapses.
   const hasVariantSummary =
     isStockEntityRow && (stockVariantCount ?? 0) > 0 && Boolean(localizedName);
+  // Both rows that carry a 40px avatar: the collapsed stock entity and the
+  // trending row (Figma 25366:45112).
+  const isLargeIdentity = isStockEntityRow || isTrendingRow;
+  // Native coins carry no contract address, so their second line is the age
+  // alone and there is nothing to slide to.
+  const hasTrendingAddressSwap = isTrendingRow && shouldShowAddress;
+  let identityContentGap: '$1' | '$0.5' | undefined;
+  if (isTrendingRow) {
+    identityContentGap = '$1';
+  } else if (isStockEntityRow) {
+    identityContentGap = '$0.5';
+  }
 
   return (
     <XStack
       alignItems="center"
-      gap={isStockEntityRow ? '$3.5' : '$3'}
-      flex={isStockEntityRow ? 1 : undefined}
-      minWidth={isStockEntityRow ? 0 : undefined}
+      gap={isLargeIdentity ? '$3.5' : '$3'}
+      flex={isLargeIdentity ? 1 : undefined}
+      minWidth={isLargeIdentity ? 0 : undefined}
       userSelect="none"
     >
       <Token
@@ -290,10 +315,10 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
           hideVariantChrome ? undefined : effectiveNetworkLogoUri
         }
         fallbackIcon="CryptoCoinOutline"
-        size={isStockEntityRow ? 'lg' : 'md'}
+        size={isLargeIdentity ? 'lg' : 'md'}
       />
 
-      <Stack flex={1} minWidth={0} gap={isStockEntityRow ? '$0.5' : undefined}>
+      <Stack flex={1} minWidth={0} gap={identityContentGap}>
         <XStack alignItems="center" gap="$1">
           {symbolElement}
           {maxLeverage ? <LeverageBadge leverage={maxLeverage} /> : null}
@@ -309,6 +334,69 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
             />
           )}
         </XStack>
+        {isTrendingRow ? (
+          // Same sliding window as the stock row, one size down: the token age
+          // is pushed out by the contract address while the pointer is on the
+          // row, so the line never swaps underneath the pointer.
+          <Stack height={TRENDING_SUMMARY_LINE_HEIGHT} overflow="hidden">
+            <Stack
+              animation="quick"
+              y={
+                hasTrendingAddressSwap && isRowHovered
+                  ? -TRENDING_SUMMARY_LINE_HEIGHT
+                  : 0
+              }
+            >
+              <XStack
+                height={TRENDING_SUMMARY_LINE_HEIGHT}
+                alignItems="center"
+                minWidth={0}
+              >
+                <SizableText
+                  size="$bodySmMedium"
+                  color="$text"
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {tokenAge}
+                </SizableText>
+              </XStack>
+              {hasTrendingAddressSwap ? (
+                <XStack
+                  height={TRENDING_SUMMARY_LINE_HEIGHT}
+                  alignItems="center"
+                  gap="$0.5"
+                  minWidth={0}
+                >
+                  <SizableText
+                    size="$bodySm"
+                    color="$textSubdued"
+                    numberOfLines={1}
+                  >
+                    {shortened}
+                  </SizableText>
+                  {showCopyButton ? (
+                    // No padded hit box: the design keeps the glyph on the text
+                    // baseline inside a 16px line, so the affordance is the
+                    // recolor on hover rather than a background.
+                    <Stack
+                      cursor="pointer"
+                      hitSlop={NATIVE_HIT_SLOP}
+                      hoverStyle={{ opacity: 0.6 }}
+                      onPress={handleCopy}
+                    >
+                      <Icon
+                        name="Copy3Outline"
+                        size="$3.5"
+                        color="$iconSubdued"
+                      />
+                    </Stack>
+                  ) : null}
+                </XStack>
+              ) : null}
+            </Stack>
+          </Stack>
+        ) : null}
         {hasVariantSummary ? (
           // Both lines live in one 20px window and the pair slides up on
           // hover, so the company name is pushed out by the token summary
@@ -352,7 +440,7 @@ const BasicTokenIdentityItem: FC<ITokenIdentityItemProps> = ({
             </Stack>
           </Stack>
         ) : null}
-        {shouldShowSecondRow && !hasVariantSummary ? (
+        {shouldShowSecondRow && !hasVariantSummary && !isTrendingRow ? (
           <XStack alignItems="center" gap="$1.5" minWidth={0}>
             {localizedName ? (
               <>

@@ -4,6 +4,7 @@ import {
   XStack,
   YStack,
 } from '@onekeyhq/components';
+import type { ISizableTextProps, IYStackProps } from '@onekeyhq/components';
 
 export interface ITxnsWalletInfo {
   /** Positive (green) count, e.g. incoming wallets */
@@ -21,6 +22,13 @@ interface ITxnsProps {
    * Wallet info object containing buy & sell counts.
    */
   walletInfo?: ITxnsWalletInfo;
+  /**
+   * Size of the total. The trending table sets its values in medium
+   * (Figma 25375:49664); everywhere else keeps the regular weight.
+   */
+  valueSize?: ISizableTextProps['size'];
+  /** Space between the total and the breakdown. */
+  gap?: IYStackProps['gap'];
 }
 
 /**
@@ -31,11 +39,16 @@ interface ITxnsProps {
  *   38.55K/39.64K
  *
  */
-export function Txns({ transactions, walletInfo }: ITxnsProps) {
+export function Txns({
+  transactions,
+  walletInfo,
+  valueSize = '$bodyMd',
+  gap = '$0.5',
+}: ITxnsProps) {
   return (
-    <YStack gap="$0.5">
+    <YStack gap={gap}>
       {/* Total transactions */}
-      <NumberSizeableText size="$bodyMd" formatter="marketCap">
+      <NumberSizeableText size={valueSize} formatter="marketCap">
         {transactions === 0 ? '--' : transactions}
       </NumberSizeableText>
 

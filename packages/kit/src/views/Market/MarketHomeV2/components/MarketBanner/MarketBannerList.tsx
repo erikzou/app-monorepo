@@ -37,7 +37,7 @@ function BannerContainerMobile({ children }: { children: ReactNode }) {
 function BannerContainerDesktop({ children }: { children: ReactNode }) {
   return (
     // Figma 25473:87712: 32 above the cards, 20 below, inside the page's own
-    // 1140 frame.
+    // 1240 frame.
     <XStack
       width="100%"
       maxWidth={MARKET_HOME_CONTENT_MAX_WIDTH}

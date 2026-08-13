@@ -4,12 +4,13 @@ import { useMemo } from 'react';
 import { SizableText, XStack } from '../../../primitives';
 import { useSortIcon } from '../hooks';
 
-import type { IXStackProps } from '../../../primitives';
+import type { IIconProps, IXStackProps } from '../../../primitives';
 import type { ETableSortType, ITableColumn } from '../types';
 
 interface IColumnProps<T> {
   name: string;
   showSortIcon?: boolean;
+  sortIconSize?: IIconProps['size'];
   order?: 'asc' | 'desc' | undefined;
   align?: ITableColumn<T>['align'];
   onPress?: () => void;
@@ -28,6 +29,7 @@ export function Column<T>({
   name,
   align = 'left',
   disabledSorts,
+  sortIconSize,
   ...props
 }: PropsWithChildren<IColumnProps<T> & Omit<IXStackProps, 'onPress'>>) {
   const jc = useMemo(() => {
@@ -45,6 +47,7 @@ export function Column<T>({
     order,
     cursor,
     disabledSorts,
+    size: sortIconSize,
   });
   return (
     <XStack
