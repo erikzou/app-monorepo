@@ -18,8 +18,7 @@ type IHoldingsBreakdownRow = {
 /**
  * MOCK DATA — holder concentration has no wired source yet, so the popover
  * renders the design's figures (Figma 25375:49590) to lock the layout down.
- * The same four metrics back the "Holdings audit" group in the Filters dialog,
- * which is disabled for the same reason. Replace with the distribution payload.
+ * Replace with the distribution payload.
  *
  * The design's Insider row uses a bespoke rodent glyph that is not in the icon
  * set; `AnonymousHiddenOutline` stands in for it.

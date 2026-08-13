@@ -1,7 +1,4 @@
-import {
-  EMarketFilterDimension,
-  EMarketFilterGroup,
-} from './marketTrendingFilterTypes';
+import { EMarketFilterDimension } from './marketTrendingFilterTypes';
 
 import type {
   IMarketFilterConditions,
@@ -56,7 +53,6 @@ function countFloors(values: number[]): IMarketFilterOption[] {
 export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   {
     id: EMarketFilterDimension.MarketCap,
-    group: EMarketFilterGroup.Metrics,
     label: 'Market cap',
     unit: '$',
     minParam: 'marketCapMin',
@@ -66,7 +62,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   },
   {
     id: EMarketFilterDimension.Liquidity,
-    group: EMarketFilterGroup.Metrics,
     label: 'Liquidity',
     unit: '$',
     minParam: 'liquidityMin',
@@ -76,7 +71,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   },
   {
     id: EMarketFilterDimension.Holders,
-    group: EMarketFilterGroup.Metrics,
     label: 'Holders',
     minParam: 'holdersMin',
     maxParam: 'holdersMax',
@@ -85,7 +79,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   },
   {
     id: EMarketFilterDimension.Turnover,
-    group: EMarketFilterGroup.Metrics,
     label: 'Turnover',
     unit: '$',
     minParam: 'volumeMin',
@@ -95,7 +88,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   },
   {
     id: EMarketFilterDimension.Change,
-    group: EMarketFilterGroup.Metrics,
     label: 'Change',
     minParam: 'priceChangePercentMin',
     maxParam: 'priceChangePercentMax',
@@ -108,7 +100,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   },
   {
     id: EMarketFilterDimension.Txns,
-    group: EMarketFilterGroup.Metrics,
     label: 'Txns',
     minParam: 'txsMin',
     maxParam: 'txsMax',
@@ -117,7 +108,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
   },
   {
     id: EMarketFilterDimension.TokenAge,
-    group: EMarketFilterGroup.Metrics,
     label: 'Token age',
     // No server-side age param exists, so this row filters the slice already
     // fetched rather than the upstream pool.
@@ -129,21 +119,6 @@ export const MARKET_FILTER_DIMENSIONS: IMarketFilterDimensionConfig[] = [
       { id: 'under-30d', label: '≤ 30d', max: 30 * DAY },
     ],
   },
-];
-
-// TODO(i18n): demo copy, hardcoded English.
-export const MARKET_FILTER_GROUP_LABELS: Record<EMarketFilterGroup, string> = {
-  [EMarketFilterGroup.Metrics]: 'Metrics',
-  // Names the metric these rows measure, so the rows themselves can stay short
-  // enough to fit the label column ("Top 10 %", "Dev %", …).
-  [EMarketFilterGroup.Audit]: 'Holdings audit',
-};
-
-// Metrics first: those are the conditions the demo can actually apply; the
-// audit block mirrors the Holders popover and is still waiting on data.
-export const MARKET_FILTER_GROUP_ORDER: EMarketFilterGroup[] = [
-  EMarketFilterGroup.Metrics,
-  EMarketFilterGroup.Audit,
 ];
 
 export const MARKET_FILTER_DIMENSION_MAP = new Map(

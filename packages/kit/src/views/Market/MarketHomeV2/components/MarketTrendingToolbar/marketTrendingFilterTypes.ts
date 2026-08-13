@@ -25,13 +25,6 @@ export type IMarketFilterOption = {
   max?: number;
 };
 
-// Section groups in the Filters dialog: named groups on one scrolling page
-// rather than tabs.
-export enum EMarketFilterGroup {
-  Metrics = 'metrics',
-  Audit = 'audit',
-}
-
 export type IMarketFilterDimensionConfig = {
   id: EMarketFilterDimension;
   // TODO(i18n): demo copy, hardcoded English.
@@ -47,7 +40,6 @@ export type IMarketFilterDimensionConfig = {
   localField?: keyof IMarketToken;
   // firstTradeTime is a timestamp; compare (now - value) against min/max.
   isAge?: boolean;
-  group: EMarketFilterGroup;
   options: IMarketFilterOption[];
 };
 

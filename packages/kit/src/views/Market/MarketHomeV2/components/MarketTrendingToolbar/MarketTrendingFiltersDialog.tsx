@@ -4,20 +4,14 @@ import type { ReactNode } from 'react';
 import {
   Button,
   Dialog,
-  Divider,
   ScrollView,
   SizableText,
   XStack,
   YStack,
 } from '@onekeyhq/components';
 
-import {
-  MARKET_FILTER_DIMENSIONS,
-  MARKET_FILTER_GROUP_LABELS,
-  MARKET_FILTER_GROUP_ORDER,
-} from './marketTrendingFilterConfig';
+import { MARKET_FILTER_DIMENSIONS } from './marketTrendingFilterConfig';
 import { useMarketTrendingFilter } from './MarketTrendingFilterContext';
-import { EMarketFilterGroup } from './marketTrendingFilterTypes';
 import { TierPill } from './TierPill';
 
 import type {
@@ -44,20 +38,6 @@ function getTierColumns(optionCount: number) {
     ? TIER_COLUMNS_FOR_FOUR_OPTIONS
     : TIER_COLUMNS_DEFAULT;
 }
-
-/**
- * MOCK ROWS — the holdings-audit thresholds have no source yet. They mirror the
- * Holders popover in the table (Top 10 / Dev / Bundlers / Insider) so the two
- * stay recognizably the same data, and are rendered disabled rather than hidden
- * so the gap stays visible in review.
- */
-const AUDIT_TIER_LABELS = ['≤ 10%', '≤ 30%', '≤ 50%'];
-const AUDIT_ROWS = [
-  { label: 'Top 10 %', key: 'top10' },
-  { label: 'Dev %', key: 'dev' },
-  { label: 'Bundlers %', key: 'bundlers' },
-  { label: 'Insider %', key: 'insider' },
-];
 
 // Equal-width pills on a fixed column grid so every row lines up.
 function TierGrid({
@@ -237,67 +217,30 @@ function MarketTrendingFiltersContent({
         showsVerticalScrollIndicator={false}
       >
         <YStack gap="$6">
-          {MARKET_FILTER_GROUP_ORDER.map((group, groupIndex) => {
-            const dimensions = MARKET_FILTER_DIMENSIONS.filter(
-              (dimension) => dimension.group === group,
-            );
-            return (
-              <YStack key={group} gap="$4">
-                {groupIndex > 0 ? <Divider mb="$2" /> : null}
-                <SizableText size="$headingSm">
-                  {MARKET_FILTER_GROUP_LABELS[group]}
-                </SizableText>
-                <YStack gap="$6">
-                  {group === EMarketFilterGroup.Metrics ? (
-                    <FilterRow label="Time frame">
-                      <XStack
-                        width={CONTROL_COLUMN_WIDTH}
-                        gap="$1"
-                        flexShrink={0}
-                      >
-                        {TIME_RANGE_OPTIONS.map((option) => (
-                          <TierPill
-                            key={option}
-                            grow
-                            variant="plain"
-                            minWidth={TIME_RANGE_PILL_MIN_WIDTH}
-                            label={option}
-                            selected={option === draftTimeRange}
-                            onPress={() => setDraftTimeRange(option)}
-                            testID={`market-trending-filter-time-range-${option}`}
-                          />
-                        ))}
-                      </XStack>
-                    </FilterRow>
-                  ) : null}
-                  {group === EMarketFilterGroup.Audit
-                    ? AUDIT_ROWS.map((row) => (
-                        <FilterRow key={row.key} label={row.label}>
-                          <TierGrid
-                            columns={getTierColumns(AUDIT_TIER_LABELS.length)}
-                            items={AUDIT_TIER_LABELS.map((tierLabel) => ({
-                              key: tierLabel,
-                              label: tierLabel,
-                              disabled: true,
-                              testID: `market-trending-filter-audit-${row.key}-${tierLabel}`,
-                            }))}
-                          />
-                        </FilterRow>
-                      ))
-                    : dimensions.map((dimension) => (
-                        <DimensionRow
-                          key={dimension.id}
-                          dimension={dimension}
-                          selectedOptionId={draft[dimension.id]}
-                          onSelect={(optionId) =>
-                            handleSelect(dimension, optionId)
-                          }
-                        />
-                      ))}
-                </YStack>
-              </YStack>
-            );
-          })}
+          <FilterRow label="Time frame">
+            <XStack width={CONTROL_COLUMN_WIDTH} gap="$1" flexShrink={0}>
+              {TIME_RANGE_OPTIONS.map((option) => (
+                <TierPill
+                  key={option}
+                  grow
+                  variant="plain"
+                  minWidth={TIME_RANGE_PILL_MIN_WIDTH}
+                  label={option}
+                  selected={option === draftTimeRange}
+                  onPress={() => setDraftTimeRange(option)}
+                  testID={`market-trending-filter-time-range-${option}`}
+                />
+              ))}
+            </XStack>
+          </FilterRow>
+          {MARKET_FILTER_DIMENSIONS.map((dimension) => (
+            <DimensionRow
+              key={dimension.id}
+              dimension={dimension}
+              selectedOptionId={draft[dimension.id]}
+              onSelect={(optionId) => handleSelect(dimension, optionId)}
+            />
+          ))}
         </YStack>
       </ScrollView>
       {/* Two equal-width actions: secondary Reset, primary Confirm. The
