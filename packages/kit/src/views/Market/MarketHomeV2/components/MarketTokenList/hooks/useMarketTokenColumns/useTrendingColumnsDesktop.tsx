@@ -21,10 +21,6 @@ import { getTokenPriceChangeStyle } from '@onekeyhq/shared/src/utils/tokenUtils'
 
 import { TokenIdentityItem } from '../../components/TokenIdentityItem';
 import { TrendingHoldersCell } from '../../components/TrendingHoldersCell';
-import {
-  TrendingRiskBadge,
-  getDemoRiskLevel,
-} from '../../components/TrendingRiskBadge';
 import { Txns } from '../../components/Txns';
 import { getTokenAgeInfo } from '../../utils/tokenListHelpers';
 
@@ -40,19 +36,17 @@ const TOKEN_AGE_TRANSLATION_MAP = {
 const EMPTY_MARKET_VALUE = '--';
 
 /**
- * Figma 25375:49611. The table is inset 12 and every cell carries 8, so the
+ * Figma 25366:45108. The table is inset 12 and every cell carries 8, so the
  * first column lands on the same 20px line as the toolbar above it.
  *
  * The left block is fixed at 256: 8 (cell) + 24 (star) + 6 (gap) puts the
  * avatar at 38, and the name column takes the remaining 218. The six numeric
- * columns then share what is left beside the fixed 80px Risk column.
+ * columns then split the 960 that is left, 160 each.
  */
 const STAR_COLUMN_WIDTH = 38;
 const NAME_COLUMN_WIDTH = 218;
-const RISK_COLUMN_WIDTH = 80;
 const STAR_HEADER_WIDTH = 24;
 
-const CELL_PROPS = { px: '$2' } as const;
 // Figma 25375:49624: the sort glyph sits 2px after the label and is 14, not the
 // table's default 16.
 const NUMERIC_COLUMN_PROPS = { flex: 1, px: '$2', gap: '$0.5' } as const;
@@ -348,21 +342,6 @@ export const useTrendingColumnsDesktop = (
           );
         },
         renderSkeleton: () => <Skeleton width={80} height={20} />,
-      },
-      {
-        // TODO(i18n): needs a translation key.
-        title: 'Risk',
-        dataIndex: 'risk',
-        columnWidth: RISK_COLUMN_WIDTH,
-        columnProps: CELL_PROPS,
-        render: (_: unknown, record: IMarketToken) => (
-          <TrendingRiskBadge
-            level={getDemoRiskLevel(record.address || record.id)}
-          />
-        ),
-        renderSkeleton: () => (
-          <Skeleton width={40} height={16} borderRadius="$1" />
-        ),
       },
     ];
   }, [deferRichRowAfterIndex, intl, networkId]);
