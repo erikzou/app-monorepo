@@ -405,7 +405,7 @@ function DesktopLayoutContent({
           nativeChartRightGroupTrailingControl={
             showChartModeSwitch ? chartModeSwitch : undefined
           }
-          nativeChartControlsPaddingHorizontal={isStockPage ? 0 : undefined}
+          nativeChartControlsPaddingHorizontal={0}
           isNativeChartFullscreen={isChartFullscreen}
           nativeChartFullscreenHeader={<MarketChartFullscreenHeader />}
           onNativeChartFullscreenChange={chartFullscreenChangeHandler}
@@ -431,7 +431,7 @@ function DesktopLayoutContent({
         nativePriceMarketCapControlMode="select"
         nativeControlsLayoutMode="desktop"
         chartModeControl={showChartModeSwitch ? chartModeSwitch : undefined}
-        chartControlsPaddingHorizontal={isStockPage ? 0 : undefined}
+        chartControlsPaddingHorizontal={0}
         isNativeChartFullscreen={isChartFullscreen}
         showNativeIndicatorQuickBar={false}
         onNativeChartFullscreenChange={chartFullscreenChangeHandler}
@@ -442,7 +442,6 @@ function DesktopLayoutContent({
     chartModeSwitch,
     handleTradingViewTouchScroll,
     isChartFullscreen,
-    isStockPage,
     marketTradingViewParams,
     networkId,
     showChartModeSwitch,
@@ -596,7 +595,9 @@ function DesktopLayoutContent({
             {isStockPage ? (
               <StockTradePanel />
             ) : (
-              <Stack px="$5" pt="$4" pb="$3">
+              // Figma 25651:52423: the widget opens 24 below the column top
+              // and closes 20 above the position summary.
+              <Stack px="$5" pt="$6" pb="$5">
                 <SwapPanel swapToken={swapToken} panelVariant="memeDesktop" />
               </Stack>
             )}

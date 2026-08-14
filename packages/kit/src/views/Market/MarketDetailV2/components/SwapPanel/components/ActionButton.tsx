@@ -349,13 +349,18 @@ export function ActionButton({
     shouldUseColoredStyle = false;
   }
 
-  const buttonStyleProps: IButtonProps = shouldUseColoredStyle
-    ? {
-        variant: tradeType === ESwapDirection.BUY ? 'accent' : 'destructive',
-      }
-    : {
-        variant: 'primary',
-      };
+  // `submitLabel` marks the assemblies whose action button opens a review step
+  // rather than submitting a trade. Those follow the stock panel: one neutral
+  // primary button, greyed until there is an amount — the green/red trade
+  // styling belongs to a button that places the order.
+  const buttonStyleProps: IButtonProps =
+    shouldUseColoredStyle && !submitLabel
+      ? {
+          variant: tradeType === ESwapDirection.BUY ? 'accent' : 'destructive',
+        }
+      : {
+          variant: 'primary',
+        };
 
   const handlePress = useCallback(
     async (event: GestureResponderEvent) => {

@@ -64,11 +64,18 @@ const SwapPanelTop = ({
 
   return (
     <YStack>
-      <XStack justifyContent="space-between">
+      {/* Figma 25651:52430: the crypto panel runs this as a 32-tall tab row. */}
+      <XStack
+        justifyContent="space-between"
+        alignItems="center"
+        h={showDivider ? undefined : 32}
+      >
         <XStack
           borderBottomWidth="$0.5"
           borderBottomColor="$borderActive"
           ml={2}
+          alignSelf={showDivider ? undefined : 'stretch'}
+          alignItems="center"
         >
           <SizableText size="$bodyMdMedium" cursor="default">
             {intl.formatMessage({ id: ETranslations.perp_trade_market })}

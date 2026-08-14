@@ -12,6 +12,7 @@ import {
 } from '@onekeyhq/components';
 
 const PLACEHOLDER = '--';
+const EST_RECEIVED_ROW_HEIGHT = 40;
 
 /**
  * DEMO VALUE — price impact has no source in the panel: the figure only exists
@@ -81,8 +82,11 @@ export function EstReceivedRow({
   }, [amount, rate, receiveTokenPrice]);
 
   return (
-    <XStack alignItems="flex-start" gap="$2" minHeight="$5">
-      <XStack flex={1} minWidth={0} alignItems="center" gap="$1.5" h="$5">
+    // Fixed height: the value is one line before an amount is entered and two
+    // after it, and the row must not grow when it changes — that would push the
+    // action button down under the pointer (Figma 25672:55995).
+    <XStack h={EST_RECEIVED_ROW_HEIGHT} alignItems="center" gap="$2">
+      <XStack flex={1} minWidth={0} alignItems="center" gap="$1.5">
         <Icon name="HandCoinsOutline" size="$4" color="$iconSubdued" />
         {/* TODO(i18n): demo copy, hardcoded English. */}
         <SizableText size="$bodyMd" color="$textSubdued">
@@ -93,7 +97,7 @@ export function EstReceivedRow({
       {loading && hasAmount ? (
         <Skeleton width="$24" height="$5" />
       ) : (
-        <YStack alignItems="flex-end" flexShrink={0}>
+        <YStack alignItems="flex-end" justifyContent="center" flexShrink={0}>
           {estimate ? (
             <>
               <NumberSizeableText
@@ -136,7 +140,7 @@ export function EstReceivedRow({
               </XStack>
             </>
           ) : (
-            <SizableText size="$bodyMd" color="$textSubdued" h="$5">
+            <SizableText size="$bodyMd" color="$textSubdued">
               {PLACEHOLDER}
             </SizableText>
           )}

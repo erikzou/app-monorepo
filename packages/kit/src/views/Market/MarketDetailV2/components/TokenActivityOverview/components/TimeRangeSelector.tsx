@@ -21,10 +21,11 @@ export function TimeRangeSelector({
     <Stack
       flexDirection="row"
       justifyContent="space-between"
-      gap="$1"
-      bg="$neutral5"
+      gap="$0.5"
+      bg="$bgStrong"
       p="$0.5"
       borderRadius="$2.5"
+      borderCurve="continuous"
     >
       {options.map((opt) => (
         <ButtonFrame
@@ -33,7 +34,8 @@ export function TimeRangeSelector({
           flex={1}
           borderWidth={0}
           borderRadius="$2"
-          py="$1"
+          borderCurve="continuous"
+          py={6}
           onPress={() => onChange(opt.value)}
           bg={value === opt.value ? '$bgApp' : '$transparent'}
           hoverStyle={{

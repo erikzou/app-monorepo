@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import BigNumber from 'bignumber.js';
 import { useIntl } from 'react-intl';
 
-import { SizableText, Toast, YStack } from '@onekeyhq/components';
+import { SizableText, Stack, Toast, YStack } from '@onekeyhq/components';
 import type { IAccountSelectorActiveAccountInfo } from '@onekeyhq/kit/src/states/jotai/contexts/accountSelector';
 import { validateAmountInput } from '@onekeyhq/kit/src/utils/validateAmountInput';
 import type { useSwapPanel } from '@onekeyhq/kit/src/views/Market/MarketDetailV2/components/SwapPanel/hooks/useSwapPanel';
@@ -312,12 +312,27 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
     resetAnalytics,
   ]);
 
+  const presetSelector =
+    showMarketPresetSelector && marketPresetSettings ? (
+      <MarketPresetSelector
+        antiMEV={isMEV}
+        estimatePriorityFeeFiatValues={estimatePriorityFeeFiatValues}
+        presetSettings={marketPresetSettings}
+        variant={onCloseDialog ? 'compact' : 'full'}
+        hidePresetButtons={hideMarketPresetButtons}
+      />
+    ) : null;
+
   return (
+    // Figma 25651:52423: 16 between every block of the crypto panel, and its
+    // preset block sits under the action button rather than above it.
     <YStack gap="$4">
       {/* Trade type selector */}
       <TradeTypeSelector value={tradeType} onChange={setTradeType} />
 
-      <YStack gap="$3">
+      {/* Figma 25651:52429: 16 between the order-type row, the amount input and
+          the estimate; the default panel keeps its tighter 12. */}
+      <YStack gap={isMemeDesktop ? '$4' : '$3'}>
         {/* Token input section */}
         <SwapPanelTop
           enableAddressTypeSelector={enableAddressTypeSelector}
@@ -404,15 +419,7 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
         </SizableText>
       ) : null}
 
-      {showMarketPresetSelector && marketPresetSettings ? (
-        <MarketPresetSelector
-          antiMEV={isMEV}
-          estimatePriorityFeeFiatValues={estimatePriorityFeeFiatValues}
-          presetSettings={marketPresetSettings}
-          variant={onCloseDialog ? 'compact' : 'full'}
-          hidePresetButtons={hideMarketPresetButtons}
-        />
-      ) : null}
+      {isMemeDesktop ? null : presetSelector}
 
       <ActionButton
         supportSpeedSwap={!!supportSpeedSwap?.enabled}
@@ -445,6 +452,12 @@ export function SwapPanelContent(props: ISwapPanelContentProps) {
           })
         }
       />
+
+      {/* Figma 25651:52537: the preset block sits 20 under the action button,
+          4 more than the panel's own rhythm. */}
+      {isMemeDesktop && presetSelector ? (
+        <Stack pt="$1">{presetSelector}</Stack>
+      ) : null}
 
       {/* Slippage setting */}
       {suppressStandaloneSlippage ? null : (

@@ -413,8 +413,6 @@ export const TradingViewChartControls = memo(
               </XStack>
             </XStack>
 
-            {rightGroupTrailingControl}
-
             {fullscreenControl ? (
               <XStack
                 gap="$2"
@@ -423,11 +421,22 @@ export const TradingViewChartControls = memo(
                 opacity={isControlsReady ? 1 : 0}
                 pointerEvents={isControlsReady ? 'auto' : 'none'}
               >
-                {priceMarketCapControl || rightGroupTrailingControl ? (
+                {priceMarketCapControl ? <ToolbarSeparator /> : null}
+
+                {fullscreenControl}
+              </XStack>
+            ) : null}
+
+            {/* Last item, so the caller's control (the market Lite/Pro switch)
+                sits flush right in this toolbar exactly as it does in the Lite
+                one — otherwise it moves sideways every time the user toggles. */}
+            {rightGroupTrailingControl ? (
+              <XStack gap="$2" alignItems="center" flexShrink={0}>
+                {priceMarketCapControl || fullscreenControl ? (
                   <ToolbarSeparator />
                 ) : null}
 
-                {fullscreenControl}
+                {rightGroupTrailingControl}
               </XStack>
             ) : null}
           </XStack>
