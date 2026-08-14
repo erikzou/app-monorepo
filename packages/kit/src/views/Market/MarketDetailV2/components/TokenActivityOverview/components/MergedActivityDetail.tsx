@@ -74,10 +74,12 @@ export function MergedActivityDetail({
 }) {
   const hasSplit = buyVolume !== undefined && sellVolume !== undefined;
   const netVolume = hasSplit ? buyVolume - sellVolume : undefined;
+  // Split on the two volumes' own sum, not on `totalVolume`: the payload's
+  // total is its own figure and does not always equal vBuy + vSell, and using
+  // it made the bar disagree with the Buy/Sell volumes printed right under it.
+  const splitTotal = hasSplit ? buyVolume + sellVolume : 0;
   const buyPercentage =
-    totalVolume !== undefined && totalVolume > 0 && buyVolume !== undefined
-      ? (buyVolume / totalVolume) * 100
-      : 0;
+    hasSplit && splitTotal > 0 ? (buyVolume / splitTotal) * 100 : 0;
 
   return (
     <Stack>
