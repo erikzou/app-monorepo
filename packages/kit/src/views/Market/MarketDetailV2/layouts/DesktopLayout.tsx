@@ -53,6 +53,8 @@ import { CryptoDetailHeader } from '../components/TokenDetailHeader/CryptoDetail
 import { CryptoHeaderStats } from '../components/TokenDetailHeader/CryptoHeaderStats';
 import { TokenDetailHeader } from '../components/TokenDetailHeader/TokenDetailHeader';
 import { TokenSupplementaryInfo } from '../components/TokenSupplementaryInfo/TokenSupplementaryInfo';
+import { TopCoinTabs } from '../components/TopCoinTabs/TopCoinTabs';
+import { TopCoinTradePanel } from '../components/TopCoinTradePanel/TopCoinTradePanel';
 import { useMarketStockEntity } from '../hooks/useMarketStockEntity';
 import {
   useMarketTradingViewParams,
@@ -60,6 +62,7 @@ import {
 } from '../hooks/useTokenDetail';
 import { useTradingViewNativeInMarketDetail } from '../hooks/useTradingViewNativeInMarketDetail';
 import { getMarketDetailTradingViewNativeSource } from '../utils/getMarketDetailTradingViewNativeSource';
+import { isTopCoinToken } from '../utils/marketDetailAssembly';
 
 import type { DesktopInformationTabs } from '../components/InformationTabs/layout/DesktopInformationTabs';
 import type { IMarketLiteChartRange } from '../components/MarketLiteChart';
@@ -292,15 +295,17 @@ function DesktopLayoutContent({
   // tokenized variant. There is only one layer: variants are expressed through
   // the trade dropdown and the trust block, never a page of their own.
   const isStockPage = Boolean(stockEntity);
-  // Everything that is not a stock renders the crypto assembly. Majors get
-  // their own configuration later; until that list exists they ride along here.
-  const isCryptoPage = !isStockPage;
+  // Three configurations of one skeleton: majors, stocks, and everything else.
+  const isTopCoinPage = !isStockPage && isTopCoinToken({ networkId, isNative });
+  const isCryptoPage = !isStockPage && !isTopCoinPage;
   const showChartModeSwitch = !isChartFullscreen;
-  const chartMode = isStockPage ? stockChartMode : cryptoChartMode;
+  // Majors and stocks are read on the line chart; the meme configuration opens
+  // on the candles.
+  const chartMode = isCryptoPage ? cryptoChartMode : stockChartMode;
   const showLiteChart = showChartModeSwitch && chartMode === 'lite';
-  const chartHeight = isStockPage
-    ? MARKET_DETAIL_LAYOUT.stockChartHeight
-    : MARKET_DETAIL_LAYOUT.chartHeight;
+  const chartHeight = isCryptoPage
+    ? MARKET_DETAIL_LAYOUT.chartHeight
+    : MARKET_DETAIL_LAYOUT.stockChartHeight;
 
   const scrollContainerRef = useRef<HTMLElement>(null);
   useIframeWheelPassthrough({
@@ -320,9 +325,9 @@ function DesktopLayoutContent({
   // expand control there keeps the Lite/Pro switch as the last item in both
   // toolbars, so toggling doesn't shift it sideways. The crypto toolbar is the
   // live one and keeps its expand control (Figma 25593:18426).
-  const chartFullscreenChangeHandler = isStockPage
-    ? undefined
-    : handleChartFullscreenChange;
+  const chartFullscreenChangeHandler = isCryptoPage
+    ? handleChartFullscreenChange
+    : undefined;
   const handleTradingViewTouchScroll = useCallback(
     (deltaY: number) => {
       if (!isChartFullscreen) {
@@ -384,15 +389,15 @@ function DesktopLayoutContent({
 
   const chartModeSwitch = useMemo(
     () =>
-      isStockPage ? (
-        <MarketChartModeSwitch />
-      ) : (
+      isCryptoPage ? (
         <MarketChartModeSwitch
           mode={cryptoChartMode}
           onModeChange={setCryptoChartMode}
         />
+      ) : (
+        <MarketChartModeSwitch />
       ),
-    [cryptoChartMode, isStockPage],
+    [cryptoChartMode, isCryptoPage],
   );
   const marketTradingView = useMemo(() => {
     if (useTradingViewNative) {
@@ -460,15 +465,20 @@ function DesktopLayoutContent({
           edge below that width, so the inner box is still exactly 1240 on a
           1440 viewport. */}
       <YStack {...contentFrameProps} pt="$5">
-        {isStockPage ? (
+        {isCryptoPage ? (
+          <CryptoDetailHeader showFavoriteButton={showFavoriteButton} />
+        ) : (
           <TokenDetailHeader
             showFavoriteButton={showFavoriteButton}
-            stockEntityIdentity={stockEntityIdentity}
+            stockEntityIdentity={
+              stockEntityIdentity ??
+              (isTopCoinPage && tokenDetail
+                ? { ticker: tokenDetail.symbol, name: tokenDetail.name }
+                : undefined)
+            }
             isStockLayout
             showMediaAndSecurity={false}
           />
-        ) : (
-          <CryptoDetailHeader showFavoriteButton={showFavoriteButton} />
         )}
       </YStack>
 
@@ -490,11 +500,13 @@ function DesktopLayoutContent({
               // share/token source toggle; crypto shows the percentage alone
               // and fills the trailing slot with its header stats
               // (Figma 25593:18426).
-              showPriceChangeValue={isStockPage}
+              showPriceChangeValue={!isCryptoPage}
               priceSource={priceSource}
               onPriceSourceChange={
                 isStockPage ? handlePriceSourceChange : undefined
               }
+              /* Majors carry no header stats: the Overview tab right below
+                 already leads with them (Figma 25703:19145). */
               trailingSlot={isCryptoPage ? <CryptoHeaderStats /> : undefined}
             />
           ) : null}
@@ -566,6 +578,13 @@ function DesktopLayoutContent({
             ref={registerTabsSection as any}
             minHeight={MARKET_DETAIL_LAYOUT.infoTabsHeight}
           >
+            {isTopCoinPage ? (
+              <TopCoinTabs
+                portfolioData={portfolioData}
+                isRefreshing={isRefreshing}
+                tokenLogoUrl={tokenDetail?.logoUrl}
+              />
+            ) : null}
             {isStockPage && stockEntity ? (
               <StockEntityTabs
                 entity={stockEntity}
@@ -573,14 +592,15 @@ function DesktopLayoutContent({
                 isRefreshing={isRefreshing}
                 tokenLogoUrl={tokenDetail?.logoUrl}
               />
-            ) : (
+            ) : null}
+            {isCryptoPage ? (
               <LazyDesktopInformationTabs
                 portfolioData={portfolioData}
                 isRefreshing={isRefreshing}
                 isBTCNetwork={isBTCNetwork}
                 tokenLogoUrl={tokenDetail?.logoUrl}
               />
-            )}
+            ) : null}
           </Stack>
         </YStack>
 
@@ -592,22 +612,23 @@ function DesktopLayoutContent({
             pb={platformEnv.isWeb ? '$12' : undefined}
           >
             {isCryptoPage ? <PerpetualTradingBanner px="$5" /> : null}
-            {isStockPage ? (
-              <StockTradePanel />
-            ) : (
+            {isStockPage ? <StockTradePanel /> : null}
+            {isTopCoinPage ? <TopCoinTradePanel swapToken={swapToken} /> : null}
+            {isCryptoPage ? (
               // Figma 25651:52423: the widget opens 24 below the column top
               // and closes 20 above the position summary.
               <Stack px="$5" pt="$6" pb="$5">
                 <SwapPanel swapToken={swapToken} panelVariant="memeDesktop" />
               </Stack>
-            )}
+            ) : null}
 
             {isStockPage && stockEntity ? (
               <StockTrustPanel
                 entity={stockEntity}
                 instrument={selectedInstrument}
               />
-            ) : (
+            ) : null}
+            {isCryptoPage ? (
               <>
                 <MarketPositionSummary portfolioData={portfolioData} />
                 {isBTCMainnet ? null : (
@@ -615,7 +636,7 @@ function DesktopLayoutContent({
                 )}
                 <TokenSupplementaryInfo />
               </>
-            )}
+            ) : null}
           </Stack>
         </Stack>
       </XStack>

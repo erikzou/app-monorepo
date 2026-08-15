@@ -124,6 +124,11 @@ interface ISwapHeaderContainerProps {
   showSwapPro?: boolean;
   /** Hide right action buttons (settings/history) - used when they're shown elsewhere in desktop layout */
   hideRightActions?: boolean;
+  // Embedded instances (the Market top-coin page) show the current type as a
+  // plain title: the page they sit on has already decided what is being
+  // traded, so a Swap/Stocks/Limit switcher there would offer a choice the
+  // surrounding page cannot follow.
+  hideTypeTabs?: boolean;
   marketPresetSettings?: IMarketPresetSettingsState;
   enterFrom?: ESwapSource;
 }
@@ -136,6 +141,7 @@ const SwapHeaderContainer = ({
   defaultSwapType,
   showSwapPro,
   hideRightActions,
+  hideTypeTabs,
   marketPresetSettings,
   enterFrom,
 }: ISwapHeaderContainerProps) => {
@@ -388,13 +394,19 @@ const SwapHeaderContainer = ({
       {...(platformEnv.isNativeIOS && { height: 56, zIndex: 1 })}
     >
       <Stack flex={1} minWidth={0}>
-        <ScrollableFilterBar
-          selectedItemId={swapTypeSwitch}
-          itemGap="$1.5"
-          itemPr="$5"
-        >
-          {tabs}
-        </ScrollableFilterBar>
+        {hideTypeTabs ? (
+          <SizableText size="$headingMd" color="$text" numberOfLines={1}>
+            {swapBridgeLabel}
+          </SizableText>
+        ) : (
+          <ScrollableFilterBar
+            selectedItemId={swapTypeSwitch}
+            itemGap="$1.5"
+            itemPr="$5"
+          >
+            {tabs}
+          </ScrollableFilterBar>
+        )}
       </Stack>
       {!hideRightActions ? (
         <SwapHeaderRightActionContainer

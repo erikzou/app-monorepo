@@ -151,9 +151,15 @@ interface ISwapMainLoadProps {
   children?: React.ReactNode;
   swapInitParams?: ISwapInitParams;
   pageType?: EPageType.modal;
+  // Set by surfaces that embed the module inside another page.
+  hideTypeTabs?: boolean;
 }
 
-const SwapMainLoad = ({ swapInitParams, pageType }: ISwapMainLoadProps) => {
+const SwapMainLoad = ({
+  swapInitParams,
+  pageType,
+  hideTypeTabs,
+}: ISwapMainLoadProps) => {
   const { preSwapStepsStart, preSwapBeforeStepActions } = useSwapBuildTx();
   const intl = useIntl();
   const { gtLg } = useMedia();
@@ -1413,6 +1419,7 @@ const SwapMainLoad = ({ swapInitParams, pageType }: ISwapMainLoadProps) => {
               pageType={pageType}
               defaultSwapType={swapInitParams?.swapTabSwitchType}
               showSwapPro={platformEnv.isNative}
+              hideTypeTabs={hideTypeTabs}
               hideRightActions={showDesktopProviderPanel}
               enterFrom={swapInitParams?.swapSource}
               marketPresetSettings={

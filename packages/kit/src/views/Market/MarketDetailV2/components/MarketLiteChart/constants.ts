@@ -1,4 +1,4 @@
-export type IMarketLiteChartRange = '1H' | '1D' | '1W' | '1Y' | 'All';
+export type IMarketLiteChartRange = '1H' | '1D' | '1W' | '1M' | '1Y' | 'All';
 
 export interface IMarketLiteChartRangeItem {
   label: IMarketLiteChartRange;
@@ -18,6 +18,7 @@ export const MARKET_LITE_CHART_RANGES: IMarketLiteChartRangeItem[] = [
   { label: '1H', interval: '1m', seconds: HOUR },
   { label: '1D', interval: '5m', seconds: DAY },
   { label: '1W', interval: '1H', seconds: 7 * DAY },
+  { label: '1M', interval: '4H', seconds: 30 * DAY },
   { label: '1Y', interval: '1D', seconds: 365 * DAY },
   { label: 'All', interval: '1W', seconds: 5 * 365 * DAY },
 ];
