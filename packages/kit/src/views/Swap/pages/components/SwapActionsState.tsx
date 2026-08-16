@@ -60,6 +60,7 @@ import {
   ESwapTabSwitchType,
 } from '@onekeyhq/shared/types/swap/types';
 
+import { useShowTradeReviewDialog } from '../../../Market/MarketDetailV2/components/TradeReviewDialog/TradeReviewDialog';
 import {
   useSwapAddressInfo,
   useSwapRecipientAddressInfo,
@@ -75,6 +76,7 @@ import {
   useSwapQuoteProgressState,
   useSwapSlippagePercentageModeInfo,
 } from '../../hooks/useSwapState';
+// DEMO: the market's stand-in review dialog, shared with the stock panel.
 import { SwapTestIDs } from '../../testIDs';
 import { buildSwapIncognitoSettingsUpdate } from '../../utils/incognitoSettings';
 
@@ -82,6 +84,9 @@ import { SwapIncognitoRecipientInput } from './SwapIncognitoRecipientInput';
 import { PercentageStageOnKeyboard } from './SwapInputContainer';
 
 interface ISwapActionsStateProps {
+  // DEMO: makes the primary button open the market's review dialog instead of
+  // waiting on a quote it will never get.
+  demoReview?: boolean;
   forceQuoteActionLoading?: boolean;
   onPreSwap: () => void;
   onOpenRecipientAddress: () => void;
@@ -92,6 +97,7 @@ interface ISwapActionsStateProps {
 // cspell:ignore ellipsize
 
 const SwapActionsState = ({
+  demoReview,
   forceQuoteActionLoading,
   onPreSwap,
   onOpenRecipientAddress,
@@ -305,13 +311,23 @@ const SwapActionsState = ({
   const shouldShowQuoteActionLoading =
     !swapActionState.isRefreshQuote &&
     (swapActionState.isQuoteActionLoading || Boolean(forceQuoteActionLoading));
-  const isActionDisabled =
-    swapActionState.disabled ||
-    swapActionState.isLoading ||
-    shouldShowQuoteActionLoading ||
-    shouldBlockIncognitoRecipientAction;
+  // DEMO: the embedded market card has no provider behind it, so its button
+  // never leaves the quote-loading state. There it stands in for the step
+  // instead: always pressable, always the review dialog.
+  const isActionDisabled = demoReview
+    ? false
+    : swapActionState.disabled ||
+      swapActionState.isLoading ||
+      shouldShowQuoteActionLoading ||
+      shouldBlockIncognitoRecipientAction;
+
+  const showTradeReview = useShowTradeReviewDialog();
 
   const onActionHandlerBefore = useCallback(async () => {
+    if (demoReview) {
+      showTradeReview();
+      return;
+    }
     if (swapActionState.noConnectWallet) {
       if (platformEnv.isWebDappMode) {
         navigation.pushModal(EModalRoutes.OnboardingModal, {
@@ -363,6 +379,8 @@ const SwapActionsState = ({
     swapFromAddressInfo?.accountInfo?.account?.id,
     swapFromAddressInfo?.address,
     swapToAddressInfo?.address,
+    demoReview,
+    showTradeReview,
   ]);
 
   const incognitoRecipientInputComponent = useMemo(

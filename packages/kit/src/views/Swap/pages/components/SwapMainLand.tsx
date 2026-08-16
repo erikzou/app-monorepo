@@ -109,7 +109,6 @@ import TransactionLossNetworkFeeExceedDialog from '../../components/TransactionL
 import { useMarketPresetSwapOverridesEffect } from '../../hooks/useMarketPresetSwapOverridesEffect';
 import { useSwapAddressInfo } from '../../hooks/useSwapAccount';
 import { useSwapBuildTx } from '../../hooks/useSwapBuiltTx';
-import { useSwapDemoQuote } from '../../hooks/useSwapDemoQuote';
 import { useSwapInit } from '../../hooks/useSwapGlobal';
 import {
   useSwapProAccount,
@@ -157,7 +156,8 @@ interface ISwapMainLoadProps {
   hideKLineButton?: boolean;
   compactActions?: boolean;
   actionIconSize?: number;
-  // DEMO: fills an empty quote so the embedded card can walk the whole flow.
+  // DEMO: the market embed has no provider behind it, so its action button
+  // stands in for the review step instead of waiting on a quote.
   demoQuote?: boolean;
 }
 
@@ -174,7 +174,6 @@ const SwapMainLoad = ({
   const intl = useIntl();
   const { gtLg } = useMedia();
   const { fetchLoading } = useSwapInit(swapInitParams);
-  useSwapDemoQuote(demoQuote);
   const navigation =
     useAppNavigation<IPageNavigationProp<IModalSwapParamList>>();
   const [quoteResult] = useSwapQuoteCurrentSelectAtom();
@@ -1275,6 +1274,7 @@ const SwapMainLoad = ({
     if (!platformEnv.isNative) {
       return (
         <SwapOldSwapBridgeLimitContainer
+          demoReview={demoQuote}
           pageType={pageType}
           storeName={storeName}
           onSelectToken={onSelectToken}
@@ -1359,6 +1359,7 @@ const SwapMainLoad = ({
     swapInitParams?.swapTabSwitchType,
     swapInitParams?.swapSource,
     gtLg,
+    demoQuote,
   ]);
 
   // Desktop: show provider panel on the right side, need wider layout

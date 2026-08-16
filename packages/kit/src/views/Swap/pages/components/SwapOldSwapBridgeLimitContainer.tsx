@@ -47,6 +47,8 @@ import SwapTipsContainer from './SwapTipsContainer';
 import type { KeyboardAwareScrollViewRef } from 'react-native-keyboard-controller';
 
 interface ISwapOldSwapBridgeLimitContainerProps {
+  // DEMO: forwarded to the action button, see SwapActionsState.
+  demoReview?: boolean;
   pageType?: EPageType;
   storeName: EJotaiContextStoreNames;
   onSelectToken: (type: ESwapDirectionType) => void;
@@ -139,6 +141,7 @@ const SwapOldSwapBridgeLimitContainer = ({
   fromTokenAmountValue,
   swapRecentTokenPairs,
   headerContent,
+  demoReview,
 }: ISwapOldSwapBridgeLimitContainerProps) => {
   const scrollViewRef = useRef<KeyboardAwareScrollViewRef>(null);
   const bottomOffset = KEYBOARD_AWARE_SCROLL_BOTTOM_OFFSET + 60;
@@ -242,6 +245,7 @@ const SwapOldSwapBridgeLimitContainer = ({
         <LimitInfoContainer />
       ) : null}
       <SwapActionsState
+        demoReview={demoReview}
         onPreSwap={onPreSwap}
         onOpenRecipientAddress={onToAnotherAddressModal}
         onSelectPercentageStage={onSelectPercentageStage}
@@ -305,6 +309,7 @@ const SwapOldSwapBridgeLimitContainer = ({
           onBalanceMaxPress={onBalanceMaxPress}
         />
         <SwapActionsState
+          demoReview={demoReview}
           onPreSwap={onPreSwap}
           onOpenRecipientAddress={onToAnotherAddressModal}
           onSelectPercentageStage={onSelectPercentageStage}
