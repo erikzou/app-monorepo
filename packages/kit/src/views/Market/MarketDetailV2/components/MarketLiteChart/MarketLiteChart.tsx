@@ -23,12 +23,18 @@ export function MarketLiteChart({
   range,
   height,
   symbol,
+  onHoverChange,
 }: {
   networkId: string;
   tokenAddress: string;
   range: IMarketLiteChartRange;
   height: number;
   symbol?: string;
+  // Reports the scrubbed point so the header above can follow the crosshair.
+  // Called with undefined when the pointer leaves the plot.
+  onHoverChange?: (
+    point: { time: number; price: number; changePercent?: string } | undefined,
+  ) => void;
 }) {
   const theme = useTheme();
   const { data, isLoading } = useMarketLiteChartData({
@@ -59,6 +65,32 @@ export function MarketLiteChart({
         formatterOptions: { currency: '$' },
       }) as string,
     [],
+  );
+
+  // The scrubbed change is measured against the first point of the range, so
+  // the header reads "what this range has done up to the point under the
+  // cursor" rather than switching to an unrelated 24h figure.
+  const handleHover = useCallback(
+    (point: { time?: number; price?: number; x?: number; y?: number }) => {
+      if (!onHoverChange) {
+        return;
+      }
+      if (point.time === undefined || point.price === undefined) {
+        onHoverChange(undefined);
+        return;
+      }
+      const base = data[0]?.[1];
+      const changePercent =
+        base && Number.isFinite(base) && base !== 0
+          ? (((point.price - base) / base) * 100).toString()
+          : undefined;
+      onHoverChange({
+        time: point.time,
+        price: point.price,
+        changePercent,
+      });
+    },
+    [data, onHoverChange],
   );
 
   if (isLoading && data.length === 0) {
@@ -101,6 +133,7 @@ export function MarketLiteChart({
         priceFormatter={priceFormatter}
         fontSize={11}
         useTimeScaleTickMarkWithoutUnit
+        onHover={onHoverChange ? handleHover : undefined}
       />
     </YStack>
   );

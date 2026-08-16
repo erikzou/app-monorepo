@@ -163,12 +163,125 @@ function StockVariantRow({
  * so this picks which tokenized variant the trade panel acts on; selecting one
  * re-routes the page to that variant's token.
  */
-export function StockVariantSelector({
+/**
+ * The tradability read the notice needs, without the dropdown's own fetches.
+ */
+function useStockVariantTradability({
   instruments,
   selectedInstrument,
 }: {
   instruments: IMarketStockInstrument[];
   selectedInstrument?: IMarketStockInstrument;
+}) {
+  const activeInstrument = selectedInstrument ?? instruments[0];
+  const usMarketStatus = useUSMarketStatus();
+  const isUsMarketOpen = usMarketStatus?.unavailable
+    ? undefined
+    : usMarketStatus?.open;
+  const isActiveTradable = activeInstrument
+    ? isVariantTradableNow({ instrument: activeInstrument, isUsMarketOpen })
+    : true;
+  const alternative = useMemo(
+    () =>
+      isActiveTradable
+        ? undefined
+        : findTradableAlternative({
+            instruments,
+            excludeInstrumentId: activeInstrument?.instrumentId,
+            isUsMarketOpen,
+          }),
+    [
+      activeInstrument?.instrumentId,
+      instruments,
+      isActiveTradable,
+      isUsMarketOpen,
+    ],
+  );
+  return { isActiveTradable, alternative };
+}
+
+/**
+ * The closed-market banner as its own block. It is full width and its action
+ * cannot shrink, so it must not live inside the flexed column that holds the
+ * variant trigger — there it pushes the row wider than the panel.
+ */
+export function StockVariantClosedNotice({
+  instruments,
+  selectedInstrument,
+}: {
+  instruments: IMarketStockInstrument[];
+  selectedInstrument?: IMarketStockInstrument;
+}) {
+  const tokenDetailActions = useTokenDetailActions();
+  const { isActiveTradable, alternative } = useStockVariantTradability({
+    instruments,
+    selectedInstrument,
+  });
+  const handleSwitchToAlternative = useCallback(() => {
+    if (!alternative) {
+      return;
+    }
+    navigateToMarketTokenDetail(
+      {
+        address: alternative.contractAddress,
+        networkId: alternative.networkId,
+        isNative: false,
+      },
+      { tokenDetailActions },
+    );
+  }, [alternative, tokenDetailActions]);
+
+  if (isActiveTradable || instruments.length === 0) {
+    return null;
+  }
+
+  return (
+    <XStack
+      px="$3"
+      py="$2"
+      gap="$2"
+      alignItems="center"
+      flexWrap="wrap"
+      borderRadius="$3"
+      borderCurve="continuous"
+      bg="$bgCautionSubdued"
+    >
+      {/* TODO(i18n): demo copy, hardcoded English. */}
+      <SizableText
+        size="$bodySm"
+        color="$textCaution"
+        flexGrow={1}
+        flexShrink={1}
+        flexBasis={0}
+        minWidth={140}
+      >
+        US market closed — this token is not trading right now.
+      </SizableText>
+      {alternative ? (
+        <Button
+          testID={MarketTestIDs.stockVariantSwitchButton}
+          size="small"
+          variant="tertiary"
+          onPress={handleSwitchToAlternative}
+        >
+          {`Switch to ${alternative.tokenSymbol}`}
+        </Button>
+      ) : null}
+    </XStack>
+  );
+}
+
+export function StockVariantSelector({
+  instruments,
+  selectedInstrument,
+  hideClosedNotice = false,
+}: {
+  instruments: IMarketStockInstrument[];
+  selectedInstrument?: IMarketStockInstrument;
+  // The trade panel puts the trigger in a flexed column next to the price, and
+  // the notice is a full-width block; hosts that lay it out themselves render
+  // StockVariantClosedNotice as a sibling instead.
+  hideClosedNotice?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   // Fetched only while the dropdown is open — see the hook's own note.
@@ -334,32 +447,33 @@ export function StockVariantSelector({
     alignSelf: 'flex-start',
   } as const;
 
-  const closedNotice = isActiveTradable ? null : (
-    <XStack
-      mt="$2"
-      px="$3"
-      py="$2"
-      gap="$2"
-      alignItems="center"
-      borderRadius="$3"
-      borderCurve="continuous"
-      bg="$bgCautionSubdued"
-    >
-      <SizableText size="$bodySm" color="$textCaution" flex={1} minWidth={0}>
-        US market closed — this token is not trading right now.
-      </SizableText>
-      {alternative ? (
-        <Button
-          testID={MarketTestIDs.stockVariantSwitchButton}
-          size="small"
-          variant="tertiary"
-          onPress={handleSwitchToAlternative}
-        >
-          {`Switch to ${alternative.tokenSymbol}`}
-        </Button>
-      ) : null}
-    </XStack>
-  );
+  const closedNotice =
+    isActiveTradable || hideClosedNotice ? null : (
+      <XStack
+        mt="$2"
+        px="$3"
+        py="$2"
+        gap="$2"
+        alignItems="center"
+        borderRadius="$3"
+        borderCurve="continuous"
+        bg="$bgCautionSubdued"
+      >
+        <SizableText size="$bodySm" color="$textCaution" flex={1} minWidth={0}>
+          US market closed — this token is not trading right now.
+        </SizableText>
+        {alternative ? (
+          <Button
+            testID={MarketTestIDs.stockVariantSwitchButton}
+            size="small"
+            variant="tertiary"
+            onPress={handleSwitchToAlternative}
+          >
+            {`Switch to ${alternative.tokenSymbol}`}
+          </Button>
+        ) : null}
+      </XStack>
+    );
 
   if (!isSelectable) {
     return (

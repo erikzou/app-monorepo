@@ -78,6 +78,7 @@ export function MarketChartPriceBar({
   priceSource = 'share',
   onPriceSourceChange,
   showPriceChangeValue = true,
+  timestampLabel,
   trailingSlot,
 }: {
   price?: string;
@@ -88,6 +89,9 @@ export function MarketChartPriceBar({
   // Stocks pair the percentage with the absolute move; the crypto assembly
   // shows the percentage alone.
   showPriceChangeValue?: boolean;
+  // Shown beside the change while the chart is being scrubbed, so the reader
+  // knows the figures above belong to a point in the past rather than to now.
+  timestampLabel?: string;
   // Rendered at the trailing edge of the row, opposite the price.
   trailingSlot?: ReactNode;
 }) {
@@ -155,6 +159,11 @@ export function MarketChartPriceBar({
                 </SizableText>
               ) : null}
             </XStack>
+            {timestampLabel ? (
+              <SizableText size="$bodyLgMedium" color="$textSubdued">
+                {timestampLabel}
+              </SizableText>
+            ) : null}
           </XStack>
         </XStack>
         <StockMarketStatusBadge stock={stock} size="dot" />

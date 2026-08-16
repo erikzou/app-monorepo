@@ -82,6 +82,17 @@ const MARKET_DETAIL_LAYOUT = {
   infoTabsHeight: 480,
 } as const;
 
+// Scrubbing the Lite chart retitles the header, so the timestamp has to read
+// as a moment rather than a bare number. Locale-aware, no seconds.
+function formatChartHoverTime(timeInSeconds: number) {
+  return new Date(timeInSeconds * 1000).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 const SCROLL_CONTAINER_STYLE = { overflowY: 'auto' } as const;
 const MARKET_CHART_FULLSCREEN_STYLE = {
   position: 'fixed',
@@ -279,6 +290,9 @@ function DesktopLayoutContent({
     (source: IMarketPriceSource) => setPriceSource({ source }),
     [setPriceSource],
   );
+  const [hoveredChartPoint, setHoveredChartPoint] = useState<
+    { time: number; price: number; changePercent?: string } | undefined
+  >(undefined);
   const [liteChartRange, setLiteChartRange] = useState<IMarketLiteChartRange>(
     MARKET_LITE_CHART_DEFAULT_RANGE,
   );
@@ -492,9 +506,22 @@ function DesktopLayoutContent({
         <YStack flex={1} minWidth={0}>
           {showChartModeSwitch ? (
             <MarketChartPriceBar
-              price={stockPriceForSource ?? tokenDetail?.price}
+              price={
+                hoveredChartPoint
+                  ? String(hoveredChartPoint.price)
+                  : (stockPriceForSource ?? tokenDetail?.price)
+              }
               priceChangePercent={
-                stockPriceChangeForSource ?? tokenDetail?.priceChange24hPercent
+                hoveredChartPoint?.changePercent ??
+                (hoveredChartPoint
+                  ? undefined
+                  : (stockPriceChangeForSource ??
+                    tokenDetail?.priceChange24hPercent))
+              }
+              timestampLabel={
+                hoveredChartPoint
+                  ? formatChartHoverTime(hoveredChartPoint.time)
+                  : undefined
               }
               stock={tokenDetail?.stock}
               // Stocks pair the percentage with the absolute move and offer the
@@ -550,6 +577,7 @@ function DesktopLayoutContent({
                   range={liteChartRange}
                   height={chartHeight - MARKET_CHART_TOOLBAR_HEIGHT}
                   symbol={isTopCoinPage ? tokenDetail?.symbol : undefined}
+                  onHoverChange={setHoveredChartPoint}
                 />
               </>
             ) : (

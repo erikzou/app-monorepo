@@ -9,6 +9,7 @@ import {
   Stack,
   Toast,
   XStack,
+  YStack,
   useInPageDialog,
   useIsOverlayPage,
 } from '@onekeyhq/components';
@@ -38,7 +39,10 @@ import {
 
 import { useMarketStockEntity } from '../../hooks/useMarketStockEntity';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
-import { StockVariantSelector } from '../StockVariantSelector/StockVariantSelector';
+import {
+  StockVariantClosedNotice,
+  StockVariantSelector,
+} from '../StockVariantSelector/StockVariantSelector';
 
 import {
   EMarketPresetTradeSide,
@@ -725,37 +729,48 @@ export function SwapPanelWrap({
       hideMarketPresetButtons={isStockEntity}
       orderHeaderSlot={
         isStockEntity ? (
-          <XStack gap="$2" alignItems="center">
-            <Stack flex={1} minWidth={0}>
-              <StockVariantSelector
-                instruments={stockInstruments}
-                selectedInstrument={selectedStockInstrument}
-              />
-            </Stack>
-            {/* Chart button: same toggle as the chart header's Share/Token
+          <YStack gap="$2">
+            <XStack gap="$2" alignItems="center">
+              <Stack flex={1} minWidth={0}>
+                <StockVariantSelector
+                  hideClosedNotice
+                  instruments={stockInstruments}
+                  selectedInstrument={selectedStockInstrument}
+                />
+              </Stack>
+              {/* Chart button: same toggle as the chart header's Share/Token
                 Price switch, so both stay in sync through the atom. */}
-            <Stack
-              testID="market-stock-price-source-chart"
-              w="$8"
-              h="$8"
-              borderRadius="$2"
-              borderCurve="continuous"
-              alignItems="center"
-              justifyContent="center"
-              cursor="pointer"
-              userSelect="none"
-              bg={isTokenPriceSource ? '$bgStrong' : '$transparent'}
-              hoverStyle={{ bg: isTokenPriceSource ? '$bgStrong' : '$bgHover' }}
-              pressStyle={{ bg: '$bgActive' }}
-              onPress={handleTogglePriceSource}
-            >
-              <Icon
-                name="TradingViewCandlesOutline"
-                size="$5"
-                color={isTokenPriceSource ? '$icon' : '$iconSubdued'}
-              />
-            </Stack>
-          </XStack>
+              <Stack
+                testID="market-stock-price-source-chart"
+                w="$8"
+                h="$8"
+                borderRadius="$2"
+                borderCurve="continuous"
+                alignItems="center"
+                justifyContent="center"
+                cursor="pointer"
+                userSelect="none"
+                bg={isTokenPriceSource ? '$bgStrong' : '$transparent'}
+                hoverStyle={{
+                  bg: isTokenPriceSource ? '$bgStrong' : '$bgHover',
+                }}
+                pressStyle={{ bg: '$bgActive' }}
+                onPress={handleTogglePriceSource}
+              >
+                <Icon
+                  name="TradingViewCandlesOutline"
+                  size="$5"
+                  color={isTokenPriceSource ? '$icon' : '$iconSubdued'}
+                />
+              </Stack>
+            </XStack>
+            {/* Full width, below the row: the banner's action does not shrink,
+                so inside the trigger's column it would widen the panel. */}
+            <StockVariantClosedNotice
+              instruments={stockInstruments}
+              selectedInstrument={selectedStockInstrument}
+            />
+          </YStack>
         ) : undefined
       }
       activeAccount={activeAccount}
