@@ -346,6 +346,9 @@ function MarketWatchlistTokenList({
 
   return (
     <MarketTokenListBase
+      // Demo alignment: the watchlist keeps its own columns but stands on the
+      // same table grid as Stocks.
+      redesignedTableGeometry
       testID={MarketTestIDs.watchList}
       onItemPress={onItemPress}
       toolbar={toolbar || (hidePerps ? undefined : categorySelector)}

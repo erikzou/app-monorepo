@@ -99,17 +99,17 @@ function MarketWatchlistCategorySelectorDesktop({
   } = useNetworkFilterScroll();
 
   return (
+    // Demo alignment: same box as the Stocks category bar — its own 20/16/20
+    // padding and no frame, so the chips sit on the page rather than in a
+    // control of their own.
     <XStack
       position="relative"
-      p="$1"
-      gap="$1"
-      mt="$3"
-      mb="$2"
+      px="$5"
+      pt="$4"
+      pb="$5"
+      gap="$2.5"
       maxWidth="100%"
       overflow="hidden"
-      borderWidth={1}
-      borderColor="$neutral4"
-      borderRadius="$3"
     >
       <XStack flex={1} position="relative">
         <ScrollView

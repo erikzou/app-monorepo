@@ -16,6 +16,11 @@ import platformEnv from '@onekeyhq/shared/src/platformEnv';
 
 import { usePerpsNavigation } from '../../../hooks/usePerpsNavigation';
 import { DesktopStickyHeaderContext } from '../../layouts/DesktopStickyHeaderContext';
+import {
+  MARKET_HOME_TABLE_HEADER_HEIGHT,
+  MARKET_HOME_TABLE_PADDING,
+  MARKET_HOME_TABLE_ROW_HEIGHT,
+} from '../../utils/marketHomeLayout';
 import { StickyHeaderPortal } from '../StickyHeaderPortal';
 
 import { useMarketPerpsTokenList } from './hooks/useMarketPerpsTokenList';
@@ -24,6 +29,14 @@ import { useSyncedMarketPerpsCategory } from './hooks/useSyncedMarketPerpsCatego
 import { MarketPerpsCategorySelector } from './MarketPerpsCategorySelector';
 
 import type { IMarketPerpsToken } from './hooks/useMarketPerpsTokenList';
+
+// Demo alignment with the Stocks table (Figma 25473:87731): same 36 header,
+// same 72 rows. Contents are untouched.
+const PERPS_ROW_PROPS = { minHeight: MARKET_HOME_TABLE_ROW_HEIGHT } as const;
+const PERPS_HEADER_ROW_PROPS = {
+  minHeight: MARKET_HOME_TABLE_HEADER_HEIGHT,
+  alignItems: 'center',
+} as const;
 
 type IMarketPerpsTokenListProps = {
   tabIntegrated?: boolean;
@@ -107,11 +120,16 @@ function MarketPerpsTokenListImpl({
     if (!useDesktopPortal || !isTabFocused || !stickyPortalTarget) return null;
     return (
       <StickyHeaderPortal target={stickyPortalTarget}>
-        <YStack bg="$bgApp" px="$4">
-          <Stack width="100%" mb="$3">
-            {CategorySelector}
+        <YStack bg="$bgApp">
+          {/* Demo alignment with Stocks: the category strip carries its own
+              padding and the header row sits on the table's own inset. */}
+          <Stack width="100%">{CategorySelector}</Stack>
+          <Stack px={MARKET_HOME_TABLE_PADDING}>
+            <Table.HeaderRow
+              columns={perpsColumns}
+              headerRowProps={PERPS_HEADER_ROW_PROPS}
+            />
           </Stack>
-          <Table.HeaderRow columns={perpsColumns} />
         </YStack>
       </StickyHeaderPortal>
     );
@@ -158,7 +176,7 @@ function MarketPerpsTokenListImpl({
             <Table.Skeleton
               columns={perpsColumns}
               count={20}
-              rowProps={{ minHeight: '$14' }}
+              rowProps={PERPS_ROW_PROPS}
             />
           ) : (
             <Table<IMarketPerpsToken>
@@ -170,7 +188,9 @@ function MarketPerpsTokenListImpl({
               columns={perpsColumns}
               dataSource={tokens}
               keyExtractor={(item) => item.name}
-              estimatedItemSize="$14"
+              estimatedItemSize={MARKET_HOME_TABLE_ROW_HEIGHT}
+              rowProps={PERPS_ROW_PROPS}
+              headerRowProps={PERPS_HEADER_ROW_PROPS}
               extraData={hasRealTimeData}
               TableEmptyComponent={TableEmptyComponent}
               TableFooterComponent={TableFooterComponent}

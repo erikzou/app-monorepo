@@ -282,6 +282,9 @@ type IMarketTokenListBaseProps = {
    * local sort over the loaded pool.
    */
   isTrendingList?: boolean;
+  // Opts a list into the redesigned table geometry (36 header / 72 rows)
+  // without taking that list's columns.
+  redesignedTableGeometry?: boolean;
   /**
    * Controlled local sort. Passed by the Trending tab so the toolbar shortcuts
    * and the column headers write one state; left out everywhere else, where the
@@ -351,6 +354,7 @@ function MarketTokenListBase({
   testID,
   isStockList,
   isTrendingList,
+  redesignedTableGeometry,
   localSort,
   onLocalSortChange,
 }: IMarketTokenListBaseProps) {
@@ -911,7 +915,12 @@ function MarketTokenListBase({
   const stickyPortalTarget = stickyHeaderCtx?.portalTarget ?? null;
   const useDesktopPortal = webTabIntegrated && !!stickyPortalTarget && !md;
 
-  const usesRedesignedTableGeometry = Boolean(isStockList || isTrendingList);
+  // Geometry only — which columns a list shows is decided elsewhere. The
+  // watchlist opts in explicitly so every desktop table in Market stands on the
+  // same 36/72 grid without inheriting the stock or trending column set.
+  const usesRedesignedTableGeometry = Boolean(
+    isStockList || isTrendingList || redesignedTableGeometry,
+  );
   const tableHeaderRowProps = useMemo<IXStackProps | undefined>(
     () =>
       usesRedesignedTableGeometry
