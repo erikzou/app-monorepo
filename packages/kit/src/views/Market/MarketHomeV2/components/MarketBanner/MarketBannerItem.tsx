@@ -5,6 +5,7 @@ import { StyleSheet } from 'react-native';
 import {
   Icon,
   Image,
+  NumberSizeableText,
   SizableText,
   Stack,
   XStack,
@@ -19,31 +20,15 @@ import {
 
 import { MarketTestIDs } from '../../testIDs';
 
+import { useMarketBannerFocusToken } from './useMarketBannerFocusToken';
+
+import type { IMarketBannerFocusToken } from './useMarketBannerFocusToken';
+
 type IMarketBannerItemProps = {
   item: IMarketBannerItem;
   isSmallScreen?: boolean;
   onPress?: (item: IMarketBannerItem) => void;
 };
-
-function convertThemeToken(token: string, defaultValue: string): string {
-  // Convert "prefix/suffix" format to "$prefixSuffix" Tamagui token
-  // e.g., "bg/subdued" -> "$bgSubdued", "text/success" -> "$textSuccess"
-  // Also handles hyphenated suffixes: "bg/info-subdued" -> "$bgInfoSubdued"
-  if (!token) {
-    return defaultValue;
-  }
-  const parts = token.split('/');
-  if (parts.length === 2) {
-    const [prefix, suffix] = parts;
-    // Convert hyphenated suffix to camelCase: "info-subdued" -> "InfoSubdued"
-    const camelCaseSuffix = suffix
-      .split('-')
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join('');
-    return `$${prefix}${camelCaseSuffix}`;
-  }
-  return token.startsWith('$') ? token : `$${token}`;
-}
 
 function BannerTokenGroupComponent({ tokenLogos }: { tokenLogos?: string[] }) {
   if (!tokenLogos?.length) return null;
@@ -87,18 +72,88 @@ function BannerTokenGroupComponent({ tokenLogos }: { tokenLogos?: string[] }) {
 
 const BannerTokenGroup = memo(BannerTokenGroupComponent);
 
+/**
+ * The topic's talking point (Figma 25756:29808): one token, named, with its
+ * 24h move. The three logos below say what the topic contains; this says why
+ * it is worth a look today.
+ */
+function BannerFocusTokenComponent({
+  focusToken,
+}: {
+  focusToken?: IMarketBannerFocusToken;
+}) {
+  if (!focusToken?.symbol) {
+    return null;
+  }
+  const changePercent = focusToken.priceChange24hPercent;
+  const isDown = Number(changePercent) < 0;
+  return (
+    <XStack gap="$1.5" alignItems="center" width="100%" minWidth={0}>
+      <Stack
+        w="$6"
+        h="$6"
+        borderRadius="$full"
+        borderWidth={StyleSheet.hairlineWidth}
+        borderColor="$borderSubdued"
+        bg="$bgStrong"
+        overflow="hidden"
+        flexShrink={0}
+      >
+        <Image
+          size="$6"
+          borderRadius="$full"
+          source={{ uri: focusToken.logoUrl }}
+          fallback={
+            <Stack
+              w="$6"
+              h="$6"
+              alignItems="center"
+              justifyContent="center"
+              bg="$bgStrong"
+            >
+              <Icon size="$4" name="CryptoCoinOutline" color="$iconSubdued" />
+            </Stack>
+          }
+        />
+      </Stack>
+      <XStack
+        flex={1}
+        minWidth={0}
+        gap="$1.5"
+        alignItems="baseline"
+        overflow="hidden"
+      >
+        <SizableText size="$headingSm" color="$text" numberOfLines={1}>
+          {focusToken.symbol}
+        </SizableText>
+        {changePercent === undefined ? null : (
+          <NumberSizeableText
+            size="$bodySmMedium"
+            color={isDown ? '$textCritical' : '$textSuccess'}
+            formatter="priceChange"
+            formatterOptions={{ showPlusMinusSigns: true }}
+            numberOfLines={1}
+          >
+            {changePercent}
+          </NumberSizeableText>
+        )}
+      </XStack>
+    </XStack>
+  );
+}
+
+const BannerFocusToken = memo(BannerFocusTokenComponent);
+
 function MarketBannerItemComponent({
   item,
   isSmallScreen,
   onPress,
 }: IMarketBannerItemProps) {
-  const { title, description, backgroundColor, tokenLogos } = item;
+  const { title, tokenLogos } = item;
   const isPerps = item.type === EMarketBannerType.Perps;
-  const bgColor = convertThemeToken(backgroundColor, '$bgSubdued');
-  const descriptionColor = convertThemeToken(
-    description?.fontColor ?? '',
-    '$textSubdued',
-  );
+  const focusToken = useMarketBannerFocusToken({
+    tokenListId: item.tokenListId,
+  });
 
   const handlePress = useCallback(() => {
     onPress?.(item);
@@ -107,34 +162,36 @@ function MarketBannerItemComponent({
   return (
     <Stack
       flexDirection="column"
-      bg={bgColor}
+      // One background for every topic (Figma 25756:29808). The per-topic tint
+      // the payload carries is ignored: five differently coloured cards read as
+      // five states rather than one strip.
+      bg="$bgSubdued"
       borderRadius="$3"
+      borderCurve="continuous"
       px="$3"
       py="$3.5"
       width="$32"
       alignItems="flex-start"
-      justifyContent="space-between"
+      justifyContent="center"
       onPress={handlePress}
       animation="quick"
       animateOnly={ANIMATE_ONLY_BORDER_COLOR}
       borderWidth={StyleSheet.hairlineWidth}
-      borderColor="$neutral3"
+      borderColor="$borderDisabled"
       hoverStyle={{ borderColor: '$neutral4' }}
       pressStyle={{ borderColor: '$neutral5' }}
       h={118}
       userSelect="none"
       $gtMd={{
-        flexDirection: 'row',
         flex: 1,
         flexBasis: 0,
         minWidth: 180,
         maxWidth: 256,
         width: 'auto',
         h: 'auto',
-        minHeight: 96,
+        minHeight: 120,
         p: '$4',
         gap: '$3',
-        alignItems: 'center',
       }}
     >
       <YStack
@@ -143,11 +200,12 @@ function MarketBannerItemComponent({
         flex={1}
         minWidth={0}
         width="100%"
-        $gtMd={{ flex: 1, width: 'auto' }}
+        $gtMd={{ flex: 0, width: '100%', gap: '$3' }}
       >
         <XStack alignItems="flex-start" gap="$1" minWidth={0} maxWidth="100%">
           <SizableText
-            size="$headingSm"
+            size="$bodyMdMedium"
+            color="$textSubdued"
             numberOfLines={isPerps && !isSmallScreen ? 1 : 2}
             flexShrink={1}
             minWidth={0}
@@ -161,11 +219,7 @@ function MarketBannerItemComponent({
             </Stack>
           ) : null}
         </XStack>
-        {description ? (
-          <SizableText size="$bodyMdMedium" color={descriptionColor}>
-            {description.text}
-          </SizableText>
-        ) : null}
+        <BannerFocusToken focusToken={focusToken} />
       </YStack>
       <BannerTokenGroup tokenLogos={tokenLogos} />
     </Stack>
