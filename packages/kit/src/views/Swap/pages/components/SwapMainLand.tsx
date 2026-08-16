@@ -156,6 +156,7 @@ interface ISwapMainLoadProps {
   hideTypeTabs?: boolean;
   hideKLineButton?: boolean;
   compactActions?: boolean;
+  actionIconSize?: number;
   // DEMO: fills an empty quote so the embedded card can walk the whole flow.
   demoQuote?: boolean;
 }
@@ -166,6 +167,7 @@ const SwapMainLoad = ({
   hideTypeTabs,
   hideKLineButton,
   compactActions,
+  actionIconSize,
   demoQuote,
 }: ISwapMainLoadProps) => {
   const { preSwapStepsStart, preSwapBeforeStepActions } = useSwapBuildTx();
@@ -1431,6 +1433,7 @@ const SwapMainLoad = ({
               hideTypeTabs={hideTypeTabs}
               hideKLineButton={hideKLineButton}
               compactActions={compactActions}
+              actionIconSize={actionIconSize}
               hideRightActions={showDesktopProviderPanel}
               enterFrom={swapInitParams?.swapSource}
               marketPresetSettings={

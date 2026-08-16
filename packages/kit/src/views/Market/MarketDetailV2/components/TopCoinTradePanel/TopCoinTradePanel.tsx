@@ -13,6 +13,10 @@ import type { ISwapToken } from '@onekeyhq/shared/types/swap/types';
 // cross-chain default (USDC on Ethereum).
 const ALL_NETWORK_DEFAULT_PAIR_ID = 'onekeyall--0';
 
+// Figma 25703:19314 — the card's header actions are 20px glyphs, not the
+// module's default compact 24.
+const MARKET_TRADE_HEADER_ICON_SIZE = 20;
+
 /**
  * Seeding only the buy side leaves the pay box empty, because the module's
  * cold-start hydration bails as soon as either side is already set. So pick the
@@ -85,6 +89,7 @@ export function TopCoinTradePanel({ swapToken }: { swapToken?: ISwapToken }) {
         hideTypeTabs
         hideKLineButton
         compactActions={false}
+        actionIconSize={MARKET_TRADE_HEADER_ICON_SIZE}
         demoQuote
         pageType={EPageType.modal}
         swapInitParams={swapInitParams}

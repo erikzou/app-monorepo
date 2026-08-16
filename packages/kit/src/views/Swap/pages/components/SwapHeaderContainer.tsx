@@ -134,6 +134,9 @@ interface ISwapHeaderContainerProps {
   // narrow column but its header follows the desktop spec (Figma 25703:19314):
   // 20px glyphs in a 32px round hit area, 16 apart.
   compactActions?: boolean;
+  // Explicit glyph/hit-area sizing for embedders that follow a spec of their
+  // own rather than the layout-derived compact set.
+  actionIconSize?: number;
   marketPresetSettings?: IMarketPresetSettingsState;
   enterFrom?: ESwapSource;
 }
@@ -149,6 +152,7 @@ const SwapHeaderContainer = ({
   hideTypeTabs,
   hideKLineButton,
   compactActions,
+  actionIconSize,
   marketPresetSettings,
   enterFrom,
 }: ISwapHeaderContainerProps) => {
@@ -420,6 +424,7 @@ const SwapHeaderContainer = ({
           pageType={pageType}
           marketPresetSettings={marketPresetSettings}
           hideKLineButton={hideKLineButton}
+          iconSize={actionIconSize}
           compact={
             compactActions ??
             Boolean(isCompactLayout && !useDesktopModalHeaderActions)
