@@ -91,10 +91,11 @@ function MarketBannerListComponent() {
     return null;
   }
 
-  const bannerItems = bannerList.map((item) => (
+  const bannerItems = bannerList.map((item, index) => (
     <MarketBannerItem
       key={item._id}
       item={item}
+      index={index}
       isSmallScreen={isSmallScreen}
       onPress={toMarketBannerDetail}
     />

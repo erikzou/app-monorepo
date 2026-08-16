@@ -12,7 +12,6 @@ import {
   YStack,
 } from '@onekeyhq/components';
 import { ANIMATE_ONLY_BORDER_COLOR } from '@onekeyhq/components/src/utils/animationConstants';
-import { LeverageBadge } from '@onekeyhq/kit/src/views/Market/components/PerpsBadges';
 import {
   EMarketBannerType,
   type IMarketBannerItem,
@@ -26,6 +25,8 @@ import type { IMarketBannerFocusToken } from './useMarketBannerFocusToken';
 
 type IMarketBannerItemProps = {
   item: IMarketBannerItem;
+  // Position in the strip; only used to spread the focus-token fallback.
+  index?: number;
   isSmallScreen?: boolean;
   onPress?: (item: IMarketBannerItem) => void;
 };
@@ -123,7 +124,16 @@ function BannerFocusTokenComponent({
         alignItems="baseline"
         overflow="hidden"
       >
-        <SizableText size="$headingSm" color="$text" numberOfLines={1}>
+        {/* The number is the point of this row, so the symbol is what gives
+            way when the card is narrow. */}
+        <SizableText
+          size="$headingSm"
+          color="$text"
+          numberOfLines={1}
+          flexShrink={1}
+          minWidth={0}
+          ellipsizeMode="tail"
+        >
           {focusToken.symbol}
         </SizableText>
         {changePercent === undefined ? null : (
@@ -133,6 +143,7 @@ function BannerFocusTokenComponent({
             formatter="priceChange"
             formatterOptions={{ showPlusMinusSigns: true }}
             numberOfLines={1}
+            flexShrink={0}
           >
             {changePercent}
           </NumberSizeableText>
@@ -146,6 +157,7 @@ const BannerFocusToken = memo(BannerFocusTokenComponent);
 
 function MarketBannerItemComponent({
   item,
+  index,
   isSmallScreen,
   onPress,
 }: IMarketBannerItemProps) {
@@ -153,6 +165,7 @@ function MarketBannerItemComponent({
   const isPerps = item.type === EMarketBannerType.Perps;
   const focusToken = useMarketBannerFocusToken({
     tokenListId: item.tokenListId,
+    index,
   });
 
   const handlePress = useCallback(() => {
@@ -213,11 +226,6 @@ function MarketBannerItemComponent({
           >
             {title}
           </SizableText>
-          {isPerps ? (
-            <Stack flexShrink={0}>
-              <LeverageBadge leverage={10} />
-            </Stack>
-          ) : null}
         </XStack>
         <BannerFocusToken focusToken={focusToken} />
       </YStack>
