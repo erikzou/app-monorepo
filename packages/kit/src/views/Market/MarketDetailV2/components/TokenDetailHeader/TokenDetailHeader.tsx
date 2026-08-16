@@ -32,6 +32,7 @@ export function TokenDetailHeader({
   showFavoriteButton = true,
   stockEntityIdentity,
   isStockLayout = false,
+  isTopCoinLayout = false,
   containerProps,
 }: {
   showStats?: boolean;
@@ -41,6 +42,9 @@ export function TokenDetailHeader({
   // True on both stock layers (entity page and variant page): the contract,
   // audit and social links all live in the trust block there.
   isStockLayout?: boolean;
+  // The top-coin assembly reuses the stock header shape with a different
+  // switcher and its own badges.
+  isTopCoinLayout?: boolean;
   containerProps?: ComponentProps<typeof XStack>;
 }) {
   const { lg, md } = useMedia();
@@ -116,6 +120,7 @@ export function TokenDetailHeader({
         showFavoriteButton={showFavoriteButton}
         stockEntityIdentity={stockEntityIdentity}
         hideContractAddress={isStockLayout}
+        isTopCoinLayout={isTopCoinLayout}
       />
 
       {showHeaderRight ? (

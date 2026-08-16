@@ -5,6 +5,7 @@ import { usePromiseResult } from '@onekeyhq/kit/src/hooks/usePromiseResult';
 import type { IMarketTokenChart } from '@onekeyhq/shared/types/market';
 
 import { MARKET_LITE_CHART_RANGES } from './constants';
+import { fetchOkxDemoKline, getOkxDemoInstId } from './okxDemoKline';
 
 import type { IMarketLiteChartRange } from './constants';
 
@@ -14,10 +15,13 @@ export function useMarketLiteChartData({
   networkId,
   tokenAddress,
   range,
+  symbol,
 }: {
   networkId: string;
   tokenAddress: string;
   range: IMarketLiteChartRange;
+  // Only used by the demo OKX fallback below.
+  symbol?: string;
 }) {
   const rangeItem = useMemo(
     () => MARKET_LITE_CHART_RANGES.find((item) => item.label === range),
@@ -26,7 +30,15 @@ export function useMarketLiteChartData({
 
   const { result, isLoading } = usePromiseResult(
     async () => {
-      if (!networkId || !tokenAddress || !rangeItem) {
+      if (!rangeItem) {
+        return EMPTY_CHART_DATA;
+      }
+      // DEMO: majors have no pool-based kline yet, so they read OKX instead of
+      // rendering an empty chart. See okxDemoKline.ts.
+      if (getOkxDemoInstId(symbol)) {
+        return fetchOkxDemoKline({ symbol, interval: rangeItem.interval });
+      }
+      if (!networkId || !tokenAddress) {
         return EMPTY_CHART_DATA;
       }
       const timeTo = Math.floor(Date.now() / 1000);
@@ -45,7 +57,7 @@ export function useMarketLiteChartData({
         ({ t, c }) => [t, c] as [number, number],
       );
     },
-    [networkId, tokenAddress, rangeItem],
+    [networkId, tokenAddress, rangeItem, symbol],
     { watchLoading: true, initResult: EMPTY_CHART_DATA },
   );
 

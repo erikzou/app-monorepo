@@ -129,6 +129,7 @@ interface ISwapHeaderContainerProps {
   // traded, so a Swap/Stocks/Limit switcher there would offer a choice the
   // surrounding page cannot follow.
   hideTypeTabs?: boolean;
+  hideKLineButton?: boolean;
   marketPresetSettings?: IMarketPresetSettingsState;
   enterFrom?: ESwapSource;
 }
@@ -142,6 +143,7 @@ const SwapHeaderContainer = ({
   showSwapPro,
   hideRightActions,
   hideTypeTabs,
+  hideKLineButton,
   marketPresetSettings,
   enterFrom,
 }: ISwapHeaderContainerProps) => {
@@ -412,6 +414,7 @@ const SwapHeaderContainer = ({
         <SwapHeaderRightActionContainer
           pageType={pageType}
           marketPresetSettings={marketPresetSettings}
+          hideKLineButton={hideKLineButton}
           compact={Boolean(isCompactLayout && !useDesktopModalHeaderActions)}
         />
       ) : null}

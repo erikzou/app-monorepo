@@ -22,17 +22,20 @@ export function MarketLiteChart({
   tokenAddress,
   range,
   height,
+  symbol,
 }: {
   networkId: string;
   tokenAddress: string;
   range: IMarketLiteChartRange;
   height: number;
+  symbol?: string;
 }) {
   const theme = useTheme();
   const { data, isLoading } = useMarketLiteChartData({
     networkId,
     tokenAddress,
     range,
+    symbol,
   });
 
   // Tint follows the direction of the range, matching how the header renders

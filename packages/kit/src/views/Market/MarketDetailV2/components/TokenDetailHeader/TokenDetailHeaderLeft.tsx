@@ -43,6 +43,12 @@ interface ITokenDetailHeaderLeftProps {
   stockEntityIdentity?: { ticker: string; name: string };
   // Stock layers surface the contract address in the trust block instead.
   hideContractAddress?: boolean;
+  /**
+   * The top-coin assembly borrows the stock identity shape (ticker over name)
+   * but is not a stock: its switcher browses the watchlist, it keeps its chain
+   * badge, and it carries the community-recognized mark next to the ticker.
+   */
+  isTopCoinLayout?: boolean;
 }
 
 export function TokenDetailHeaderLeft({
@@ -54,6 +60,7 @@ export function TokenDetailHeaderLeft({
   showFavoriteButton = true,
   stockEntityIdentity,
   hideContractAddress = false,
+  isTopCoinLayout = false,
 }: ITokenDetailHeaderLeftProps) {
   const { md } = useMedia();
 
@@ -138,8 +145,15 @@ export function TokenDetailHeaderLeft({
             {stockEntityIdentity ? null : marketStar}
             <MarketTokenSelector
               titleOverride={stockEntityIdentity?.ticker}
-              hideNetworkBadge={Boolean(stockEntityIdentity)}
-              stockSwitcher={Boolean(stockEntityIdentity)}
+              hideNetworkBadge={
+                Boolean(stockEntityIdentity) && !isTopCoinLayout
+              }
+              stockSwitcher={Boolean(stockEntityIdentity) && !isTopCoinLayout}
+              titleSuffix={
+                isTopCoinLayout && communityRecognized ? (
+                  <CommunityRecognizedBadge />
+                ) : undefined
+              }
               subtitleSlot={entitySubtitle}
             />
           </>

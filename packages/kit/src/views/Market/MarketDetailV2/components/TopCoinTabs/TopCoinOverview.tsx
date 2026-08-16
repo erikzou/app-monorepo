@@ -72,48 +72,53 @@ function StatCell({ item }: { item: ITopCoinStat }) {
   );
 }
 
+// Figma 25713:20534: label in 14/20 medium subdued, the change in 18/24
+// semibold, and the price it implies in 16/24 regular at full contrast — the
+// price is a figure in its own right here, not a caption.
 function PerformanceCell({ item }: { item: ITopCoinPerformanceItem }) {
   const isDown = Number(item.changePercent) < 0;
   return (
     <YStack
-      gap="$1.5"
-      pr="$2.5"
+      gap="$2.5"
+      py="$2"
       flexGrow={1}
       flexShrink={1}
       flexBasis={0}
       minWidth={0}
     >
-      <SizableText size="$bodyMd" color="$textSubdued">
+      <SizableText size="$bodyMdMedium" color="$textSubdued">
         {item.label}
       </SizableText>
-      {item.changePercent === undefined ? (
-        <SizableText size="$bodyLgMedium" color="$textSubdued">
-          {PLACEHOLDER}
-        </SizableText>
-      ) : (
-        <NumberSizeableText
-          size="$bodyLgMedium"
-          color={isDown ? '$textCritical' : '$textSuccess'}
-          formatter="priceChange"
-          formatterOptions={{ showPlusMinusSigns: true }}
-        >
-          {item.changePercent}
-        </NumberSizeableText>
-      )}
-      {item.price ? (
-        <NumberSizeableText
-          size="$bodyMd"
-          color="$textSubdued"
-          formatter="price"
-          formatterOptions={{ currency: '$' }}
-        >
-          {item.price}
-        </NumberSizeableText>
-      ) : (
-        <SizableText size="$bodyMd" color="$textSubdued">
-          {PLACEHOLDER}
-        </SizableText>
-      )}
+      <YStack gap="$0.5">
+        {item.changePercent === undefined ? (
+          <SizableText size="$headingLg" color="$textSubdued">
+            {PLACEHOLDER}
+          </SizableText>
+        ) : (
+          <NumberSizeableText
+            size="$headingLg"
+            color={isDown ? '$textCritical' : '$textSuccess'}
+            formatter="priceChange"
+            formatterOptions={{ showPlusMinusSigns: true }}
+          >
+            {item.changePercent}
+          </NumberSizeableText>
+        )}
+        {item.price ? (
+          <NumberSizeableText
+            size="$bodyLg"
+            color="$text"
+            formatter="price"
+            formatterOptions={{ currency: '$' }}
+          >
+            {item.price}
+          </NumberSizeableText>
+        ) : (
+          <SizableText size="$bodyLg" color="$text">
+            {PLACEHOLDER}
+          </SizableText>
+        )}
+      </YStack>
     </YStack>
   );
 }
@@ -149,7 +154,7 @@ export function TopCoinOverview({
       </StockSection>
 
       {/* TODO(i18n): demo copy, hardcoded English. */}
-      <StockSection title="24h Range">
+      <StockSection title="24h Range" gap="$6">
         <XStack>
           <YStack
             gap="$1.5"
@@ -223,15 +228,15 @@ export function TopCoinOverview({
         </XStack>
       </StockSection>
 
-      <StockSection title="Performance">
-        <XStack>
+      <StockSection title="Performance" gap="$6">
+        <XStack gap="$0.5">
           {performance.map((item) => (
             <PerformanceCell key={item.key} item={item} />
           ))}
         </XStack>
       </StockSection>
 
-      <StockSection title={symbol ? `Earn ${symbol}` : 'Earn'}>
+      <StockSection title={symbol ? `Earn ${symbol}` : 'Earn'} gap="$6">
         <XStack
           gap="$4"
           alignItems="center"
@@ -245,7 +250,13 @@ export function TopCoinOverview({
           // worse than none.
           hoverStyle={{ bg: '$bgHover' }}
         >
-          <Icon name="ChartTrendingUpOutline" size="$10" color="$iconSuccess" />
+          {/*
+            The design's Earn row carries an illustration, not a UI icon, so
+            this uses the design system's own percentage illustration rather
+            than a line icon scaled up. It is theme-aware on its own, which is
+            why no color is passed.
+          */}
+          <Icon name="BlockPercentageIllus" size="$10" />
           <YStack flex={1} minWidth={0} gap="$1">
             <SizableText size="$bodyLgMedium" color="$text">
               {`Earn ${DEMO_EARN_APY}% APY on your ${symbol}`}
@@ -263,7 +274,7 @@ export function TopCoinOverview({
         </XStack>
       </StockSection>
 
-      <StockSection title={symbol ? `About ${symbol}` : 'About'}>
+      <StockSection title={symbol ? `About ${symbol}` : 'About'} gap="$6">
         <SizableText size="$bodyMd" color="$textSubdued">
           {tokenDetail?.name
             ? `${tokenDetail.name} is one of the assets tracked by this market. A full description is not carried on the detail payload yet.`

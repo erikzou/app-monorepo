@@ -477,6 +477,7 @@ function DesktopLayoutContent({
                 : undefined)
             }
             isStockLayout
+            isTopCoinLayout={isTopCoinPage}
             showMediaAndSecurity={false}
           />
         )}
@@ -548,6 +549,7 @@ function DesktopLayoutContent({
                   tokenAddress={tokenAddress}
                   range={liteChartRange}
                   height={chartHeight - MARKET_CHART_TOOLBAR_HEIGHT}
+                  symbol={isTopCoinPage ? tokenDetail?.symbol : undefined}
                 />
               </>
             ) : (

@@ -756,12 +756,16 @@ const SwapHeaderRightActionContainer = ({
   iconColor,
   compact,
   marketPresetSettings,
+  hideKLineButton,
 }: {
   pageType?: EPageType;
   iconSize?: number | `$${string}`;
   iconColor?: ColorTokens;
   compact?: boolean;
   marketPresetSettings?: IMarketPresetSettingsState;
+  // Embedders that already own a chart (the market detail page) suppress the
+  // panel's own chart entry rather than offering two routes to the same view.
+  hideKLineButton?: boolean;
 }) => {
   const navigation =
     useAppNavigation<IPageNavigationProp<IModalSwapParamList>>();
@@ -833,9 +837,10 @@ const SwapHeaderRightActionContainer = ({
   }, [historyProtocolType, navigation, swapStoreName]);
 
   const showKLineButton =
-    swapTypeSwitch === ESwapTabSwitchType.SWAP ||
-    swapTypeSwitch === ESwapTabSwitchType.STOCK ||
-    swapTypeSwitch === ESwapTabSwitchType.LIMIT;
+    !hideKLineButton &&
+    (swapTypeSwitch === ESwapTabSwitchType.SWAP ||
+      swapTypeSwitch === ESwapTabSwitchType.STOCK ||
+      swapTypeSwitch === ESwapTabSwitchType.LIMIT);
   const isKLineDisabled = !fromToken && !toToken;
   const showKLineAsDialog =
     platformEnv.isNative || (platformEnv.isExtension && !gtLg);
