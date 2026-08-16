@@ -154,6 +154,7 @@ interface ISwapMainLoadProps {
   // Set by surfaces that embed the module inside another page.
   hideTypeTabs?: boolean;
   hideKLineButton?: boolean;
+  compactActions?: boolean;
 }
 
 const SwapMainLoad = ({
@@ -161,6 +162,7 @@ const SwapMainLoad = ({
   pageType,
   hideTypeTabs,
   hideKLineButton,
+  compactActions,
 }: ISwapMainLoadProps) => {
   const { preSwapStepsStart, preSwapBeforeStepActions } = useSwapBuildTx();
   const intl = useIntl();
@@ -1423,6 +1425,7 @@ const SwapMainLoad = ({
               showSwapPro={platformEnv.isNative}
               hideTypeTabs={hideTypeTabs}
               hideKLineButton={hideKLineButton}
+              compactActions={compactActions}
               hideRightActions={showDesktopProviderPanel}
               enterFrom={swapInitParams?.swapSource}
               marketPresetSettings={

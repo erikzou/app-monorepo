@@ -130,6 +130,10 @@ interface ISwapHeaderContainerProps {
   // surrounding page cannot follow.
   hideTypeTabs?: boolean;
   hideKLineButton?: boolean;
+  // Overrides the layout-derived action sizing. The market trade card is a
+  // narrow column but its header follows the desktop spec (Figma 25703:19314):
+  // 20px glyphs in a 32px round hit area, 16 apart.
+  compactActions?: boolean;
   marketPresetSettings?: IMarketPresetSettingsState;
   enterFrom?: ESwapSource;
 }
@@ -144,6 +148,7 @@ const SwapHeaderContainer = ({
   hideRightActions,
   hideTypeTabs,
   hideKLineButton,
+  compactActions,
   marketPresetSettings,
   enterFrom,
 }: ISwapHeaderContainerProps) => {
@@ -415,7 +420,10 @@ const SwapHeaderContainer = ({
           pageType={pageType}
           marketPresetSettings={marketPresetSettings}
           hideKLineButton={hideKLineButton}
-          compact={Boolean(isCompactLayout && !useDesktopModalHeaderActions)}
+          compact={
+            compactActions ??
+            Boolean(isCompactLayout && !useDesktopModalHeaderActions)
+          }
         />
       ) : null}
     </XStack>
