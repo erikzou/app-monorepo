@@ -109,6 +109,7 @@ import TransactionLossNetworkFeeExceedDialog from '../../components/TransactionL
 import { useMarketPresetSwapOverridesEffect } from '../../hooks/useMarketPresetSwapOverridesEffect';
 import { useSwapAddressInfo } from '../../hooks/useSwapAccount';
 import { useSwapBuildTx } from '../../hooks/useSwapBuiltTx';
+import { useSwapDemoQuote } from '../../hooks/useSwapDemoQuote';
 import { useSwapInit } from '../../hooks/useSwapGlobal';
 import {
   useSwapProAccount,
@@ -155,6 +156,8 @@ interface ISwapMainLoadProps {
   hideTypeTabs?: boolean;
   hideKLineButton?: boolean;
   compactActions?: boolean;
+  // DEMO: fills an empty quote so the embedded card can walk the whole flow.
+  demoQuote?: boolean;
 }
 
 const SwapMainLoad = ({
@@ -163,11 +166,13 @@ const SwapMainLoad = ({
   hideTypeTabs,
   hideKLineButton,
   compactActions,
+  demoQuote,
 }: ISwapMainLoadProps) => {
   const { preSwapStepsStart, preSwapBeforeStepActions } = useSwapBuildTx();
   const intl = useIntl();
   const { gtLg } = useMedia();
   const { fetchLoading } = useSwapInit(swapInitParams);
+  useSwapDemoQuote(demoQuote);
   const navigation =
     useAppNavigation<IPageNavigationProp<IModalSwapParamList>>();
   const [quoteResult] = useSwapQuoteCurrentSelectAtom();

@@ -85,6 +85,7 @@ export function TopCoinTradePanel({ swapToken }: { swapToken?: ISwapToken }) {
         hideTypeTabs
         hideKLineButton
         compactActions={false}
+        demoQuote
         pageType={EPageType.modal}
         swapInitParams={swapInitParams}
       />
