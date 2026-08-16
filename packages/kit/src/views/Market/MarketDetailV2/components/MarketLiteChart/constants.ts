@@ -55,4 +55,6 @@ export const MARKET_CHART_TOOLBAR_SEGMENT_STYLE = {
 // The area fill has to follow the line color, otherwise a down range renders a
 // red line over a green gradient. The fill fades to fully transparent.
 export const MARKET_LITE_CHART_AREA_TOP_ALPHA = 0.2;
+// The stretch of line past the cursor while scrubbing.
+export const MARKET_LITE_CHART_DIMMED_LINE_ALPHA = 0.3;
 export const MARKET_LITE_CHART_AREA_BOTTOM_ALPHA = 0;
