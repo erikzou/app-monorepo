@@ -30,6 +30,7 @@ import {
 } from '@onekeyhq/shared/types/swap/types';
 
 import { useTokenDetail } from '../../../hooks/useTokenDetail';
+import { useShowTradeReviewDialog } from '../../TradeReviewDialog/TradeReviewDialog';
 import { usePaymentTokenPrice } from '../hooks/usePaymentTokenPrice';
 import { ESwapDirection, type ITradeType } from '../hooks/useTradeType';
 
@@ -362,8 +363,16 @@ export function ActionButton({
           variant: 'primary',
         };
 
+  const showTradeReview = useShowTradeReviewDialog();
+
   const handlePress = useCallback(
     async (event: GestureResponderEvent) => {
+      // DEMO: assemblies that carry a review step stop at the review dialog
+      // instead of building a transaction.
+      if (submitLabel) {
+        showTradeReview();
+        return;
+      }
       if (platformEnv.isWeb && noAccount) {
         showAccountSelector();
         return;
@@ -445,6 +454,8 @@ export function ActionButton({
       activeAccount?.deriveType,
       networkId,
       onSwapAction,
+      submitLabel,
+      showTradeReview,
     ],
   );
 

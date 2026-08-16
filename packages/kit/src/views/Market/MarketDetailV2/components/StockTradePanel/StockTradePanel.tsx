@@ -21,12 +21,16 @@ import type { IMarketStockInstrument } from '@onekeyhq/shared/types/marketV2';
 
 import { useMarketStockEntity } from '../../hooks/useMarketStockEntity';
 import { useTokenDetail } from '../../hooks/useTokenDetail';
-import { StockVariantSelector } from '../StockVariantSelector/StockVariantSelector';
+import {
+  StockVariantClosedNotice,
+  StockVariantSelector,
+} from '../StockVariantSelector/StockVariantSelector';
 import { InfoItemLabel } from '../SwapPanel/components/InfoItemLabel';
 import { TokenSelectorPopover } from '../SwapPanel/components/TokenInputSection/TokenSelectorPopover';
 import { TradeTypeSelector } from '../SwapPanel/components/TradeTypeSelector';
 import { useSpeedSwapInit } from '../SwapPanel/hooks/useSpeedSwapInit';
 import { ESwapDirection } from '../SwapPanel/hooks/useTradeType';
+import { useShowTradeReviewDialog } from '../TradeReviewDialog/TradeReviewDialog';
 
 import { useShowStockAdvancedSettings } from './StockAdvancedSettingsDialog';
 
@@ -374,6 +378,7 @@ export function StockTradePanel() {
     [],
   );
   const showAdvancedSettings = useShowStockAdvancedSettings();
+  const showTradeReview = useShowTradeReviewDialog();
 
   const instruments = useMemo<IMarketStockInstrument[]>(
     () => entity?.instruments ?? [],
@@ -477,6 +482,7 @@ export function StockTradePanel() {
       <YStack px="$5" gap="$4">
         <XStack pl="$1" py="$2" gap="$2.5" alignItems="center">
           <StockVariantSelector
+            hideClosedNotice
             instruments={instruments}
             selectedInstrument={selectedInstrument}
           />
@@ -507,6 +513,13 @@ export function StockTradePanel() {
             onPress={handleTogglePriceSource}
           />
         </XStack>
+
+        {/* Full width, below the row: the banner's action does not shrink, so
+            inside the variant trigger's column it widened the whole panel. */}
+        <StockVariantClosedNotice
+          instruments={instruments}
+          selectedInstrument={selectedInstrument}
+        />
 
         <AmountCard
           amount={amount}
@@ -557,6 +570,7 @@ export function StockTradePanel() {
           size="large"
           variant="primary"
           disabled={!hasAmount}
+          onPress={showTradeReview}
         >
           {/* TODO(i18n): needs translation keys. */}
           {hasAmount ? 'Review' : 'Enter amount'}
