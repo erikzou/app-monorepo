@@ -9,34 +9,47 @@ import {
 } from '@onekeyhq/shared/types/swap/types';
 import type { ISwapToken } from '@onekeyhq/shared/types/swap/types';
 
+// The all-networks entry in the shared default map; its pay token is the
+// cross-chain default (USDC on Ethereum).
+const ALL_NETWORK_DEFAULT_PAIR_ID = 'onekeyall--0';
+
 /**
  * Seeding only the buy side leaves the pay box empty, because the module's
  * cold-start hydration bails as soon as either side is already set. So pick the
- * counterpart from the same per-network default pair the Swap module uses
- * everywhere else: for a native major the pay side is that network's default
- * stablecoin, and for anything else it is the native coin.
+ * counterpart out of the same per-network default pair the Swap module uses
+ * everywhere else, choosing whichever half of that pair is not the coin this
+ * page is about.
+ *
+ * The market's swap token does not carry `isNative`, so the side is decided by
+ * comparing the tokens themselves rather than by trusting that flag.
  */
+function isSameToken(a?: ISwapToken, b?: ISwapToken) {
+  return Boolean(
+    a &&
+    b &&
+    a.networkId === b.networkId &&
+    (a.contractAddress ?? '').toLowerCase() ===
+      (b.contractAddress ?? '').toLowerCase(),
+  );
+}
+
 function getDefaultPaymentToken(token?: ISwapToken) {
   if (!token?.networkId) {
     return undefined;
   }
   const defaultPair = swapDefaultSetTokens[token.networkId];
-  // Same-network only, deliberately. A cross-chain pair seeds as BRIDGE, which
-  // the module folds back into the merged Swap tab and then drops the pay token
-  // again, so chains that carry no counterpart in the shared config (BTC and
-  // the other UTXO coins) keep an empty pay box until a top-coin payment list
-  // exists.
-  const counterpart = token.isNative
-    ? defaultPair?.toToken
-    : defaultPair?.fromToken;
-  if (
-    !counterpart ||
-    (counterpart.contractAddress === token.contractAddress &&
-      counterpart.networkId === token.networkId)
-  ) {
-    return undefined;
-  }
-  return counterpart;
+  const sameNetworkCounterpart = [
+    defaultPair?.toToken,
+    defaultPair?.fromToken,
+  ].find((candidate) => candidate && !isSameToken(candidate, token));
+  // Chains whose default entry carries only the native coin (BTC and the other
+  // UTXO chains) have no same-chain counterpart, and majors there are bought by
+  // bridging anyway, so fall back to the cross-chain default pay token the Swap
+  // module already ships.
+  const counterpart =
+    sameNetworkCounterpart ??
+    swapDefaultSetTokens[ALL_NETWORK_DEFAULT_PAIR_ID]?.toToken;
+  return isSameToken(counterpart, token) ? undefined : counterpart;
 }
 
 /**

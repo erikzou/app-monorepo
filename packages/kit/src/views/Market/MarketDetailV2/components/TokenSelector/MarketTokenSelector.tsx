@@ -84,8 +84,12 @@ SelectorTabItem.displayName = 'SelectorTabItem';
 
 function BaseMarketTokenSelectorContent({
   stockMode = false,
+  watchlistMode = false,
 }: {
   stockMode?: boolean;
+  // Opens the switcher already on the watchlist tab. Top coins use this: the
+  // page's peers are the coins the user follows, not a category listing.
+  watchlistMode?: boolean;
 }) {
   const intl = useIntl();
   const route = useRoute();
@@ -104,7 +108,7 @@ function BaseMarketTokenSelectorContent({
   const { isWatchlistMode } = selectorConfig;
 
   const [startListSelect, setStartListSelect] = useState(
-    stockMode ? false : isWatchlistMode,
+    stockMode ? false : watchlistMode || isWatchlistMode,
   );
   const [selectedCategory, setSelectedCategory] = useState('trending');
 
@@ -286,12 +290,17 @@ function BaseMarketTokenSelectorContent({
 function MarketTokenSelectorContent({
   isOpen,
   stockMode,
+  watchlistMode,
 }: {
   isOpen: boolean;
   stockMode?: boolean;
+  watchlistMode?: boolean;
 }) {
   return isOpen ? (
-    <BaseMarketTokenSelectorContent stockMode={stockMode} />
+    <BaseMarketTokenSelectorContent
+      stockMode={stockMode}
+      watchlistMode={watchlistMode}
+    />
   ) : null;
 }
 
@@ -304,6 +313,7 @@ function BaseMarketTokenSelector({
   titleSuffix,
   subtitleSlot,
   stockSwitcher = false,
+  watchlistSwitcher = false,
   largeTrigger = false,
 }: {
   showAddress?: boolean;
@@ -320,6 +330,8 @@ function BaseMarketTokenSelector({
   subtitleSlot?: ReactNode;
   // On a stock page the trigger switches stocks, not arbitrary tokens.
   stockSwitcher?: boolean;
+  // Top-coin pages browse the watchlist rather than a category listing.
+  watchlistSwitcher?: boolean;
   // The crypto detail assembly (Figma 25593:18404) uses the same 48px logo and
   // 20/28 ticker as the stock entity trigger, but carries no subtitle: its
   // contract address sits beside the identity rather than under it.
@@ -488,6 +500,7 @@ function BaseMarketTokenSelector({
           <MarketTokenSelectorContentMemo
             isOpen={isOpenProp ?? false}
             stockMode={stockSwitcher}
+            watchlistMode={watchlistSwitcher}
           />
         )}
       />
@@ -501,6 +514,7 @@ function BaseMarketTokenSelector({
       stableLogoUrls,
       triggerTitle,
       stockSwitcher,
+      watchlistSwitcher,
       useLargeTrigger,
     ],
   );

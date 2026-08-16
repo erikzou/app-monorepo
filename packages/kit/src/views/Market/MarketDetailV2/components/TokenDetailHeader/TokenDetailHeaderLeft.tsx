@@ -149,6 +149,7 @@ export function TokenDetailHeaderLeft({
                 Boolean(stockEntityIdentity) && !isTopCoinLayout
               }
               stockSwitcher={Boolean(stockEntityIdentity) && !isTopCoinLayout}
+              watchlistSwitcher={isTopCoinLayout}
               titleSuffix={
                 isTopCoinLayout && communityRecognized ? (
                   <CommunityRecognizedBadge />
